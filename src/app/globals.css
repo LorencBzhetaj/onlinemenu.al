@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f1720;
+
+  /* Tema default "Mesnatë Alpine" — faqja publike i mbivendos këto
+     dinamikisht sipas restaurant.primaryColor / accentColor. */
+  --brand-primary: #0f1720;
+  --brand-accent: #c9a24b;
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "Cormorant Garamond", Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1720;
+    --foreground: #f5f0e6;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+}

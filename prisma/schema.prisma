@@ -1,0 +1,169 @@
+// Prisma schema — Platforma e Menusë Digjitale (SaaS, multi-tenant)
+//
+// Database: PostgreSQL (Neon). DATABASE_URL = pooled, DIRECT_URL = direct (migracionet).
+// Multi-tenancy: një database e vetme, izolim me foreign key `restaurantId`.
+// Çdo query nga dashboard-i filtrohet sipas restaurantId të sesionit.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // url: lidhja e "pooled" (runtime serverless). directUrl: lidhja direkte
+  // (migracionet — PgBouncer/pooling s'e mbështet migrate deploy).
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Përdoruesit dhe rolet
+// ─────────────────────────────────────────────────────────────
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  role         String       @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
+  restaurants  Restaurant[]
+  createdAt    DateTime     @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────
+// Restoranti (tenant)
+// ─────────────────────────────────────────────────────────────
+model Restaurant {
+  id           String  @id @default(cuid())
+  slug         String  @unique // p.sh. "gjecaj-restaurant" -> /m/gjecaj-restaurant
+  name         String
+  logoUrl      String?
+  primaryColor String? // personalizim minimal i temës
+  accentColor  String?
+  fontHeading  String? @default("Playfair Display")
+  fontBody     String? @default("Cormorant Garamond")
+  // Stili i fotos në menunë publike: "large" | "thumbnail" | "none"
+  menuPhotoStyle String @default("none")
+  phone        String?
+  whatsapp     String?
+  address      String?
+  isPublished  Boolean @default(false) // owner mund ta fikë/ndezë menunë
+
+  // Përmbajtje e Hero-s publike (opsionale; do të editohen te moduli Settings).
+  estYear    Int? // p.sh. 1922 -> "EST. 1922"
+  taglineAl  String? // script-line, p.sh. "Shije të Alpeve"
+  taglineEn  String?
+  subtitleAl String? // nëntitull uppercase, p.sh. "Kuzhinë Tradicionale · Theth"
+  subtitleEn String?
+
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String
+
+  subscription Subscription?
+  categories   Category[]
+  tastingMenus TastingMenu[]
+  analytics    MenuView[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Abonimi (menaxhim gjysmë-manual, pa Stripe në fillim)
+// ─────────────────────────────────────────────────────────────
+model Subscription {
+  id              String     @id @default(cuid())
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String     @unique
+  plan            String // "monthly" | "quarterly" | "yearly"
+  status          String     @default("trial") // "trial" | "active" | "expired" | "cancelled"
+  startedAt       DateTime   @default(now())
+  expiresAt       DateTime
+  lastPaymentNote String? // shënim manual (p.sh. "Paguar via WhatsApp 10/08")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Struktura e menusë: Category -> Subcategory? -> MenuItem
+// ─────────────────────────────────────────────────────────────
+model Category {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  nameAl       String
+  nameEn       String
+  icon         String?
+  sortOrder    Int        @default(0)
+
+  subcategories Subcategory[]
+  items         MenuItem[] // përdoret nëse s'ka subcategories
+
+  @@index([restaurantId])
+}
+
+model Subcategory {
+  id         String   @id @default(cuid())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  nameAl     String
+  nameEn     String
+  sortOrder  Int      @default(0)
+
+  items MenuItem[]
+
+  @@index([categoryId])
+}
+
+model MenuItem {
+  id            String       @id @default(cuid())
+  category      Category?    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  subcategoryId String?
+
+  nameAl String
+  nameEn String
+  descAl String?
+  descEn String?
+  price  Int // në lek/cent (Int, jo decimal — shmang gabime rrumbullakimi)
+
+  imageUrl    String?
+  isChefPick  Boolean @default(false) // "Rekomandimet e Shefit"
+  isDailyMenu Boolean @default(false) // "Menu Ditore"
+  isVisible   Boolean @default(true)
+  avgRating   Float?  @default(0) // vlerësim me yje
+  ratingCount Int     @default(0)
+  sortOrder   Int     @default(0)
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Menu degustuese
+// ─────────────────────────────────────────────────────────────
+model TastingMenu {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  name         String
+  price        Int
+  guestCount   Int        @default(2)
+  // JSON: [{titleAl, titleEn, descAl, descEn}] — tip Json nativ në PostgreSQL.
+  courses      Json
+
+  @@index([restaurantId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Analitika (tracking shikimesh/klikimesh)
+// ─────────────────────────────────────────────────────────────
+model MenuView {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  itemId       String? // për "cilat pjata klikohen më shumë"
+  viewedAt     DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@index([itemId])
+}

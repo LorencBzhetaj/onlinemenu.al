@@ -1,0 +1,39 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env files — injoro TË GJITHA (.env, .env.local, .env.production, ...)
+# përveç shabllonit .env.example
+.env
+.env.*
+!.env.example
+
+# prisma / sqlite
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/*.db
+/prisma/*.db-journal
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel
