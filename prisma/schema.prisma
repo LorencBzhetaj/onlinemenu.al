@@ -25,7 +25,21 @@ model User {
   passwordHash String? // null për përdoruesit që kyçen vetëm me Google OAuth
   role         String       @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
   restaurants  Restaurant[]
+  resetTokens  PasswordResetToken[]
   createdAt    DateTime     @default(now())
+}
+
+// Token për rivendosjen e password-it (Forgot/Reset Password).
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────────────────────
