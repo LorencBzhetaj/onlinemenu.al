@@ -22,7 +22,7 @@ datasource db {
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
-  passwordHash String
+  passwordHash String? // null për përdoruesit që kyçen vetëm me Google OAuth
   role         String       @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
   restaurants  Restaurant[]
   createdAt    DateTime     @default(now())

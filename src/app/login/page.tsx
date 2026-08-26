@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GoogleButton, OrDivider } from "@/components/google-button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +37,10 @@ export default function LoginPage() {
     <main className="min-h-screen grid place-items-center bg-midnight text-alpine-cream px-6">
       <div className="w-full max-w-sm">
         <h1 className="font-heading text-3xl text-center mb-8">Hyr në llogari</h1>
+
+        <GoogleButton label="Vazhdo me Google" />
+        <OrDivider />
+
         <form onSubmit={onSubmit} className="space-y-4">
           <input
             type="email"

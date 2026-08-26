@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GoogleButton, OrDivider } from "@/components/google-button";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -45,6 +46,10 @@ export default function RegisterPage() {
         <p className="text-center text-sm text-alpine-cream/60 mb-8">
           30 ditë, pa kartë krediti.
         </p>
+
+        <GoogleButton label="Regjistrohu me Google" />
+        <OrDivider />
+
         <form onSubmit={onSubmit} className="space-y-4">
           <input
             type="text"
