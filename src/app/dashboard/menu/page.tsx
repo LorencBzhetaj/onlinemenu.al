@@ -1,13 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { pageAccess } from "@/modules/memberships/access";
+import { pageAccess, restaurantIdFromSearchParams } from "@/modules/memberships/access";
 import { DashboardNotice } from "@/components/dashboard-notice";
 import { MenuManager } from "./menu-manager";
 import type { CategoryDTO } from "@/lib/menu-types";
 
 export const dynamic = "force-dynamic";
 
-export default async function MenuPage() {
-  const access = await pageAccess("menu:read");
+export default async function MenuPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const access = await pageAccess("menu:read", restaurantIdFromSearchParams(searchParams));
   if (!access.ok) return <DashboardNotice reason={access.reason} />;
   const { restaurantId } = access.ctx;
 

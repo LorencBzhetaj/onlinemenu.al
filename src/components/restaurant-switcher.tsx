@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Zgjedhës minimal i restorantit aktiv. Shfaqet vetëm kur ka >1 anëtarësim.
+// Ndryshimi e PIN-on këtë tab me ?r (mbijeton refresh/back) DHE ruan default-in server-side;
+// tab-et e tjerë mbeten te restoranti i tyre (?r i vet), pa u ridrejtuar.
 export function RestaurantSwitcher({
   memberships,
   activeId,
@@ -12,6 +14,8 @@ export function RestaurantSwitcher({
   activeId: string | null;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const current = useSearchParams().get("r") || activeId;
   const [saving, setSaving] = useState(false);
 
   if (memberships.length <= 1) return null;
@@ -25,12 +29,14 @@ export function RestaurantSwitcher({
       body: JSON.stringify({ restaurantId }),
     });
     setSaving(false);
+    // Pin te ky tab me ?r (nuk prek tab-et e tjerë).
+    router.push(`${pathname}?r=${encodeURIComponent(restaurantId)}`);
     router.refresh();
   }
 
   return (
     <select
-      value={activeId ?? ""}
+      value={current ?? ""}
       onChange={change}
       disabled={saving}
       aria-label="Restoranti aktiv"

@@ -42,10 +42,27 @@ Modeli i pronësisë 1:1 u shndërrua në **membership + rol + restorant aktiv**
 ### Teste — **49/49** (`tests/phase1.test.ts`)
 Cross-tenant lexim+shkrim i refuzuar · revoked private reads · rol→veprim (STAFF/MANAGER/OWNER) · action i panjohur/bad_request · tabela e entitlement-it · **cancelled-subscription backfill (s'riaktivizon)** · provisionim atomik+idempotent+**concurrency** · invariant ownerId↔OWNER · selectActiveRestaurant · **krijim pas verifikimit → membership+entitlements**.
 
+### Kontrolli përfundimtar i integrimit (E2E/HTTP me cookie reale) — **19/19**
+`npm run test:e2e` (Playwright + Chromium, server në këmbë mbi Postgres lokal; shih tests/README.md):
+- OWNER A↔B: header x-restaurant-id i mirë → 201; i tenant-it tjetër → 403; i munguar → 400; ID objekti/parent i tenant-it tjetër → 403.
+- MANAGER menu:write → 201 dhe billing page → "nuk ka akses"; STAFF menu:write → 403; membership i revokuar → 403.
+- Modul MENU joaktiv: shkrim → 403 `MODULE_INACTIVE`; faqja publike → "jo aktive".
+- **Two-tab**: hap formularin e A → kalo aktivin global te B në tab tjetër → shkrimi/leximi i tab-it të parë MBETEN te A; refresh dhe navigim e ruajnë (via `?r`).
+- Publik `/m/[slug]`: respekton isPublished + suspendedAt + entitlement MENU, menjëherë (pa cache i vjetruar).
+
+### Probleme të gjetura në këtë kontroll dhe të rregulluara
+1. **Two-tab (cross-tab):** restoranti i faqes tani lidhet me URL-në `?r=<id>` (per-tab, mbijeton refresh/back/forward); `pageAccess`/`useApiFetch`/nav/switcher e respektojnë. Pa fallback të heshtur kur aktivi global ndryshon në një tab tjetër.
+2. **Publik `/m/[slug]`:** hequr kontrolli paralel `isActive(subscription)`; tani përdor `hasEntitlement(MENU)` (përfshin suspendedAt + modul) + `isPublished`; faqja u bë `force-dynamic` që çaktivizimi/pezullimi të reflektohet menjëherë (pa dritare 60s cache).
+3. **Seed:** (nga raundi i mëparshëm) super-admin `emailVerified=true`.
+
+### Admin — rikontroll roli + audit
+Admin routes/faqet rikontrollojnë rolin **në server** (`admin/layout.tsx` + `/api/admin/.../subscription`: `role !== "SUPER_ADMIN"` → refuzim). **Audit NUK ekziston** (s'ka model `AuditLog`); mutacionet admin nuk regjistrojnë audit. **Punë e mbetur** (Faza 7, `AuditLog` + `/admin/audit`) — jo e përfunduar.
+
 ### Kufizime të Fazës 1
 - MANAGER/STAFF **provisionohen** vetëm në Fazën 7 (`invitations/accept` i shtyrë); Faza 1 krijon vetëm OWNER; rolet e tjera testohen duke shtuar membership direkt.
-- Testet e autorizimit mbulojnë `resolveAccess` (logjika); testet HTTP end-to-end me cookie sesioni kërkojnë server në këmbë (jashtë scope-it të testit lokal).
+- **Audit i admin-it mungon** (shih më sipër) — Faza 7.
 - `requireRestaurantAccess` bën 1 query membership për kërkesë private (pa cache); optimizim nëse duhet, më vonë.
+- `/m/[slug]` tani `force-dynamic`: korrektësi e menjëhershme e gate-it kundrejt cache-it; nëse ngarkesa publike rritet, rikonsidero cache afatshkurtër VETËM për përmbajtjen, jo për gate-in.
 - Faqet `analytics`/`tasting-menus` janë placeholder (pa të dhëna); gate-i i rolit shtohet kur të marrin të dhëna.
 
 ---

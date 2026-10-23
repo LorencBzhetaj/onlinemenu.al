@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 import { googleFontsHref, DEFAULT_HEADING, DEFAULT_BODY } from "@/lib/branding";
 import { mixHex, lighten } from "@/lib/color";
 import "./menu.css";
@@ -12,7 +13,9 @@ import {
   type PubRestaurant,
 } from "./public-menu";
 
-export const revalidate = 60;
+// Dinamike: gate-i (isPublished + suspendedAt + entitlement MENU) duhet të reflektojë
+// menjëherë çaktivizimin/pezullimin, pa dritare cache-i ku menuja mbetet e dukshme.
+export const dynamic = "force-dynamic";
 
 async function getRestaurant(slug: string) {
   return prisma.restaurant.findUnique({
@@ -50,12 +53,6 @@ export async function generateMetadata({
   };
 }
 
-function isActive(sub: { status: string; expiresAt: Date } | null): boolean {
-  if (!sub) return false;
-  if (sub.status === "expired" || sub.status === "cancelled") return false;
-  return new Date(sub.expiresAt) >= new Date();
-}
-
 // courses vjen si Json nativ nga PostgreSQL (array/objekt), por trajtojmë edhe
 // rastin kur është ende string (të dhëna të vjetra), për robustësi.
 function parseCourses(value: unknown): PubCourse[] {
@@ -87,8 +84,10 @@ export default async function PublicMenuPage({
   const restaurant = await getRestaurant(params.slug);
   if (!restaurant) notFound();
 
-  // Menuja shfaqet vetëm nëse është e publikuar dhe abonimi aktiv.
-  if (!restaurant.isPublished || !isActive(restaurant.subscription)) {
+  // Gate i vetëm, pa kontroll paralel: i publikuar DHE entitlement MENU aktiv.
+  // hasEntitlement përfshin suspendedAt + status abonimi (allowlist) + statusin/skadimin e modulit.
+  const menuActive = await hasEntitlement(restaurant.id, "MENU");
+  if (!restaurant.isPublished || !menuActive) {
     return (
       <main
         style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#0f1720", color: "#f5f0e6", padding: "0 24px", textAlign: "center" }}

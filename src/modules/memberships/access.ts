@@ -79,18 +79,30 @@ export function accessErrorStatus(code: AccessErrorCode): number {
  * përcjell këtë restaurantId te komponentët klient (që e vendosin header-in).
  */
 export async function pageAccess(
-  action: string
+  action: string,
+  explicitRestaurantId?: string | null
 ): Promise<{ ok: true; ctx: AccessContext } | { ok: false; reason: AccessErrorCode }> {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
     if (!userId) return { ok: false, reason: "unauthenticated" };
-    const ctx = await resolveAccess(userId, action, session.user.restaurantId);
+    // restaurantId i lidhur me faqen: ?r (per-tab, mbijeton refresh/back) ose aktivi si fallback.
+    const restaurantId = explicitRestaurantId ?? session.user.restaurantId;
+    const ctx = await resolveAccess(userId, action, restaurantId);
     return { ok: true, ctx };
   } catch (e) {
     if (e instanceof AccessError) return { ok: false, reason: e.code };
     throw e;
   }
+}
+
+/** Nxjerr `?r` (restoranti i faqes) nga searchParams të një faqeje server-side. */
+export function restaurantIdFromSearchParams(
+  sp: { [key: string]: string | string[] | undefined } | undefined
+): string | undefined {
+  const r = sp?.r;
+  const v = Array.isArray(r) ? r[0] : r;
+  return v && v.trim() ? v.trim() : undefined;
 }
 
 /** restaurantId i përcjellë shprehimisht nga faqja/formulari (header x-restaurant-id). */

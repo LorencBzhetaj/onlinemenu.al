@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { pageAccess } from "@/modules/memberships/access";
+import { pageAccess, restaurantIdFromSearchParams } from "@/modules/memberships/access";
 import { DashboardNotice } from "@/components/dashboard-notice";
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   // billing:read → vetëm OWNER (STAFF/MANAGER refuzohen).
-  const access = await pageAccess("billing:read");
+  const access = await pageAccess("billing:read", restaurantIdFromSearchParams(searchParams));
   if (!access.ok) return <DashboardNotice reason={access.reason} />;
   const subscription = await prisma.subscription.findUnique({
     where: { restaurantId: access.ctx.restaurantId },

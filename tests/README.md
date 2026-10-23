@@ -45,6 +45,25 @@ export DIRECT_URL="$DATABASE_URL"
 npm test   # `pretest` ekzekuton guard-in e DB-së lokale automatikisht
 ```
 
+## E2E / HTTP (browser real, cookie sesioni)
+
+`tests/e2e/phase1.e2e.ts` kërkon serverin NË KËMBË mbi të njëjtën DB lokale:
+
+```bash
+# Terminal 1 — ndërto dhe nis serverin (me env lokale + RESEND dummy për build)
+export DATABASE_URL="postgresql://postgres@127.0.0.1:5433/onlinemenu_test"; export DIRECT_URL="$DATABASE_URL"
+export NEXTAUTH_SECRET=test-secret NEXTAUTH_URL=http://localhost:3000 NEXT_PUBLIC_BASE_URL=http://localhost:3000 RESEND_API_KEY=re_dummy
+npm run build && npm start
+
+# Terminal 2 — ekzekuto E2E (Playwright + Chromium i parainstaluar)
+export DATABASE_URL="postgresql://postgres@127.0.0.1:5433/onlinemenu_test"; export DIRECT_URL="$DATABASE_URL"
+npm run test:e2e
+```
+
+Mbulon me cookie reale: OWNER A↔B, header x-restaurant-id i mirë/i keq/i munguar, ID objekti/parent
+të tenant-it tjetër, MANAGER/STAFF/revoked, modul MENU joaktiv (route + publik), two-tab
+(shkrim/lexim mbeten te A + refresh + navigation), dhe gate-i publik (isPublished+suspendedAt+MENU).
+
 ## Çfarë mbulohet
 
 Link/kod happy path · replay · skadim · wrong-code + lock · resend invalidon +

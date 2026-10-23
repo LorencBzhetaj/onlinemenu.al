@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext } from "react";
+import { useSearchParams } from "next/navigation";
 
 // Restoranti i lidhur me faqen e hapur (i zgjidhur në SSR). Përcillet eksplicit te
 // çdo thirrje private e API-t me header-in x-restaurant-id. Kjo e lidh kërkesën me
@@ -17,13 +18,16 @@ export function RestaurantProvider({
   return <RestaurantIdContext.Provider value={restaurantId}>{children}</RestaurantIdContext.Provider>;
 }
 
+// Restoranti i faqes: ?r (per-tab, mbijeton refresh/back/forward) ose aktivi si fallback.
 export function useRestaurantId(): string | null {
-  return useContext(RestaurantIdContext);
+  const fallback = useContext(RestaurantIdContext);
+  const fromUrl = useSearchParams().get("r");
+  return fromUrl || fallback;
 }
 
 /** fetch që shton header-in x-restaurant-id te çdo thirrje private. */
 export function useApiFetch() {
-  const restaurantId = useContext(RestaurantIdContext);
+  const restaurantId = useRestaurantId();
   return useCallback(
     (input: RequestInfo | URL, init?: RequestInit) => {
       const headers = new Headers(init?.headers);

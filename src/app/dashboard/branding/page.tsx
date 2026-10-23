@@ -1,12 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { pageAccess } from "@/modules/memberships/access";
+import { pageAccess, restaurantIdFromSearchParams } from "@/modules/memberships/access";
 import { DashboardNotice } from "@/components/dashboard-notice";
 import { BrandingForm, type BrandingInitial } from "./branding-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function BrandingPage() {
-  const access = await pageAccess("branding:read");
+export default async function BrandingPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const access = await pageAccess("branding:read", restaurantIdFromSearchParams(searchParams));
   if (!access.ok) return <DashboardNotice reason={access.reason} />;
 
   const restaurant = await prisma.restaurant.findUnique({

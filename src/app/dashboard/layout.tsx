@@ -5,18 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 import { RestaurantProvider } from "@/components/restaurant-context";
 import { RestaurantSwitcher } from "@/components/restaurant-switcher";
+import { DashboardNav } from "@/components/dashboard-nav";
 import { listMemberships } from "@/modules/memberships/active-restaurant";
-
-const NAV = [
-  { href: "/dashboard", label: "Përmbledhje" },
-  { href: "/dashboard/menu", label: "Menu" },
-  { href: "/dashboard/tasting-menus", label: "Menu Degustuese" },
-  { href: "/dashboard/branding", label: "Personalizim" },
-  { href: "/dashboard/qr", label: "QR Kod" },
-  { href: "/dashboard/analytics", label: "Analitika" },
-  { href: "/dashboard/settings", label: "Cilësime" },
-  { href: "/dashboard/billing", label: "Abonimi" },
-];
 
 export default async function DashboardLayout({
   children,
@@ -45,26 +35,7 @@ export default async function DashboardLayout({
 
         <RestaurantSwitcher memberships={memberships} activeId={session.user.restaurantId} />
 
-        <nav className="mt-3 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap rounded-md px-3 py-2 hover:bg-midnight-soft transition"
-            >
-              {item.label}
-            </Link>
-          ))}
-          {/* Lidhja Admin brenda nav-it në mobile (footer-i fshihet) */}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="whitespace-nowrap rounded-md px-3 py-2 text-alpine-gold hover:bg-midnight-soft transition lg:hidden"
-            >
-              → Admin
-            </Link>
-          )}
-        </nav>
+        <DashboardNav isAdmin={isAdmin} />
 
         {/* Footer-i i sidebar-it: vetëm desktop */}
         <div className="mt-auto hidden lg:block pt-6 border-t border-alpine-cream/10 space-y-2">
