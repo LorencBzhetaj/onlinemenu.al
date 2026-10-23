@@ -42,7 +42,8 @@ export async function issueVerification(
   await db.emailVerification.upsert({
     where: { userId },
     create: { userId, tokenHash, codeHash, expiresAt, attempts: 0, used: false },
-    update: { tokenHash, codeHash, expiresAt, attempts: 0, used: false },
+    // Ri-dërgim: rrit versionin → anulon çdo konsumim në fluturim të kredencialit të vjetër.
+    update: { tokenHash, codeHash, expiresAt, attempts: 0, used: false, version: { increment: 1 } },
   });
 
   return { token, code };
@@ -136,10 +137,12 @@ export async function consumeVerification(input: ConsumeInput): Promise<ConsumeR
   try {
     const verifiedUser = await prisma.$transaction(async (tx) => {
       const cas = await tx.emailVerification.updateMany({
-        where: { id: record!.id, used: false, expiresAt: { gt: now } },
+        // CAS i lidhur me VERSIONIN e lexuar: nëse një ri-dërgim (ose konsumim tjetër)
+        // e ndryshoi rekordin mes leximit dhe këtu, version-i s'përputhet → count=0.
+        where: { id: record!.id, version: record!.version, used: false, expiresAt: { gt: now } },
         data: { used: true },
       });
-      // Humbi garën (konsumuar nga kërkesë paralele, ose skadoi ndërkohë).
+      // Humbi garën (konsumuar/ri-dërguar nga kërkesë paralele, ose skadoi ndërkohë).
       if (cas.count === 0) return null;
 
       await tx.user.update({

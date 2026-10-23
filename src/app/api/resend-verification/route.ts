@@ -21,12 +21,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Email-i është i detyrueshëm." }, { status: 400 });
   }
 
-  // Rate limit i dyfishtë: 3/orë për IP DHE 3/orë për email (parandalon spam ridërgimi).
-  if (!rateLimit(`resend:ip:${ip}`, 3, HOUR_MS) || !rateLimit(`resend:email:${email}`, 3, HOUR_MS)) {
-    return NextResponse.json(
-      { error: "Shumë kërkesa ridërgimi. Provoni sërish pas pak." },
-      { status: 429 }
-    );
+  // Rate limit i dyfishtë (PostgreSQL): 3/orë për IP DHE 3/orë për email.
+  if (!(await rateLimit(`resend:ip:${ip}`, 3, HOUR_MS))) {
+    return NextResponse.json({ error: "Shumë kërkesa ridërgimi. Provoni sërish pas pak." }, { status: 429 });
+  }
+  if (!(await rateLimit(`resend:email:${email}`, 3, HOUR_MS))) {
+    return NextResponse.json({ error: "Shumë kërkesa ridërgimi. Provoni sërish pas pak." }, { status: 429 });
   }
 
   const user = await prisma.user.findUnique({

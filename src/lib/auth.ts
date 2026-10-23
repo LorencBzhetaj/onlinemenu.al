@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { consumeVerification } from "@/lib/email-verification";
+import { rateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
 
 const providers: NextAuthOptions["providers"] = [
   CredentialsProvider({
@@ -44,7 +45,13 @@ const providers: NextAuthOptions["providers"] = [
       email: { label: "Email", type: "email" },
       code: { label: "Code", type: "text" },
     },
-    async authorize(credentials) {
+    async authorize(credentials, req) {
+      // Rate limit i përbashkët për verifikimin (kundër brute-force të kodit nga një IP).
+      const ip = clientIpFromHeaders(req?.headers);
+      if (!(await rateLimit(`verify:ip:${ip}`, 10, 10 * 60 * 1000))) {
+        throw new Error("rate_limited");
+      }
+
       const result = credentials?.token
         ? await consumeVerification({ token: credentials.token })
         : credentials?.email && credentials?.code
@@ -97,12 +104,16 @@ export const authOptions: NextAuthOptions = {
             data: { email, role: "RESTAURANT_OWNER", emailVerified: true },
           });
         } else if (!existing.emailVerified) {
-          // Linking: llogari ekzistuese e PAVERIFIKUAR (regjistrim email i papërfunduar)
-          // që tani hyn me Google të verifikuar → e verifikojmë.
+          // Linking i SIGURT i një llogarie ekzistuese të PAVERIFIKUAR: një password i
+          // vendosur PARA verifikimit mund të jetë nga një palë tjetër (dikush regjistroi
+          // këtë email pa pasur kontroll mbi inbox-in). Google provon zotërimin e inbox-it,
+          // ndaj e verifikojmë — por HEQIM password-in e pabesueshëm dhe kredencialet e
+          // verifikimit në fluturim. Përdoruesi vendos password të ri me "Kam harruar…".
           await prisma.user.update({
             where: { id: existing.id },
-            data: { emailVerified: true },
+            data: { emailVerified: true, passwordHash: null, pendingRestaurantName: null },
           });
+          await prisma.emailVerification.deleteMany({ where: { userId: existing.id } });
         }
         return true;
       }

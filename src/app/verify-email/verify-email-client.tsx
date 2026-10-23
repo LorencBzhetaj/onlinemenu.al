@@ -14,6 +14,8 @@ function messageFor(error: string | undefined): string {
       return "Kod i gabuar. Kontrollo dhe provo sërish.";
     case "locked":
       return "Shumë tentativa të gabuara. Ridërgo një kod të ri.";
+    case "rate_limited":
+      return "Shumë përpjekje verifikimi. Prit pak dhe provo sërish.";
     case "invalid":
       return "Kredencial i pavlefshëm. Ridërgo verifikimin.";
     default:

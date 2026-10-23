@@ -13,8 +13,8 @@ const GENERIC = {
 };
 
 export async function POST(req: Request) {
-  // Rate limit: max 3 kërkesa/orë/IP (parandalon spam email-esh).
-  if (!rateLimit(`forgot:${clientIp(req)}`, 3, TOKEN_TTL_MS)) {
+  // Rate limit (PostgreSQL): max 3 kërkesa/orë/IP (parandalon spam email-esh).
+  if (!(await rateLimit(`forgot:ip:${clientIp(req)}`, 3, TOKEN_TTL_MS))) {
     return NextResponse.json(
       { error: "Shumë kërkesa. Provoni sërish më vonë." },
       { status: 429 }

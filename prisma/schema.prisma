@@ -45,9 +45,21 @@ model EmailVerification {
   tokenHash String   @unique // SHA-256 hex e token-it të linkut
   codeHash  String // bcrypt e kodit 6-shifror (kodi NUK është unik globalisht)
   attempts  Int      @default(0) // tentativa të gabuara kodi — lock pas MAX_CODE_ATTEMPTS
+  // Versioni i kredencialit: rritet në çdo ri-dërgim (optimistic lock). Konsumimi
+  // lidhet me versionin e lexuar → një ri-dërgim mes leximit dhe CAS-it e anulon atë.
+  version   Int      @default(0)
   expiresAt DateTime // +1 orë
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Rate limit i qëndrueshëm në PostgreSQL (i përbashkët: regjistrim, ridërgim, verifikim).
+// Një rresht për çelës (p.sh. "register:ip:1.2.3.4"); upsert atomik brenda dritares.
+model RateLimit {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
   updatedAt DateTime @updatedAt
 }
 

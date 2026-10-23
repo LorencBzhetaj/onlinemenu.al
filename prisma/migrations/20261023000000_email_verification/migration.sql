@@ -4,12 +4,27 @@
 ALTER TABLE "User" ADD COLUMN "emailVerified" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "User" ADD COLUMN "pendingRestaurantName" TEXT;
 
--- Backfill (grandfather) i përdoruesve EKZISTUES — p.sh. admin@onlinemenu.al, lori@gmail.com —
--- që u krijuan PARA se të futej gate-i i verifikimit; përndryshe bllokohen nga login-i.
--- FILTËR i qëllimshëm sipas "createdAt": kështu një re-run teorik i këtij migrimi NUK verifikon
--- regjistrime të reja të paverifikuara (ato krijohen PAS kësaj date). Mos e hiq filtrin.
--- Data = mesnata (UTC) e ditës së këtij migrimi; çdo user real ekziston para saj.
-UPDATE "User" SET "emailVerified" = true WHERE "createdAt" < TIMESTAMP '2026-10-23 00:00:00';
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Backfill (grandfather) i KUFIZUAR i përdoruesve legacy.
+--
+-- KUJDES: data e krijimit NUK provon se një llogari është legacy e besuar. Prandaj
+-- NUK përdorim cutoff sipas datës. Kriteri është AKTIVITET real që ekziston vetëm
+-- te rrjedha e VJETËR: para këtij ndryshimi, regjistrimi krijonte menjëherë një
+-- Restaurant; pra çdo pronar legacy ZOTËRON një Restaurant. Rrjedha e re NUK krijon
+-- Restaurant derisa email-i të verifikohet, pra regjistrimet e reja të paverifikuara
+-- nuk përputhen me këtë kriter dhe MBETEN false.
+--
+-- Përfshijmë edhe SUPER_ADMIN (seed-i fillestar mund të mos zotërojë Restaurant).
+--
+-- PARA aplikimit, operatori duhet të shqyrtojë bashkësinë e prekur (shih
+-- docs/IMPLEMENTATION-STATUS.md për query-n e pamjes paraprake). Mos aplikoni live
+-- pa këtë shqyrtim.
+UPDATE "User" SET "emailVerified" = true
+WHERE "emailVerified" = false
+  AND (
+    "role" = 'SUPER_ADMIN'
+    OR "id" IN (SELECT "ownerId" FROM "Restaurant")
+  );
 
 -- CreateTable: EmailVerification — një rekord aktiv për user (userId unik), kredenciale të hash-uara.
 CREATE TABLE "EmailVerification" (
@@ -18,6 +33,7 @@ CREATE TABLE "EmailVerification" (
     "tokenHash" TEXT NOT NULL,
     "codeHash" TEXT NOT NULL,
     "attempts" INTEGER NOT NULL DEFAULT 0,
+    "version" INTEGER NOT NULL DEFAULT 0,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "used" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -34,3 +50,16 @@ CREATE UNIQUE INDEX "EmailVerification_tokenHash_key" ON "EmailVerification"("to
 
 -- AddForeignKey
 ALTER TABLE "EmailVerification" ADD CONSTRAINT "EmailVerification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable: RateLimit — rate limit i qëndrueshëm (i përbashkët për register/resend/verify).
+CREATE TABLE "RateLimit" (
+    "key" TEXT NOT NULL,
+    "count" INTEGER NOT NULL,
+    "resetAt" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "RateLimit_pkey" PRIMARY KEY ("key")
+);
+
+-- Index për pastrimin e rreshtave të skaduar (prune periodik).
+CREATE INDEX "RateLimit_resetAt_idx" ON "RateLimit"("resetAt");

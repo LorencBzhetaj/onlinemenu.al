@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { pruneRateLimits } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -29,9 +30,13 @@ export async function GET(req: Request) {
     data: { status: "expired" },
   });
 
+  // Pastro rreshtat e skaduar të rate-limit-it (mban tabelën të vogël).
+  const prunedRateLimits = await pruneRateLimits();
+
   return NextResponse.json({
     ok: true,
     expired: result.count,
+    prunedRateLimits,
     ranAt: now.toISOString(),
   });
 }

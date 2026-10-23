@@ -7,8 +7,8 @@ import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
-    // Rate limit bazë: max 5 regjistrime për IP në orë (best-effort).
-    if (!rateLimit(`register:${clientIp(req)}`, 5, 60 * 60 * 1000)) {
+    // Rate limit i qëndrueshëm (PostgreSQL): max 5 regjistrime për IP në orë.
+    if (!(await rateLimit(`register:ip:${clientIp(req)}`, 5, 60 * 60 * 1000))) {
       return NextResponse.json(
         { error: "Shumë përpjekje. Provoni sërish më vonë." },
         { status: 429 }
