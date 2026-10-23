@@ -1,144 +1,87 @@
-# Status i Implementimit — Verifikim i Detyrueshëm i Email-it
+# Status i Implementimit — OnlineMenu
 
 _Përditësuar: 2026-10-23 · Branch: `main-wes312` · (commit-e lokale, pa push)_
 
-## Përmbledhje
-
-Regjistrimi **kërkon verifikim email-i** para aktivizimit. Përdoruesi merr
-njëkohësisht një **link të klikueshëm** dhe një **kod 6-shifror** te i njëjti rekord;
-përdorimi i njërit çaktivizon tjetrin. **Restaurant-i + trial-i krijohen VETËM pas
-verifikimit**, atomikisht. Mbi versionin bazë u shtuan forcime sigurie/qëndrueshmërie
-(shih seksionin "Forcimet").
+Dokumenti kryesor i statusit. Referenca:
+- Masterplan: `docs/OnlineMenu-Plan-Arkitekture-Prompte.md`
+- Baseline (Faza 0): `docs/architecture/baseline.md`
+- Vendime: `docs/architecture/decisions.md`
+- Plani i Fazës 1: `docs/architecture/phase-1-spec-and-plan.md`
+- Mockup-et e miratuar: `docs/design/*.png`
 
 ---
 
-## Rrjedha
+## Ku jemi
 
+| Pjesa | Status |
+|---|---|
+| Verifikim i detyrueshëm i email-it (link + kod) | ✅ i plotë + i forcuar; **lokal, pa push** |
+| Faza 0 — baseline & spec i zbatueshëm | ✅ i dokumentuar sipas kodit aktual |
+| Faza 1 — tenant/rol/entitlement | 📋 spec + plan teknik gati **për review** (pa implementim) |
+| Booking (Faza 4) | ⛔ jo i nisur; repo `restorant` jashtë scope-it të sesionit |
+
+---
+
+## 1. Verifikimi i email-it — përmbledhje
+
+Regjistrimi kërkon verifikim para aktivizimit; link (tokenHash SHA-256) + kod 6-shifror (bcrypt) te një rekord me `version`; Restaurant+trial krijohen vetëm pas verifikimit, atomikisht. Detajet e plota te seksionet më poshtë dhe te commit-et `b1b32d6`, `478d9a4` + forcimet e fundit.
+
+### Kontrollet e fundit (ky raund)
+- **Re-registration "latest-wins" atomik:** ndryshimi i password-it + ri-lëshimi i kredencialit bëhen në **një transaksion** (`createPendingRegistration`). Një link/kod i vjetër s'mund të verifikojë një password të vendosur nga një kërkesë tjetër. _Test: T16._
+- **Fail-open/fail-closed i dokumentuar:** `rateLimit` merr `failOpen`. **Verify = fail-CLOSED** — kur limiter-i s'arrihet, verifikimi refuzohet (`rate_limited`) **pa e konsumuar kredencialin**. Register/resend/forgot = fail-open (disponueshmëri); kjo s'e dobëson kufirin e tentativave, sepse kur limiter-i bie, verifikimi (dhe çdo guess) bllokohet tërësisht. _Test: T17._
+
+### Vendime sigurie (plot)
+hash token+kod · afat 1h · lock pas 5 tentativash (increment atomik) · rate-limit PG i përbashkët (register/resend/verify/forgot) · ridërgim invalidon të vjetrin (`version++`) · GET s'konsumon (POST verifikon) · CAS `{id, version, used:false, expiresAt>now}` në `$transaction` (asnjë dublim/konsumim i pjesshëm) · login i paverifikuar bllokohet në server · Google vetëm `email_verified===true` + linking i sigurt që **heq password-in** e pabesueshëm · backfill i kufizuar (owns-restaurant ose SUPER_ADMIN).
+
+### Teste — **76/76** (Postgres i izoluar lokal)
+`npm test` (shih `tests/README.md`; guard refuzon DB jo-lokale). Mbulon: happy link/kod, replay, skadim, lock, resend+version, concurrency (token‖token, token‖code, verify‖resend), version-guard, tentativa paralele, rollback transaksioni, login gate, Google gating+linking, backfill, rate-limit, **re-registration atomik (T16)**, **verify fail-closed (T17)**. Plus `tsc` ✅, `npm ci` i pastër ✅, `next build` ✅ (pa migrim).
+
+---
+
+## 2. Migrimi (për shqyrtim) — `prisma/migrations/20261023000000_email_verification`
+`ALTER "User"` (emailVerified, pendingRestaurantName) · `CREATE "EmailVerification"` (tokenHash, codeHash, attempts, version, …) · `CREATE "RateLimit"` · backfill i kufizuar. **Pamje paraprake PARA aplikimit:**
+```sql
+SELECT id, email, role FROM "User"
+WHERE "emailVerified" = false
+  AND ("role" = 'SUPER_ADMIN' OR "id" IN (SELECT "ownerId" FROM "Restaurant"));
 ```
-/register ─POST /api/register→ krijon User (emailVerified=false, pendingRestaurantName)
-                               + EmailVerification (tokenHash, codeHash, version, +1h)
-                               dërgon email (link + kod); PA auto-login
-        └─▶ /register/check-email?email=…  (buton "Ridërgo")
-
-Email ─▶ link  /verify-email?token=…   (GET shfaq VETËM buton; s'konsumon)
-            └ klik ─signIn("verify-login",{token})→ konsumim atomik → /dashboard
-     ─▶ kod   /verify-email  (formular email + kod)
-            └ submit ─signIn("verify-login",{email,code})→ konsumim atomik → /dashboard
-```
-
-Konsumimi (të dyja rrugët), brenda një transaksioni:
-`CAS {id, version, used:false, expiresAt>now} → used:true` → `emailVerified=true` →
-`ensureRestaurantWithTrial`.
 
 ---
 
-## Forcimet (raundi i dytë)
+## 3. Izolimi i Preview + push — status dhe hapat që mungojnë
 
-| # | Kërkesa | Zgjidhja |
-|---|---|---|
-| 1 | Kopje e rikuperueshme pa sekrete | `git bundle` i plotë i branch-it + patch i commit-it, dërguar si file; `.env` kurrë s'është në git |
-| 2 | Testet në repo + dokumentim | `tests/verification.test.ts` + `tests/README.md`; komanda `npm test`; **guard** që refuzon DB jo-lokale |
-| 3 | Lockfile + `npm ci` i pastër | shtuar `@emnapi/*` që mungonin; `rm -rf node_modules && npm ci` kalon; pastaj tsc+test+build |
-| 4 | Ndaj build nga `migrate deploy` | `build` = `next build`; migrimet me `npm run db:deploy` (hap i veçantë); build s'prek DB |
-| 5 | Backfill i kufizuar | kriter = **zotëron Restaurant** OSE **SUPER_ADMIN** (jo cutoff date); i dokumentuar, jo i aplikuar live |
-| 6 | Google linking i sigurt | verifikimi i një llogarie të paverifikuar **heq passwordHash-in** e pabesueshëm + fshin verifikimin në fluturim; re-registration mbetet "latest-wins" para verifikimit (pa asete) |
-| 7 | Konsumim i lidhur me kredencialin | shtuar `version`; CAS lidhet me `{id, version}` — ri-dërgimi (version++) anulon konsumimin në fluturim |
-| 8 | Rate limit i përbashkët | `RateLimit` në PostgreSQL (upsert atomik); zbatuar te register, resend, **verify** (dhe forgot-password) |
+**E verifikuar në këtë sesion:**
+- `build = next build` (ndarë nga migrimi) → **build/preview nuk ekzekuton `migrate deploy`**.
+- Build-i **nuk lidhet me DB** (route-t janë dinamike; s'ka query në build). Provuar me DB lokale.
 
----
+**NUK mjafton heqja e `migrate deploy` nga build** — izolimi i vërtetë kërkon që **runtime-i i Preview** të mos prekë DB-në live. Hapa konkretë që i mbeten operatorit (Vercel — s'kam akses t'i verifikoj nga këtu):
 
-## Skedarët
+1. **DB zhvillimi e izoluar:** krijo një Neon branch/DB të veçantë (jo prod). Vendos `DATABASE_URL` + `DIRECT_URL` **të scope-uar vetëm për Preview** te Vercel → Settings → Environment Variables (Environment = Preview). Prod mban variablat e veta (Environment = Production).
+2. **Runtime:** sigurohu që deployment-et Preview përdorin ato variabla Preview (jo prod). Kontroll: hap një Preview, provo regjistrim/verifikim → duhet të shkruajë te DB e dev, jo prod.
+3. **Migrimet:** apliko skemën te DB e dev me `npm run db:deploy` (me `DIRECT_URL` të dev) — jo nga build-i.
+4. **Cron:** `vercel.json` ka `check-subscriptions`. Vercel Cron ekzekuton në **Production** (jo Preview). Verifiko që cron-i prod ka `CRON_SECRET` dhe se nuk ka cron që godet DB-në e gabuar.
+5. **Email:** në Preview/dev përdor Resend **test mode** (dërgon vetëm te adresa e verifikuar) ose një sink testimi; mos dërgo email real te përdorues realë gjatë testimit.
+6. **Secrets Preview:** `NEXTAUTH_SECRET`, `NEXTAUTH_URL` (= URL-ja e Preview), `NEXT_PUBLIC_BASE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID/SECRET`, `CRON_SECRET`, Cloudinary — të scope-uar për Preview.
 
-**Të rinj:** `prisma/migrations/20261023000000_email_verification/`,
-`src/lib/email-verification.ts`, `src/lib/restaurant.ts`,
-`src/app/api/resend-verification/`, `src/app/register/check-email/`,
-`src/app/verify-email/`, `tests/verification.test.ts`, `tests/README.md`.
-
-**Të ndryshuar:** `prisma/schema.prisma` (+`version`, +`RateLimit`), `src/lib/auth.ts`,
-`src/lib/email.ts`, `src/lib/rate-limit.ts` (→ PostgreSQL, async),
-`src/app/api/register/route.ts`, `src/app/api/onboarding/route.ts`,
-`src/app/api/forgot-password/route.ts`, `src/app/api/cron/check-subscriptions/route.ts`
-(prune rate-limit), `src/app/register/page.tsx`, `src/app/login/page.tsx`,
-`src/middleware.ts`, `src/types/next-auth.d.ts`, `package.json`.
+**Vendim push-i:** meqë **s'mund ta verifikoj izolimin e Preview nga këtu** (pa akses te Vercel) dhe migrimi s'është aplikuar në asnjë DB të arritshme, **nuk bëj push** (do krijonte një Preview që pret skemën e re; nëse Preview-ja godet prod, prek të dhëna live). Commit-et mbeten **lokale**, me **bundle të rikuperueshëm të dërguar**. Sapo të konfirmosh hapat 1–2 (Preview → DB e izoluar), bëj push te `main-wes312` dhe hap **draft PR** (pa merge në main, pa deploy prod).
 
 ---
 
-## Vendime sigurie (plot)
-
-- **Ruajtje hash:** `tokenHash`=SHA-256 (token 32-byte), `codeHash`=bcrypt (kod 6-shifror). Kodi **jo** unik global.
-- **Afat** 1 orë; **lock** pas 5 tentativash kodi (increment atomik `attempts`).
-- **Rate limit (PostgreSQL):** register 5/orë/IP · resend 3/orë/IP + 3/orë/email · verify 10/10min/IP · forgot 3/orë/IP. Fail-open nëse DB dështon.
-- **Ridërgimi** invalidon kredencialin e vjetër (`upsert` + `version++`).
-- **GET s'konsumon:** linku → faqe me buton; verifikimi është POST (mbron nga prefetch i skanerëve).
-- **Atomik/concurrency:** CAS `{id, version, used:false, expiresAt>now}` brenda `$transaction` → asnjë dublim restaurant/trial, asnjë konsumim i pjesshëm (rollback i provuar).
-- **Login i paverifikuar** bllokohet në server (`authorize` hedh `EMAIL_NOT_VERIFIED`).
-- **Google** vetëm me `email_verified===true`; linking i një llogarie të paverifikuar **heq password-in** potencialisht të vendosur nga tjetërkush.
+## 4. Runbook deploy (kur të vendosësh)
+1. Shqyrto backfill-in me query-n e pamjes paraprake kundrejt DB-së së synuar.
+2. Apliko migrimin qëllimisht (jashtë build-it): `DATABASE_URL=<…> DIRECT_URL=<direct> npm run db:deploy`.
+3. Pastaj push/deploy i kodit (kodi i ri pret skemën e re).
+4. Vendos secrets-et te mjedisi përkatës.
 
 ---
 
-## Migrimi (për shqyrtim)
+## 5. Hapi pasues
+- Review i këtij statusi + `phase-1-spec-and-plan.md`.
+- Pas miratimit: implemento Fazën 1 (test-first), pa prekur booking-un.
+- **Nuk** niset Faza 1 ose bashkimi me booking-un pa miratim.
 
-`prisma/migrations/20261023000000_email_verification/migration.sql`:
-- `ALTER "User"` → `emailVerified` (default false), `pendingRestaurantName`.
-- `CREATE "EmailVerification"` → `userId` unik, `tokenHash` unik, `codeHash`, `attempts`, `version`, `expiresAt`, `used`.
-- `CREATE "RateLimit"` → `key` PK, `count`, `resetAt`, index mbi `resetAt`.
-- **Backfill i kufizuar:**
-  ```sql
-  UPDATE "User" SET "emailVerified" = true
-  WHERE "emailVerified" = false
-    AND ("role" = 'SUPER_ADMIN' OR "id" IN (SELECT "ownerId" FROM "Restaurant"));
-  ```
-  Legacy = zotëron Restaurant (rrjedha e vjetër e krijonte menjëherë) ose është super-admin.
-  Regjistrimet e reja (pa restaurant derisa të verifikohen) MBETEN false.
-
-  **Pamje paraprake PARA aplikimit** (ekzekuto dhe shqyrto bashkësinë e prekur):
-  ```sql
-  SELECT id, email, role FROM "User"
-  WHERE "emailVerified" = false
-    AND ("role" = 'SUPER_ADMIN' OR "id" IN (SELECT "ownerId" FROM "Restaurant"));
-  ```
-
----
-
-## Teste (Postgres 16 i izoluar lokal — JO Neon · **59/59 kaluan**)
-
-Komanda: `npm test` (shih `tests/README.md` për setup DB + guard-in që refuzon DB jo-lokale).
-
-Mbulon: link/kod happy · replay · skadim · wrong-code+lock · resend+`version++` ·
-concurrency (token‖token, token‖code, **verify‖resend**) · **version-guard CAS** ·
-**tentativa kodi paralele (increment atomik)** · **dështim transaksioni → rollback** ·
-login gate në server · Google gating + **linking i sigurt (heq password)** ·
-idempotencë restaurant · **backfill i kufizuar** · **rate limit PostgreSQL (seri+concurrency)**.
-
-Verifikime shtesë: `tsc --noEmit` ✅ · `npm ci` i pastër ✅ · `next build` ✅
-(**s'ekzekuton `migrate deploy`**) · mobile 375px pa overflow (raundi i parë).
-
-> Asnjë email real s'u dërgua; testet përdorin funksionet e librarisë (kthejnë token/kod të papërpunuar).
-
----
-
-## Runbook për deploy (konfigurimi i nevojshëm PARA push-it)
-
-Tani `build` s'bën më migrim, pra **push/preview build s'e prek DB-në live**. Rendi i saktë:
-
-1. **Shqyrto backfill-in** me query-n e pamjes paraprake (më sipër) kundrejt Neon.
-2. **Apliko migrimin te Neon qëllimisht**, jashtë build-it:
-   ```bash
-   DATABASE_URL=<neon-pooled> DIRECT_URL=<neon-direct> npm run db:deploy
-   ```
-   (`DIRECT_URL` = lidhja direkte, jo pooled.)
-3. **Pastaj** bëj push → Vercel ndërton (vetëm `next build`) dhe publikon kodin e ri.
-   Kodi i ri pret skemën e re; prandaj migrimi duhet aplikuar para/bashkë me deploy-in.
-4. Vendos secrets-et e nevojshëm te Vercel (shih më poshtë).
-
-> Alternativë: shto `db:deploy` si hap i veçantë CI/release (jo brenda `build`).
-
----
-
-## Kufizime / mbetet
-
-- **Nuk u bë push dhe nuk u aplikua asnjë migrim live** (sipas kërkesës). Commit-et janë lokale; dërguar bundle i rikuperueshëm.
-- **Secrets (Vercel):** `DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_BASE_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID/SECRET`, `CRON_SECRET`. S'u vendosën këtu.
-- **Resend test mode:** me `onboarding@resend.dev`, email-et shkojnë vetëm te `loribzhetaj1@gmail.com` derisa `onlinemenu.al` të verifikohet.
-- **Re-registration (residual):** para verifikimit, password-i i fundit i vendosur fiton; aktivizimi kërkon kontroll të inbox-it dhe s'ka asete para verifikimit. Forcim i mundshëm i ardhshëm: mbledh password-in PAS verifikimit (zero residual).
-- **Rate limit fail-open:** nëse DB-ja s'arrihet, lejohet (për disponueshmëri). Prune periodik te cron-i ditor.
+## 6. Kufizime
+- Pa push, pa migrim live, pa secrets prod, pa email real (sipas kërkesës).
+- Resend test mode derisa `onlinemenu.al` të verifikohet në Resend.
+- Rate-limit fail-open për register/resend/forgot (verify fail-closed); prune te cron-i ditor.
+- Residual re-registration: para verifikimit, password-i i fundit fiton; aktivizimi kërkon kontroll inbox-i; pa asete para verifikimit.
