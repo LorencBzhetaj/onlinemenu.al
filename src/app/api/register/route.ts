@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/slug";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-
-const TRIAL_DAYS = 30;
+import { issueVerification } from "@/lib/email-verification";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -34,52 +33,52 @@ export async function POST(req: Request) {
       );
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, emailVerified: true },
+    });
+    // Email i regjistruar DHE i verifikuar → marrë vërtet.
+    if (existing?.emailVerified) {
       return NextResponse.json(
         { error: "Ky email është i regjistruar tashmë." },
         { status: 409 }
       );
     }
 
-    // Gjenero një slug unik nga emri i restorantit.
-    const base = slugify(restaurantName) || "restoranti";
-    let slug = base;
-    let n = 1;
-    while (await prisma.restaurant.findUnique({ where: { slug } })) {
-      slug = `${base}-${n++}`;
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Krijo (ose rifresko një regjistrim të papërfunduar) User-in — PA Restaurant.
+    // Restaurant+trial krijohen VETËM pas verifikimit të email-it (shih consumeVerification).
+    const user = existing
+      ? await prisma.user.update({
+          where: { id: existing.id },
+          data: { passwordHash, pendingRestaurantName: restaurantName },
+          select: { id: true },
+        })
+      : await prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            role: "RESTAURANT_OWNER",
+            emailVerified: false,
+            pendingRestaurantName: restaurantName,
+          },
+          select: { id: true },
+        });
+
+    // Gjenero kredencialin e verifikimit (link + kod) dhe dërgo email-in.
+    const { token, code } = await issueVerification(user.id);
+    const base = (process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+    const verifyLink = `${base}/verify-email?token=${token}`;
+
+    const result = await sendVerificationEmail(email, verifyLink, code);
+    if (!result.ok) {
+      // Logo për debug — por mos e blloko regjistrimin (përdoruesi mund të ridërgojë).
+      console.error("Verification email error:", result.error);
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + TRIAL_DAYS);
-
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        role: "RESTAURANT_OWNER",
-        restaurants: {
-          create: {
-            name: restaurantName,
-            slug,
-            subscription: {
-              create: {
-                plan: "monthly",
-                status: "trial",
-                expiresAt,
-              },
-            },
-          },
-        },
-      },
-      include: { restaurants: true },
-    });
-
-    return NextResponse.json(
-      { ok: true, slug: user.restaurants[0]?.slug },
-      { status: 201 }
-    );
+    // PA auto-login: përdoruesi duhet të verifikojë i pari.
+    return NextResponse.json({ ok: true, email }, { status: 201 });
   } catch (err) {
     console.error("register error", err);
     return NextResponse.json(

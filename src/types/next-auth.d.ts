@@ -14,6 +14,7 @@ declare module "next-auth" {
       name?: string | null;
       image?: string | null;
       role: string;
+      emailVerified: boolean;
       restaurantId: string | null;
       restaurantSlug: string | null;
     };
@@ -23,6 +24,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
+    emailVerified?: boolean;
     restaurantId?: string | null;
     restaurantSlug?: string | null;
   }

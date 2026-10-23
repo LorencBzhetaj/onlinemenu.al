@@ -35,17 +35,20 @@ model User {
 }
 
 // Verifikim email-i në regjistrim — link (token) DHE kod 6-shifror te i njëjti rekord.
+// Një rekord i vetëm aktiv për user (userId unik): ridërgimi e mbishkruan (invalidon të vjetrin).
+// Kredencialet ruhen VETËM si hash: tokenHash = SHA-256 (token 32-byte, entropi e lartë),
+// codeHash = bcrypt (kod 6-shifror, entropi e ulët → hash i ngadaltë + kufi tentativash).
 model EmailVerification {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  token     String   @unique // për linkun (random 32 bytes hex)
-  code      String // 6 shifra
-  expiresAt DateTime // 1 orë
+  userId    String   @unique
+  tokenHash String   @unique // SHA-256 hex e token-it të linkut
+  codeHash  String // bcrypt e kodit 6-shifror (kodi NUK është unik globalisht)
+  attempts  Int      @default(0) // tentativa të gabuara kodi — lock pas MAX_CODE_ATTEMPTS
+  expiresAt DateTime // +1 orë
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  @@index([userId])
+  updatedAt DateTime @updatedAt
 }
 
 // Token për rivendosjen e password-it (Forgot/Reset Password).

@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { consumeVerification } from "@/lib/email-verification";
 
 const providers: NextAuthOptions["providers"] = [
   CredentialsProvider({
@@ -24,7 +25,38 @@ const providers: NextAuthOptions["providers"] = [
       const valid = await bcrypt.compare(credentials.password, user.passwordHash);
       if (!valid) return null;
 
+      // GATE në SERVER (jo vetëm te middleware): email i paverifikuar → mohohet sesioni.
+      if (!user.emailVerified) throw new Error("EMAIL_NOT_VERIFIED");
+
       return { id: user.id, email: user.email, role: user.role };
+    },
+  }),
+
+  // Provider i dedikuar për verifikimin e email-it: kyç përdoruesin PA password,
+  // kundrejt një kredenciali verifikimi (token linku OSE email+kod). Konsumimi është
+  // atomik dhe njëpërdorimësh (shih consumeVerification). Thirret vetëm nga POST-i i
+  // verifikimit (faqja /verify-email), kurrë nga hapja GET e linkut.
+  CredentialsProvider({
+    id: "verify-login",
+    name: "Email Verification",
+    credentials: {
+      token: { label: "Token", type: "text" },
+      email: { label: "Email", type: "email" },
+      code: { label: "Code", type: "text" },
+    },
+    async authorize(credentials) {
+      const result = credentials?.token
+        ? await consumeVerification({ token: credentials.token })
+        : credentials?.email && credentials?.code
+          ? await consumeVerification({ email: credentials.email, code: credentials.code })
+          : null;
+
+      if (!result) return null;
+      if (result.status === "ok") {
+        return { id: result.user.id, email: result.user.email, role: result.user.role };
+      }
+      // Arsyeja e dështimit shkon te klienti (lexohet nga signIn redirect:false).
+      throw new Error(result.status); // "expired" | "wrong_code" | "locked" | "invalid"
     },
   }),
 ];
@@ -50,22 +82,31 @@ export const authOptions: NextAuthOptions = {
         const email = user.email?.toLowerCase();
         if (!email) return false;
 
-        // Prano vetëm email të verifikuar nga Google (vendim sigurie).
+        // Prano VETËM nëse Google e jep email_verified === true (vendim sigurie).
+        // undefined/false → mohohet; s'i japim verifikim pa konfirmim të qartë.
         const emailVerified = (profile as { email_verified?: boolean } | undefined)?.email_verified;
-        if (emailVerified === false) return false;
+        if (emailVerified !== true) return false;
 
-        // Nëse s'ekziston → krijo User (RESTAURANT_OWNER, pa password).
-        // Restaurant NUK krijohet ende — bëhet te /onboarding.
         const existing = await prisma.user.findUnique({
           where: { email },
-          select: { id: true },
+          select: { id: true, emailVerified: true },
         });
         if (!existing) {
-          await prisma.user.create({ data: { email, role: "RESTAURANT_OWNER" } });
+          // Llogari e re me Google → verified; Restaurant-i krijohet te /onboarding.
+          await prisma.user.create({
+            data: { email, role: "RESTAURANT_OWNER", emailVerified: true },
+          });
+        } else if (!existing.emailVerified) {
+          // Linking: llogari ekzistuese e PAVERIFIKUAR (regjistrim email i papërfunduar)
+          // që tani hyn me Google të verifikuar → e verifikojmë.
+          await prisma.user.update({
+            where: { id: existing.id },
+            data: { emailVerified: true },
+          });
         }
         return true;
       }
-      return true; // Credentials trajtohet te authorize
+      return true; // Credentials / verify-login trajtohen te authorize
     },
 
     async jwt({ token, user }) {
@@ -74,15 +115,16 @@ export const authOptions: NextAuthOptions = {
       if (user?.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email.toLowerCase() },
-          select: { id: true, role: true },
+          select: { id: true, role: true, emailVerified: true },
         });
         if (dbUser) {
           token.sub = dbUser.id;
           token.role = dbUser.role;
+          token.emailVerified = dbUser.emailVerified;
         }
       }
 
-      // Per-request: restoranti i pronarit (reflekton /onboarding menjëherë).
+      // Per-request: restoranti i pronarit (reflekton onboarding/verifikim menjëherë).
       if (token.role === "RESTAURANT_OWNER" && token.sub) {
         const restaurant = await prisma.restaurant.findFirst({
           where: { ownerId: token.sub },
@@ -101,6 +143,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.sub as string;
         session.user.role = (token.role as string) ?? "RESTAURANT_OWNER";
+        session.user.emailVerified = (token.emailVerified as boolean | undefined) ?? false;
         session.user.restaurantId = (token.restaurantId as string | null) ?? null;
         session.user.restaurantSlug = (token.restaurantSlug as string | null) ?? null;
       }

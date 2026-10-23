@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GoogleButton, OrDivider } from "@/components/google-button";
@@ -32,11 +31,8 @@ export default function RegisterPage() {
       return;
     }
 
-    // Hyr automatikisht pas regjistrimit.
-    await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
-    router.push("/dashboard");
-    router.refresh();
+    // PA auto-login: dërgo te faqja që kërkon verifikimin e email-it.
+    router.push(`/register/check-email?email=${encodeURIComponent(email)}`);
   }
 
   return (

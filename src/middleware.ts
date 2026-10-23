@@ -9,6 +9,13 @@ export default withAuth(
     const isOwner = token?.role === "RESTAURANT_OWNER";
     const hasRestaurant = !!token?.restaurantId;
 
+    // Gate verifikimi (mbrojtje në thellësi; bllokimi kryesor është në server te authorize).
+    // Vetëm === false bllokon — token-at e vjetër (undefined) trajtohen si të verifikuar
+    // që të mos nxirren jashtë sesionet ekzistuese. Super admin s'i nënshtrohet.
+    if (isOwner && token?.emailVerified === false) {
+      return NextResponse.redirect(new URL("/register/check-email", req.url));
+    }
+
     // Super Admin s'ka dashboard/onboarding restoranti — dërgohet te /admin.
     if (isSuperAdmin && (path.startsWith("/dashboard") || path.startsWith("/onboarding"))) {
       return NextResponse.redirect(new URL("/admin", req.url));

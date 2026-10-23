@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resetOk, setResetOk] = useState(false);
+  const [needsVerify, setNeedsVerify] = useState(false);
 
   // Mesazh suksesi pas rivendosjes së password-it (/login?reset=1).
   useEffect(() => {
@@ -34,7 +35,12 @@ export default function LoginPage() {
 
     setLoading(false);
     if (res?.error) {
-      setError("Email ose fjalëkalim i pasaktë.");
+      if (res.error === "EMAIL_NOT_VERIFIED") {
+        setError("Email-i s'është verifikuar ende. Kontrollo kutinë ose ridërgo verifikimin.");
+        setNeedsVerify(true);
+      } else {
+        setError("Email ose fjalëkalim i pasaktë.");
+      }
       return;
     }
     router.push("/dashboard");
@@ -73,6 +79,14 @@ export default function LoginPage() {
             className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
           />
           {error && <p className="text-red-400 text-sm">{error}</p>}
+          {needsVerify && (
+            <Link
+              href={`/register/check-email?email=${encodeURIComponent(email)}`}
+              className="block text-sm text-alpine-gold hover:underline"
+            >
+              Verifiko email-in →
+            </Link>
+          )}
           <div className="text-right">
             <Link href="/forgot-password" className="text-xs text-alpine-cream/60 hover:text-alpine-gold">
               Kam harruar password-in?
