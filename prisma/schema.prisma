@@ -27,11 +27,32 @@ model User {
   emailVerified Boolean @default(false) // Google users = true; email signup verifikohet
   // Emri i restorantit i ruajtur në regjistrim; restoranti krijohet pas verifikimit.
   pendingRestaurantName String?
+  // Restoranti aktiv — VETËM default navigimi; JO autoritet lejesh (shih memberships).
+  activeRestaurantId String?
 
   restaurants  Restaurant[]
+  memberships  RestaurantMembership[]
   resetTokens  PasswordResetToken[]
   verifications EmailVerification[]
   createdAt    DateTime     @default(now())
+}
+
+// Anëtarësimi i një përdoruesi në një restorant, me rol. Autoriteti i lejeve
+// (Faza 1): requireRestaurantAccess rilexon këtë nga DB në çdo lexim/shkrim privat.
+model RestaurantMembership {
+  id           String     @id @default(cuid())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  role         String     // "OWNER" | "MANAGER" | "STAFF"
+  status       String     @default("active") // "active" | "revoked"
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, restaurantId])
+  @@index([restaurantId])
+  @@index([userId])
 }
 
 // Verifikim email-i në regjistrim — link (token) DHE kod 6-shifror te i njëjti rekord.
@@ -102,10 +123,14 @@ model Restaurant {
   subtitleAl String? // nëntitull uppercase, p.sh. "Kuzhinë Tradicionale · Theth"
   subtitleEn String?
 
+  // Pezullim administrativ (Faza 1: fusha ekziston; UI e plotë → Faza 7). null = jo i pezulluar.
+  suspendedAt DateTime?
+
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
 
   subscription Subscription?
+  memberships  RestaurantMembership[]
   categories   Category[]
   tastingMenus TastingMenu[]
   analytics    MenuView[]
@@ -128,6 +153,21 @@ model Subscription {
   startedAt       DateTime   @default(now())
   expiresAt       DateTime
   lastPaymentNote String? // shënim manual (p.sh. "Paguar via WhatsApp 10/08")
+
+  entitlements    ModuleEntitlement[]
+}
+
+// Të drejta per-modul (MENU/BOOKING) të ndara mbi abonimin. hasEntitlement vlerëson
+// me allowlist (shih docs/architecture/phase-1-spec-and-plan.md §5).
+model ModuleEntitlement {
+  id             String       @id @default(cuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  module         String       // "MENU" | "BOOKING"
+  status         String       @default("active") // "active" | "expired" | "disabled"
+  expiresAt      DateTime?    // null = pa skadim në nivel moduli (qeveris subscription-i)
+
+  @@unique([subscriptionId, module])
 }
 
 // ─────────────────────────────────────────────────────────────

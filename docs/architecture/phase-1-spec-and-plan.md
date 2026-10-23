@@ -99,19 +99,19 @@ ON CONFLICT ("subscriptionId",module) DO NOTHING;
 
 ## 5. `hasEntitlement` — tabela e vendimeve
 
-`hasEntitlement(restaurantId, module)` lexon Restaurant (suspendedAt), Subscription (status, expiresAt) dhe ModuleEntitlement (status, expiresAt). Rendi i vlerësimit:
+`hasEntitlement(restaurantId, module)` lexon Restaurant (suspendedAt), Subscription (status, expiresAt) dhe ModuleEntitlement (status, expiresAt). Përdor **allowlist** (jo denylist): çdo status i panjohur → **false**. Rendi i vlerësimit:
 
 | # | Kushti | Rezultati |
 |---|---|---|
+| 0 | Restoranti / subscription / entitlement / të dhëna të nevojshme **mungojnë** | **false** |
 | 1 | `Restaurant.suspendedAt` ≠ null | **false** (të gjitha modulet) |
-| 2 | Subscription mungon OSE `status` ∈ {expired, cancelled} | **false** |
-| 3 | ModuleEntitlement mungon për modulin | **false** |
-| 4 | `ModuleEntitlement.status` ≠ 'active' (p.sh. disabled/expired) | **false** |
-| 5 | `ModuleEntitlement.expiresAt` ≠ null DHE `< now()` | **false** |
-| 6 | `Subscription.expiresAt` ≠ null DHE `< now()` | **false** |
-| 7 | ndryshe (përfshi `expiresAt = null` me status active/trial) | **true** |
+| 2 | `Subscription.status` **NUK** ∈ allowlist `{trial, active}` (përfshi status të panjohur) | **false** |
+| 3 | `ModuleEntitlement.status` **NUK** ∈ allowlist `{active}` (përfshi status të panjohur) | **false** |
+| 4 | `ModuleEntitlement.expiresAt` ≠ null DHE `<= now()` | **false** |
+| 5 | `Subscription.expiresAt` ≠ null DHE `<= now()` | **false** |
+| 6 | ndryshe (status në allowlist, pa skadim ose skadim në të ardhmen) | **true** |
 
-Shënime: `expiresAt = null` në nivel moduli → pa skadim moduli; qeveris subscription-i (rreshti 6). Statusi lexohet **në server** në çdo kërkesë; cron-i vetëm raporton, nuk është burimi i vetëm i së vërtetës. Moduli joaktiv **ndalon shkrimet** përkatëse (`MODULE_INACTIVE`) por **lejon leximin e historikut** dhe nuk çaktivizon anulimin e rezervimeve ekzistuese (Faza 5).
+Shënime: krahasimi i skadimit është `<= now()` (çasti i skadimit numërohet i skaduar). `expiresAt = null` → pa skadim në atë nivel. Statusi lexohet **në server** në çdo kërkesë; cron-i vetëm raporton. Moduli joaktiv **ndalon shkrimet** (`MODULE_INACTIVE`) por **lejon leximin e historikut** dhe nuk çaktivizon anulimin e rezervimeve ekzistuese (Faza 5).
 
 ## 6. Shtresa e shërbimit (signatures)
 
@@ -141,7 +141,12 @@ export function hasEntitlement(restaurantId: string, module: "MENU" | "BOOKING")
 
 // src/modules/restaurants/provision.ts  (zëvendëson/zgjeron ensureRestaurantWithTrial)
 // ATOMIK (brenda tx): Restaurant + Subscription(trial) + OWNER membership + MENU(active)+BOOKING(disabled).
-export function createRestaurantForOwner(db: Tx, ownerId: string, name: string): Promise<{ slug: string; created: boolean }>;
+// IDEMPOTENT: nëse pronari ka tashmë restorant → e kthen pa krijuar tjetër (created:false).
+// SIGURT NDAJ KONKURRENCËS: merr pg_advisory_xact_lock(hashtext(ownerId)) brenda tx-së, kështu
+// dy kërkesa paralele serializohen (e dyta sheh restorantin e të parës). Kthen edhe restaurantId.
+export function createRestaurantForOwner(
+  tx: Tx, ownerId: string, name: string
+): Promise<{ restaurantId: string; slug: string; created: boolean }>;
 ```
 
 ### Harta rol → veprim (deny-by-default; shterуese)
@@ -179,6 +184,14 @@ Rezultati: Restaurant, OWNER membership, Subscription(trial) dhe ModuleEntitleme
 
 ## 9. Integrimi me auth + rrugët
 
+### Formati i URL-ve private dhe përcjellja eksplicite e restaurantId (vendim #2)
+- **URL-të private mbahen** si janë (`/dashboard/*`, `/admin/*`) — pa ristrukturim, që linket/bookmark-et ekzistuese të funksionojnë. Publiket `/m/[slug]` (dhe `/q/[code]` i ardhshëm) mbeten me adapter/redirect.
+- Restoranti i çdo kërkese private **përcillet shprehimisht** me header-in **`x-restaurant-id`**, të vendosur nga faqja që u renderua për atë restorant. Faqet server-side e marrin nga restoranti aktiv i zgjidhur në SSR dhe e kalojnë te komponentët klient; një wrapper klient (`apiFetch`) e vendos header-in në çdo thirrje private.
+- **Server components (lexime SSR)** thërrasin `requireRestaurantAccess(action, ssrRestaurantId)` drejtpërdrejt.
+- **API private** lexojnë `x-restaurant-id` dhe thërrasin `requireRestaurantAccess(action, headerId)`. Header i munguar/i pavlefshëm → **refuzohet**; **asnjëherë** fallback te `activeRestaurantId`. Kështu, ndryshimi i restorantit aktiv në një tab tjetër s'ndikon shkrimet e një faqeje të hapur për një restorant tjetër.
+- `restaurantId` nuk merret **kurrë** nga body-ja si burim autoriteti; header-i validohet me membership.
+
+### Auth
 - `jwt`/`session`: `token.activeRestaurantId` + `token.activeRole` si *hint* për UI/navigim. **Autorizimi real** bëhet nga `requireRestaurantAccess(action, restaurantId)` në server për çdo lexim/shkrim privat.
 - `src/lib/api-auth.ts`: `getAuthedRestaurantId()` → zëvendësohet gradualisht nga `requireRestaurantAccess`; `*BelongsTo` mbeten për verifikim objektesh brenda tenant-it.
 - **New** `POST /api/dashboard/active-restaurant` → `selectActiveRestaurant` (default navigimi; jo autoritet).
