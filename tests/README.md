@@ -64,6 +64,13 @@ Mbulon me cookie reale: OWNER A↔B, header x-restaurant-id i mirë/i keq/i mung
 të tenant-it tjetër, MANAGER/STAFF/revoked, modul MENU joaktiv (route + publik), two-tab
 (shkrim/lexim mbeten te A + refresh + navigation), dhe gate-i publik (isPublished+suspendedAt+MENU).
 
+`tests/e2e/visual.ts` bën kontrollin vizual (screenshots + overflow @390/1440). Ekzekuto si E2E (server + tsx).
+
+> **Varësi lokale Playwright (rregullo para CI/release):** `tests/e2e/*` importojnë Playwright nga
+> `/opt/node-tools/node_modules/playwright` dhe Chromium nga `/opt/pw-browsers/...` — specifike e këtij
+> ambienti. Para CI: shto `@playwright/test` si devDependency dhe zëvendëso path-et absolute.
+> `tests/e2e` është përjashtuar nga `tsc` dhe `npm test`.
+
 ## Çfarë mbulohet
 
 Link/kod happy path · replay · skadim · wrong-code + lock · resend invalidon +

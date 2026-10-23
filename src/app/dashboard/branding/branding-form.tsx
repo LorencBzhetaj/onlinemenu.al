@@ -97,16 +97,16 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-3xl">Personalizim</h1>
-          <p className="text-alpine-cream/60 text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Identiteti vizual i menusë sate publike. Ndryshimet shfaqen te parapamja live.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {saved && <span className="text-sm text-green-400">✔ U ruajt</span>}
+          {saved && <span className="text-sm text-green-700">✔ U ruajt</span>}
           <button
             onClick={save}
             disabled={saving || !colorsValid}
-            className="rounded-lg bg-alpine-gold px-5 py-2 text-midnight font-medium hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-white font-medium hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Duke ruajtur…" : "Ruaj"}
           </button>
@@ -125,7 +125,7 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
           {/* NGJYRA */}
           <Section title="Ngjyra">
             <div>
-              <span className="block text-sm text-alpine-cream/70 mb-2">Tema të gatshme</span>
+              <span className="block text-sm text-muted mb-2">Tema të gatshme</span>
               <div className="grid grid-cols-3 gap-2">
                 {THEME_PRESETS.map((t) => {
                   const active = primaryColor === t.primary && accentColor === t.accent;
@@ -135,14 +135,14 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
                       type="button"
                       onClick={() => applyPreset(t.primary, t.accent)}
                       className={`rounded-lg border p-2 text-left transition ${
-                        active ? "border-alpine-gold" : "border-alpine-cream/15 hover:border-alpine-cream/40"
+                        active ? "border-primary" : "border-line hover:border-line"
                       }`}
                     >
                       <div className="flex gap-1 mb-1.5">
                         <span className="h-5 w-5 rounded" style={{ background: t.primary }} />
                         <span className="h-5 w-5 rounded" style={{ background: t.accent }} />
                       </div>
-                      <span className="text-[11px] text-alpine-cream/60 leading-tight block">
+                      <span className="text-[11px] text-muted leading-tight block">
                         {t.name}
                       </span>
                     </button>
@@ -177,7 +177,7 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
           <Section title="Logo">
             <ImageUpload value={logoUrl} onChange={setLogoUrl} />
             <div>
-              <span className="block text-sm text-alpine-cream/70 mb-2">Parapamje në kontekst</span>
+              <span className="block text-sm text-muted mb-2">Parapamje në kontekst</span>
               <div className="flex items-center gap-6">
                 <LogoPreview logoUrl={logoUrl} name={initial.name} size={34} accent={accentColor} label="Header (34px)" />
                 <LogoPreview logoUrl={logoUrl} name={initial.name} size={78} accent={accentColor} label="Hero (78px)" />
@@ -187,7 +187,7 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
 
           {/* FOTO NË MENU */}
           <Section title="Foto në menu">
-            <p className="text-sm text-alpine-cream/60 -mt-2">
+            <p className="text-sm text-muted -mt-2">
               Si të shfaqen fotot e artikujve te menuja publike. Artikujt pa foto mbeten
               gjithnjë tekst i pastër.
             </p>
@@ -199,13 +199,13 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
                   onClick={() => setMenuPhotoStyle(opt.key)}
                   className={`rounded-lg border p-3 text-left transition ${
                     menuPhotoStyle === opt.key
-                      ? "border-alpine-gold bg-alpine-gold/10"
-                      : "border-alpine-cream/15 hover:border-alpine-cream/40"
+                      ? "border-primary bg-primary/10"
+                      : "border-line hover:border-line"
                   }`}
                 >
                   <PhotoStyleThumb kind={opt.key} />
-                  <span className="block text-sm text-alpine-cream mt-2">{opt.label}</span>
-                  <span className="block text-xs text-alpine-cream/40">{opt.hint}</span>
+                  <span className="block text-sm text-ink mt-2">{opt.label}</span>
+                  <span className="block text-xs text-muted">{opt.hint}</span>
                 </button>
               ))}
             </div>
@@ -230,10 +230,10 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
 
 /** Ilustrim i vogël i layout-it të kartës për secilin stil foto. */
 function PhotoStyleThumb({ kind }: { kind: MenuPhotoStyle }) {
-  const bar = "h-1.5 rounded-full bg-alpine-cream/25";
-  const img = "rounded bg-alpine-gold/40";
+  const bar = "h-1.5 rounded-full bg-black/5";
+  const img = "rounded bg-primary/40";
   return (
-    <div className="rounded-md border border-alpine-cream/10 bg-midnight p-2 h-20 flex flex-col justify-center gap-1.5">
+    <div className="rounded-md border border-line bg-canvas p-2 h-20 flex flex-col justify-center gap-1.5">
       {kind === "large" && (
         <>
           <div className={`${img} h-8 w-full`} />
@@ -263,8 +263,8 @@ function PhotoStyleThumb({ kind }: { kind: MenuPhotoStyle }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-alpine-cream/12 bg-midnight-soft p-5 space-y-5">
-      <h2 className="font-heading text-xl text-alpine-gold">{title}</h2>
+    <div className="rounded-xl border border-line bg-surface p-5 space-y-5">
+      <h2 className="font-heading text-xl text-primary">{title}</h2>
       {children}
     </div>
   );
@@ -301,7 +301,7 @@ function LogoPreview({
           {getInitials(name)}
         </div>
       )}
-      <span className="block text-[11px] text-alpine-cream/40 mt-1.5">{label}</span>
+      <span className="block text-[11px] text-muted mt-1.5">{label}</span>
     </div>
   );
 }

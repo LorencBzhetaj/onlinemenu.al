@@ -94,7 +94,7 @@ export function SortableItem({
 export function DragHandle({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`cursor-grab active:cursor-grabbing text-alpine-cream/30 hover:text-alpine-cream/70 select-none ${className}`}
+      className={`cursor-grab active:cursor-grabbing text-muted hover:text-muted select-none ${className}`}
       aria-label="Zvarrit për të rirenditur"
     >
       ⠿

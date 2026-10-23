@@ -18,8 +18,8 @@ export function LivePreview({
   logoUrl: string | null;
 }) {
   return (
-    <div className="rounded-xl border border-alpine-cream/15 overflow-hidden">
-      <div className="bg-midnight-soft px-4 py-2 text-xs text-alpine-cream/50 border-b border-alpine-cream/10">
+    <div className="rounded-xl border border-line overflow-hidden">
+      <div className="bg-surface px-4 py-2 text-xs text-muted border-b border-line">
         Parapamje live — dukja e Hero-s publike
       </div>
       <div

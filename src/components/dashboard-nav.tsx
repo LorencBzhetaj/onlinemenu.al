@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const NAV = [
   { href: "/dashboard", label: "Përmbledhje" },
@@ -16,15 +16,24 @@ const NAV = [
 
 // Navigimi ruan ?r (restorantin e këtij tab-i), që pin-i të mbijetojë lëvizjen mes faqeve.
 export function DashboardNav({ isAdmin }: { isAdmin: boolean }) {
+  const pathname = usePathname();
   const r = useSearchParams().get("r");
   const suffix = r ? `?r=${encodeURIComponent(r)}` : "";
+  const isActive = (href: string) =>
+    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+
   return (
-    <nav className="mt-3 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0">
+    <nav className="mt-4 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-6 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
       {NAV.map((item) => (
         <Link
           key={item.href}
           href={`${item.href}${suffix}`}
-          className="whitespace-nowrap rounded-md px-3 py-2 hover:bg-midnight-soft transition"
+          aria-current={isActive(item.href) ? "page" : undefined}
+          className={`whitespace-nowrap rounded-full px-3.5 py-2 transition lg:rounded-xl ${
+            isActive(item.href)
+              ? "bg-primary-soft font-medium text-primary"
+              : "text-muted hover:bg-black/[0.04] hover:text-ink"
+          }`}
         >
           {item.label}
         </Link>
@@ -32,7 +41,7 @@ export function DashboardNav({ isAdmin }: { isAdmin: boolean }) {
       {isAdmin && (
         <Link
           href="/admin"
-          className="whitespace-nowrap rounded-md px-3 py-2 text-alpine-gold hover:bg-midnight-soft transition lg:hidden"
+          className="whitespace-nowrap rounded-full px-3.5 py-2 text-primary transition hover:bg-black/[0.04] lg:hidden"
         >
           → Admin
         </Link>

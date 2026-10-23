@@ -19,7 +19,7 @@ export default async function QrPage({
   });
 
   if (!restaurant) {
-    return <div className="text-alpine-cream/70">Restoranti nuk u gjet.</div>;
+    return <div className="text-muted">Restoranti nuk u gjet.</div>;
   }
 
   return <QrGenerator slug={restaurant.slug} />;

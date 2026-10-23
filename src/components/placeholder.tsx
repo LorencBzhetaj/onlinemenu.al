@@ -1,3 +1,6 @@
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+
 export function Placeholder({
   title,
   phase,
@@ -9,17 +12,13 @@ export function Placeholder({
 }) {
   return (
     <div>
-      <div className="flex items-center gap-3 mb-2">
-        <h1 className="font-heading text-3xl">{title}</h1>
-        {phase && (
-          <span className="text-xs rounded-full border border-alpine-gold/40 text-alpine-gold px-2 py-0.5">
-            {phase}
-          </span>
-        )}
+      <div className="mb-4 flex items-center gap-3">
+        <h1 className="font-display text-2xl sm:text-3xl text-ink">{title}</h1>
+        {phase && <Badge tone="info">{phase}</Badge>}
       </div>
-      <div className="text-alpine-cream/70 max-w-2xl">
+      <Card className="max-w-2xl p-6 text-muted">
         {children ?? "Ky modul do të ndërtohet në një hap të ardhshëm."}
-      </div>
+      </Card>
     </div>
   );
 }

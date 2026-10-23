@@ -43,9 +43,9 @@ export function GoogleButton({ label = "Vazhdo me Google" }: { label?: string })
 export function OrDivider() {
   return (
     <div className="flex items-center gap-3 my-5">
-      <span className="h-px flex-1 bg-alpine-cream/15" />
-      <span className="text-xs uppercase tracking-widest text-alpine-cream/40">ose</span>
-      <span className="h-px flex-1 bg-alpine-cream/15" />
+      <span className="h-px flex-1 bg-black/5" />
+      <span className="text-xs uppercase tracking-widest text-muted">ose</span>
+      <span className="h-px flex-1 bg-black/5" />
     </div>
   );
 }

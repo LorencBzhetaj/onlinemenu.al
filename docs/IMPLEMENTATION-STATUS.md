@@ -17,8 +17,27 @@ Dokumenti kryesor i statusit. Referenca:
 |---|---|
 | Verifikim i detyrueshëm i email-it (link + kod) | ✅ i plotë + i forcuar; **lokal, pa push** |
 | Faza 0 — baseline & spec i zbatueshëm | ✅ i dokumentuar sipas kodit aktual |
-| Faza 1 — tenant/rol/entitlement | ✅ **implementuar** në ambient të izoluar; 49/49 teste; **lokal, pa push/migrim live** |
+| Faza 1 — tenant/rol/entitlement | ✅ **implementuar** + kontroll integrimi (E2E 19/19); **lokal, pa push/migrim live** |
+| Faza 2 — design system + layout-e | ✅ **implementuar** (krem/jeshile); 0 overflow @390/1440; build OK |
 | Booking (Faza 4) | ⛔ jo i nisur; repo `restorant` jashtë scope-it të sesionit |
+
+---
+
+## 0.1 Faza 2 — Design system + layout-e (e implementuar)
+
+Chrome-i i platformës (publik marketing + panel + admin + auth) u kalua në temën **krem/jeshile** sipas mockup-eve (`docs/design/*.png`). Faqja publike e menusë `/m/[slug]` **ruan brendin e restorantit** (temë e vet, nuk preket).
+
+**Tokens (Tailwind):** canvas #FAF8F3, surface #FFFFFF, ink #20241F, muted #62685F, line #E8E3D7, primary #164B36 (jeshile), accent #A77932; radii card 24/20, field 16, butona pill; hije e butë; fonte Playfair Display (tituj) + Jost (UI).
+
+**Komponentë të përbashkët** (`src/components/ui/`): Button (variante), Card/StatCard, PageHeader, Badge/StatusBadge, EmptyState/Notice, DataTable (responsive: tabelë→karta). Plus `Modal`/`Field`/`inputClass` të përbashkët (restiluar), DashboardNav (me gjendje aktive) dhe RestaurantSwitcher.
+
+**Referencat + zbatimi:** faqe referencë publike `/` (landing) dhe panel `/dashboard`; pastaj komponentët/temat te faqet ekzistuese — layout dashboard + admin, faqet e dashboard-it, auth (login/register/forgot/reset/verify/check-email), onboarding, admin restaurants (DataTable). Navigim: sidebar në desktop, nav horizontal në mobile.
+
+**Ruajtur:** autorizimi/funksionaliteti i Fazës 1 (`?r`, `x-restaurant-id`, pageAccess, membership) i paprekur — testet 125/125 ende kalojnë.
+
+**Kontroll vizual (Playwright, server real):** screenshots @**390px** dhe @**1440px** për landing, login, dashboard, menu, settings, billing, admin — **0 overflow horizontal**. `tsc` 0 · `next build` OK.
+
+> **Varësi lokale Playwright (për rregullim para CI/release):** skriptet `tests/e2e/*` (E2E + visual) importojnë Playwright nga `/opt/node-tools/node_modules/playwright` (i pranishëm vetëm në këtë ambient) dhe Chromium nga `/opt/pw-browsers/...`. Para CI/release: shto `@playwright/test` si devDependency dhe hiqe path-in absolut (ose vendose si env). **Nuk bllokon punën vizuale**; `tests/e2e` është përjashtuar nga `tsc` dhe nga `npm test`.
 
 ---
 

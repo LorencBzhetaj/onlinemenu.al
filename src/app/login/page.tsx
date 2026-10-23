@@ -48,12 +48,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center bg-midnight text-alpine-cream px-6">
+    <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm">
         <h1 className="font-heading text-3xl text-center mb-8">Hyr në llogari</h1>
 
         {resetOk && (
-          <div className="mb-5 rounded-lg border border-green-400/30 bg-green-400/10 px-4 py-3 text-sm text-green-300 text-center">
+          <div className="mb-5 rounded-lg border border-green-600/30 bg-green-50 px-4 py-3 text-sm text-green-700 text-center">
             Password-i u ndryshua me sukses. Tani mund të kyçesh.
           </div>
         )}
@@ -68,7 +68,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+            className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
           />
           <input
             type="password"
@@ -76,33 +76,33 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+            className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
           />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
           {needsVerify && (
             <Link
               href={`/register/check-email?email=${encodeURIComponent(email)}`}
-              className="block text-sm text-alpine-gold hover:underline"
+              className="block text-sm text-primary hover:underline"
             >
               Verifiko email-in →
             </Link>
           )}
           <div className="text-right">
-            <Link href="/forgot-password" className="text-xs text-alpine-cream/60 hover:text-alpine-gold">
+            <Link href="/forgot-password" className="text-xs text-muted hover:text-primary">
               Kam harruar password-in?
             </Link>
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full min-h-11 rounded-lg bg-alpine-gold py-3 text-midnight font-medium hover:opacity-90 transition disabled:opacity-50"
+            className="w-full min-h-11 rounded-lg bg-primary py-3 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
           >
             {loading ? "Duke hyrë..." : "Hyr"}
           </button>
         </form>
-        <p className="mt-6 text-center text-sm text-alpine-cream/70">
+        <p className="mt-6 text-center text-sm text-muted">
           S&apos;ke llogari?{" "}
-          <Link href="/register" className="text-alpine-gold hover:underline">
+          <Link href="/register" className="text-primary hover:underline">
             Regjistrohu
           </Link>
         </p>

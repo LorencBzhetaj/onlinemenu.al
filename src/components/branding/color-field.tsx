@@ -18,8 +18,8 @@ export function ColorField({
 
   return (
     <div>
-      <span className="block text-sm text-alpine-cream/70 mb-1">{label}</span>
-      {hint && <span className="block text-xs text-alpine-cream/40 mb-2">{hint}</span>}
+      <span className="block text-sm text-muted mb-1">{label}</span>
+      {hint && <span className="block text-xs text-muted mb-2">{hint}</span>}
       <div className="flex items-start gap-4">
         <HexColorPicker
           color={valid ? value : "#000000"}
@@ -28,18 +28,18 @@ export function ColorField({
         />
         <div className="space-y-2">
           <div
-            className="h-10 w-10 rounded-lg border border-alpine-cream/20"
+            className="h-10 w-10 rounded-lg border border-line"
             style={{ background: valid ? value : "transparent" }}
           />
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
             spellCheck={false}
-            className={`w-28 rounded-lg bg-midnight border px-2 py-1.5 text-sm text-alpine-cream outline-none focus:border-alpine-gold ${
-              valid ? "border-alpine-cream/20" : "border-red-400/60"
+            className={`w-28 rounded-lg bg-canvas border px-2 py-1.5 text-sm text-ink outline-none focus:border-primary ${
+              valid ? "border-line" : "border-red-400/60"
             }`}
           />
-          {!valid && <span className="block text-xs text-red-400">Hex i pavlefshëm</span>}
+          {!valid && <span className="block text-xs text-red-600">Hex i pavlefshëm</span>}
         </div>
       </div>
     </div>

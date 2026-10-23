@@ -14,11 +14,11 @@ export default async function AdminLayout({
   if (session.user.role !== "SUPER_ADMIN") redirect("/dashboard");
 
   return (
-    <div className="min-h-screen bg-midnight text-alpine-cream lg:flex">
-      <aside className="border-b border-alpine-cream/10 p-4 lg:min-h-screen lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-5 lg:flex lg:flex-col">
+    <div className="min-h-screen bg-canvas text-ink lg:flex">
+      <aside className="border-b border-line p-4 lg:min-h-screen lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-5 lg:flex lg:flex-col">
         <div className="flex items-center justify-between gap-3 lg:block">
           <div className="font-heading text-lg lg:mb-8">
-            Admin<span className="text-alpine-gold">·</span>Panel
+            Admin<span className="text-primary">·</span>Panel
           </div>
           <div className="lg:hidden">
             <LogoutButton />
@@ -28,26 +28,26 @@ export default async function AdminLayout({
         <nav className="mt-3 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0">
           <Link
             href="/admin/restaurants"
-            className="whitespace-nowrap rounded-md px-3 py-2 hover:bg-midnight-soft transition"
+            className="whitespace-nowrap rounded-md px-3 py-2 hover:bg-surface transition"
           >
             Restorantet
           </Link>
           <Link
             href="/dashboard"
-            className="whitespace-nowrap rounded-md px-3 py-2 text-alpine-cream/60 hover:bg-midnight-soft transition lg:hidden"
+            className="whitespace-nowrap rounded-md px-3 py-2 text-muted hover:bg-surface transition lg:hidden"
           >
             ← Dashboard
           </Link>
         </nav>
 
-        <div className="mt-auto hidden lg:block pt-6 border-t border-alpine-cream/10 space-y-2">
+        <div className="mt-auto hidden lg:block pt-6 border-t border-line space-y-2">
           <Link
             href="/dashboard"
-            className="block text-sm text-alpine-cream/60 hover:text-alpine-gold"
+            className="block text-sm text-muted hover:text-primary"
           >
             ← Dashboard
           </Link>
-          <div className="text-xs text-alpine-cream/50 truncate">
+          <div className="text-xs text-muted truncate">
             {session.user.email}
           </div>
           <LogoutButton />

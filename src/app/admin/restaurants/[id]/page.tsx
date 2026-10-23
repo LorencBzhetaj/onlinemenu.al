@@ -28,17 +28,17 @@ export default async function AdminRestaurantDetail({
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <Link href="/admin/restaurants" className="text-sm text-alpine-cream/60 hover:text-alpine-gold">
+      <Link href="/admin/restaurants" className="text-sm text-muted hover:text-primary">
         ← Të gjitha restorantet
       </Link>
 
       <div>
         <h1 className="font-heading text-3xl">{restaurant.name}</h1>
-        <p className="text-alpine-cream/60 mt-1">{restaurant.owner.email}</p>
+        <p className="text-muted mt-1">{restaurant.owner.email}</p>
       </div>
 
       {/* Përmbledhje (vetëm-lexim) */}
-      <div className="rounded-lg border border-alpine-cream/10 bg-midnight-soft p-5 space-y-2">
+      <div className="rounded-lg border border-line bg-surface p-5 space-y-2">
         <Row label="Slug" value={restaurant.slug} />
         <Row label="Email pronari" value={restaurant.owner.email} />
         <Row label="Regjistruar më" value={new Date(restaurant.createdAt).toLocaleDateString("sq-AL")} />
@@ -48,7 +48,7 @@ export default async function AdminRestaurantDetail({
       </div>
 
       {/* Statusi aktual i abonimit */}
-      <div className="rounded-lg border border-alpine-cream/10 bg-midnight-soft p-5 space-y-3">
+      <div className="rounded-lg border border-line bg-surface p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-lg">Abonimi</h2>
           <StatusBadge status={sub?.status ?? "—"} />
@@ -70,13 +70,13 @@ export default async function AdminRestaurantDetail({
             {sub.lastPaymentNote && <Row label="Shënim pagese" value={sub.lastPaymentNote} />}
           </>
         ) : (
-          <p className="text-alpine-cream/60">Pa abonim.</p>
+          <p className="text-muted">Pa abonim.</p>
         )}
       </div>
 
       {/* Veprimet e abonimit */}
-      <div className="rounded-lg border border-alpine-gold/25 bg-midnight-soft p-5 space-y-4">
-        <h2 className="font-heading text-lg text-alpine-gold">Menaxho Abonimin</h2>
+      <div className="rounded-lg border border-primary/40 bg-surface p-5 space-y-4">
+        <h2 className="font-heading text-lg text-primary">Menaxho Abonimin</h2>
         <SubscriptionForm
           restaurantId={restaurant.id}
           initial={{
@@ -93,7 +93,7 @@ export default async function AdminRestaurantDetail({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-alpine-cream/50 shrink-0">{label}</span>
+      <span className="text-muted shrink-0">{label}</span>
       <span className="capitalize text-right break-words">{value}</span>
     </div>
   );
@@ -102,14 +102,14 @@ function Row({ label, value }: { label: string; value: string }) {
 function StatusBadge({ status }: { status: string }) {
   const color =
     status === "active"
-      ? "text-green-400 border-green-400/40 bg-green-400/10"
+      ? "text-green-700 border-green-400/40 bg-green-50"
       : status === "trial"
-        ? "text-alpine-gold border-alpine-gold/40 bg-alpine-gold/10"
+        ? "text-primary border-primary/40 bg-primary/10"
         : status === "expired"
-          ? "text-red-400 border-red-400/40 bg-red-400/10"
+          ? "text-red-600 border-red-400/40 bg-red-400/10"
           : status === "cancelled"
-            ? "text-alpine-cream/50 border-alpine-cream/20 bg-alpine-cream/5"
-            : "text-alpine-cream/50 border-alpine-cream/20";
+            ? "text-muted border-line bg-black/5"
+            : "text-muted border-line";
   return (
     <span className={`rounded-full border px-3 py-1 text-xs capitalize ${color}`}>
       {status}

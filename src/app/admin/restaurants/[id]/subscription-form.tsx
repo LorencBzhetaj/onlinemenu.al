@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { PLAN_OPTIONS, STATUS_OPTIONS, PLAN_DAYS } from "@/lib/subscription";
 
 const inputClass =
-  "w-full rounded-lg bg-midnight border border-alpine-cream/20 px-3 py-2 text-alpine-cream outline-none focus:border-alpine-gold";
+  "w-full rounded-lg bg-canvas border border-line px-3 py-2 text-ink outline-none focus:border-primary";
 
 export function SubscriptionForm({
   restaurantId,
@@ -45,7 +45,7 @@ export function SubscriptionForm({
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="block text-sm text-alpine-cream/70 mb-1">Statusi</span>
+          <span className="block text-sm text-muted mb-1">Statusi</span>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
             {STATUS_OPTIONS.map((o) => (
               <option key={o.key} value={o.key}>{o.label}</option>
@@ -53,7 +53,7 @@ export function SubscriptionForm({
           </select>
         </label>
         <label className="block">
-          <span className="block text-sm text-alpine-cream/70 mb-1">Plani</span>
+          <span className="block text-sm text-muted mb-1">Plani</span>
           <select value={plan} onChange={(e) => setPlan(e.target.value)} className={inputClass}>
             {PLAN_OPTIONS.map((o) => (
               <option key={o.key} value={o.key}>{o.label}</option>
@@ -63,22 +63,22 @@ export function SubscriptionForm({
       </div>
 
       {status === "active" && (
-        <p className="text-xs text-alpine-gold/80">
+        <p className="text-xs text-primary/80">
           Skadimi do të llogaritet automatikisht: <b>+{PLAN_DAYS[plan]} ditë nga sot</b>.
         </p>
       )}
       {status === "trial" && (
-        <p className="text-xs text-alpine-gold/80">Skadimi do të vendoset +30 ditë nga sot.</p>
+        <p className="text-xs text-primary/80">Skadimi do të vendoset +30 ditë nga sot.</p>
       )}
       {(status === "expired" || status === "cancelled") && (
-        <p className="text-xs text-alpine-cream/40">
+        <p className="text-xs text-muted">
           Skadimi ekzistues ruhet; menuja publike shfaqet menjëherë si jo-aktive.
         </p>
       )}
 
       <label className="block">
-        <span className="block text-sm text-alpine-cream/70 mb-1">
-          Shënim Pagese <span className="text-alpine-cream/30">(vetëm i brendshëm)</span>
+        <span className="block text-sm text-muted mb-1">
+          Shënim Pagese <span className="text-muted">(vetëm i brendshëm)</span>
         </span>
         <textarea
           value={note}
@@ -90,17 +90,17 @@ export function SubscriptionForm({
         />
       </label>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex items-center gap-3">
         <button
           onClick={save}
           disabled={saving}
-          className="min-h-11 rounded-lg bg-alpine-gold px-5 py-2 text-midnight font-medium hover:opacity-90 disabled:opacity-50"
+          className="min-h-11 rounded-lg bg-primary px-5 py-2 text-white font-medium hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Duke ruajtur…" : "Ruaj Ndryshimet e Abonimit"}
         </button>
-        {saved && <span className="text-sm text-green-400">✔ U ruajt</span>}
+        {saved && <span className="text-sm text-green-700">✔ U ruajt</span>}
       </div>
     </div>
   );

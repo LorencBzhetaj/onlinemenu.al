@@ -117,23 +117,23 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-heading text-3xl">Menu</h1>
-          <p className="text-alpine-cream/60 text-sm mt-1">
+          <h1 className="font-display text-2xl sm:text-3xl text-ink">Menu</h1>
+          <p className="text-muted text-sm mt-1">
             Menaxho kategoritë, nën-kategoritë dhe artikujt. Zvarrit ⠿ për të rirenditur.
           </p>
         </div>
         <button
           onClick={() => setModal({ kind: "category-new" })}
-          className="rounded-lg bg-alpine-gold px-4 py-2 text-midnight font-medium hover:opacity-90"
+          className="shrink-0 whitespace-nowrap min-h-11 rounded-full bg-primary px-4 text-sm text-white font-medium hover:bg-primary-dark transition"
         >
-          + Kategori e Re
+          + Kategori
         </button>
       </div>
 
       {tree.length === 0 && (
-        <div className="rounded-lg border border-dashed border-alpine-cream/20 p-10 text-center text-alpine-cream/50">
+        <div className="rounded-lg border border-dashed border-line p-10 text-center text-muted">
           Ende s&apos;ka kategori. Fillo duke shtuar një kategori.
         </div>
       )}
@@ -142,19 +142,19 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
         {tree.map((cat) => (
           <SortableItem key={cat.id} id={cat.id}>
             {(handle) => (
-              <div className="mb-3 rounded-xl border border-alpine-cream/12 bg-midnight-soft">
+              <div className="mb-3 rounded-xl border border-line bg-surface">
                 {/* Kreu i kategorisë */}
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <span {...handle} className="touch-none px-1 cursor-grab active:cursor-grabbing text-alpine-cream/30 hover:text-alpine-cream/70 text-lg">
+                  <span {...handle} className="touch-none px-1 cursor-grab active:cursor-grabbing text-muted hover:text-muted text-lg">
                     ⠿
                   </span>
-                  <button onClick={() => toggleExpand(cat.id)} className="text-alpine-cream/50 w-4">
+                  <button onClick={() => toggleExpand(cat.id)} className="text-muted w-4">
                     {expanded.has(cat.id) ? "▾" : "▸"}
                   </button>
-                  <CategoryIcon icon={cat.icon} className="w-5 h-5 text-alpine-gold" />
+                  <CategoryIcon icon={cat.icon} className="w-5 h-5 text-primary" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-alpine-cream truncate">{cat.nameAl}</div>
-                    <div className="text-xs text-alpine-cream/40 truncate">{cat.nameEn}</div>
+                    <div className="text-ink truncate">{cat.nameAl}</div>
+                    <div className="text-xs text-muted truncate">{cat.nameEn}</div>
                   </div>
                   <HeaderBtn onClick={() => setModal({ kind: "subcategory-new", categoryId: cat.id })}>
                     + Nën-kategori
@@ -207,14 +207,14 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
                       {cat.subcategories.map((sub) => (
                         <SortableItem key={sub.id} id={sub.id}>
                           {(h) => (
-                            <div className="rounded-lg border border-alpine-cream/10 bg-midnight/50 p-3 mb-2">
+                            <div className="rounded-lg border border-line bg-canvas p-3 mb-2">
                               <div className="flex items-center gap-3 mb-2">
-                                <span {...h} className="touch-none px-1 cursor-grab active:cursor-grabbing text-alpine-cream/30 hover:text-alpine-cream/70">
+                                <span {...h} className="touch-none px-1 cursor-grab active:cursor-grabbing text-muted hover:text-muted">
                                   ⠿
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-alpine-cream/90 text-sm">{sub.nameAl}</span>
-                                  <span className="text-xs text-alpine-cream/40 ml-2">{sub.nameEn}</span>
+                                  <span className="text-muted text-sm">{sub.nameAl}</span>
+                                  <span className="text-xs text-muted ml-2">{sub.nameEn}</span>
                                 </div>
                                 <HeaderBtn onClick={() => setModal({ kind: "item-new", parent: { subcategoryId: sub.id } })}>
                                   + Artikull
@@ -249,7 +249,7 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
                                 ))}
                               </SortableList>
                               {sub.items.length === 0 && (
-                                <p className="text-xs text-alpine-cream/30 pl-6">Pa artikuj.</p>
+                                <p className="text-xs text-muted pl-6">Pa artikuj.</p>
                               )}
                             </div>
                           )}
@@ -258,7 +258,7 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
                     </SortableList>
 
                     {cat.items.length === 0 && cat.subcategories.length === 0 && (
-                      <p className="text-sm text-alpine-cream/40 text-center py-3">
+                      <p className="text-sm text-muted text-center py-3">
                         Kategori bosh — shto një artikull ose nën-kategori.
                       </p>
                     )}
@@ -311,8 +311,8 @@ function HeaderBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-md px-2.5 py-1 text-xs hover:bg-alpine-cream/10 transition ${
-        danger ? "text-red-400" : "text-alpine-cream/70"
+      className={`shrink-0 rounded-md px-2.5 py-1 text-xs hover:bg-black/5 transition ${
+        danger ? "text-red-600" : "text-muted"
       }`}
     >
       {children}

@@ -16,7 +16,7 @@ export function FontSelect({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm text-alpine-cream/70 mb-1">{label}</span>
+      <span className="block text-sm text-muted mb-1">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -30,7 +30,7 @@ export function FontSelect({
       </select>
       {/* Preview inline: emri i fontit i shkruar me vetë fontin. */}
       <span
-        className="block mt-2 text-2xl text-alpine-cream/90"
+        className="block mt-2 text-2xl text-muted"
         style={{ fontFamily: `"${value}", serif` }}
       >
         {value}

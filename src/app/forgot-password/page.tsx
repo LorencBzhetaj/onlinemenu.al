@@ -24,17 +24,17 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center bg-midnight text-alpine-cream px-6">
+    <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm">
         <h1 className="font-heading text-3xl text-center mb-2">Kam harruar password-in</h1>
-        <p className="text-center text-sm text-alpine-cream/60 mb-8">
+        <p className="text-center text-sm text-muted mb-8">
           Shkruaj email-in tënd dhe do të të dërgojmë një link për të rivendosur password-in.
         </p>
 
         {done ? (
-          <div className="rounded-lg border border-alpine-gold/30 bg-midnight-soft p-5 text-center">
-            <p className="text-alpine-cream/80 text-sm">{message}</p>
-            <Link href="/login" className="inline-block mt-4 text-alpine-gold hover:underline text-sm">
+          <div className="rounded-lg border border-primary/40 bg-surface p-5 text-center">
+            <p className="text-muted text-sm">{message}</p>
+            <Link href="/login" className="inline-block mt-4 text-primary hover:underline text-sm">
               ← Kthehu te kyçja
             </Link>
           </div>
@@ -47,17 +47,17 @@ export default function ForgotPasswordPage() {
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+              className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full min-h-11 rounded-lg bg-alpine-gold py-3 text-midnight font-medium hover:opacity-90 transition disabled:opacity-50"
+              className="w-full min-h-11 rounded-lg bg-primary py-3 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
             >
               {loading ? "Duke dërguar…" : "Dërgo linkun"}
             </button>
-            <p className="text-center text-sm text-alpine-cream/70">
-              <Link href="/login" className="text-alpine-gold hover:underline">
+            <p className="text-center text-sm text-muted">
+              <Link href="/login" className="text-primary hover:underline">
                 ← Kthehu te kyçja
               </Link>
             </p>

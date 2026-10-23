@@ -9,20 +9,39 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Tema default "Mesnatë Alpine" (nga projekti Gjeçaj) — çdo restorant
-        // e mbivendos këtë dinamikisht përmes CSS variables në faqen publike.
-        midnight: {
-          DEFAULT: "#0f1720",
-          soft: "#1a2530",
+        // ── Design system i platformës (Faza 2): krem/jeshile, i butë ──
+        canvas: "#FAF8F3", // sfondi krem
+        surface: "#FFFFFF", // kartat
+        ink: "#20241F", // teksti kryesor
+        muted: "#62685F", // teksti dytësor
+        line: "#E8E3D7", // kontura delikate
+        primary: {
+          DEFAULT: "#164B36", // jeshile (butona, theks veprimi)
+          dark: "#0F3A29",
+          soft: "#E7EFEA", // sfond i butë jeshil (badge/hover)
         },
-        alpine: {
-          gold: "#c9a24b",
-          cream: "#f5f0e6",
-        },
+        accent: "#A77932", // ar — detaje delikate (jo veprime)
+
+        // ── Tema "Mesnatë Alpine" — VETËM faqja publike /m/[slug] (brand restoranti) ──
+        midnight: { DEFAULT: "#0f1720", soft: "#1a2530" },
+        alpine: { gold: "#c9a24b", cream: "#f5f0e6" },
       },
       fontFamily: {
+        // Platforma: Playfair Display (tituj) + Jost (UI/body).
+        display: ["var(--font-display)", "Playfair Display", "Georgia", "serif"],
+        ui: ["var(--font-ui)", "Jost", "system-ui", "sans-serif"],
+        // Alias ekzistues (publik/legacy).
         heading: ["var(--font-heading)", "Playfair Display", "serif"],
-        body: ["var(--font-body)", "Cormorant Garamond", "serif"],
+        body: ["var(--font-body)", "Jost", "sans-serif"],
+      },
+      borderRadius: {
+        card: "24px",
+        "card-sm": "20px",
+        field: "16px",
+      },
+      boxShadow: {
+        soft: "0 8px 24px rgb(25 45 30 / 0.06)",
+        card: "0 1px 2px rgb(25 45 30 / 0.04), 0 8px 24px rgb(25 45 30 / 0.05)",
       },
     },
   },

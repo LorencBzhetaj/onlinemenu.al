@@ -36,10 +36,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen grid place-items-center bg-midnight text-alpine-cream px-6">
+    <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm">
         <h1 className="font-heading text-3xl text-center mb-2">Fillo provën falas</h1>
-        <p className="text-center text-sm text-alpine-cream/60 mb-8">
+        <p className="text-center text-sm text-muted mb-8">
           30 ditë, pa kartë krediti.
         </p>
 
@@ -53,7 +53,7 @@ export default function RegisterPage() {
             required
             value={restaurantName}
             onChange={(e) => setRestaurantName(e.target.value)}
-            className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+            className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
           />
           <input
             type="email"
@@ -61,7 +61,7 @@ export default function RegisterPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+            className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
           />
           <input
             type="password"
@@ -70,20 +70,20 @@ export default function RegisterPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+            className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
           />
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-alpine-gold py-3 text-midnight font-medium hover:opacity-90 transition disabled:opacity-50"
+            className="w-full rounded-lg bg-primary py-3 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
           >
             {loading ? "Duke krijuar..." : "Krijo llogari"}
           </button>
         </form>
-        <p className="mt-6 text-center text-sm text-alpine-cream/70">
+        <p className="mt-6 text-center text-sm text-muted">
           Ke llogari?{" "}
-          <Link href="/login" className="text-alpine-gold hover:underline">
+          <Link href="/login" className="text-primary hover:underline">
             Hyr
           </Link>
         </p>

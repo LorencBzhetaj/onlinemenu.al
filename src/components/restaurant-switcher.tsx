@@ -40,7 +40,7 @@ export function RestaurantSwitcher({
       onChange={change}
       disabled={saving}
       aria-label="Restoranti aktiv"
-      className="mt-3 w-full rounded-md border border-alpine-cream/15 bg-midnight px-2 py-1.5 text-sm text-alpine-cream outline-none focus:border-alpine-gold disabled:opacity-50 lg:mt-0 lg:mb-6"
+      className="mt-3 w-full rounded-field border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-primary disabled:opacity-50 lg:mt-5"
     >
       {memberships.map((m) => (
         <option key={m.restaurantId} value={m.restaurantId}>

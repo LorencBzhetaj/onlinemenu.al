@@ -115,16 +115,16 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-heading text-3xl">Cilësime</h1>
-          <p className="text-alpine-cream/60 text-sm mt-1">
+          <p className="text-muted text-sm mt-1">
             Profili i restorantit — ndarë nga Menu (përmbajtja) dhe Personalizim (ngjyra/fonte).
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {saved && <span className="text-sm text-green-400">✔ U ruajt</span>}
+          {saved && <span className="text-sm text-green-700">✔ U ruajt</span>}
           <button
             onClick={save}
             disabled={saving || !allValid}
-            className="rounded-lg bg-alpine-gold px-5 py-2 text-midnight font-medium hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-white font-medium hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Duke ruajtur…" : "Ruaj"}
           </button>
@@ -143,16 +143,16 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
           <Section title="Identiteti">
             <Field label="Emri i shfaqur">
               <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
-              {!nameValid && <span className="block text-xs text-red-400 mt-1">Emri s&apos;mund të jetë bosh.</span>}
+              {!nameValid && <span className="block text-xs text-red-600 mt-1">Emri s&apos;mund të jetë bosh.</span>}
             </Field>
 
             <div>
-              <span className="block text-sm text-alpine-cream/70 mb-1">Slug (URL publike)</span>
+              <span className="block text-sm text-muted mb-1">Slug (URL publike)</span>
               <input className={`${inputClass} opacity-60 cursor-not-allowed`} value={`/m/${initial.slug}`} readOnly disabled />
-              <div className="mt-2 rounded-lg border border-alpine-gold/30 bg-midnight p-3 text-xs text-alpine-cream/70 leading-relaxed">
+              <div className="mt-2 rounded-lg border border-primary/40 bg-canvas p-3 text-xs text-muted leading-relaxed">
                 Ky është pjesë e URL-së publike dhe QR-kodit tuaj. Ndryshimi i tij do të prishë
                 QR-in e printuar tashmë.{" "}
-                <a href={SUPPORT_MAIL} className="text-alpine-gold hover:underline">
+                <a href={SUPPORT_MAIL} className="text-primary hover:underline">
                   Na kontaktoni
                 </a>{" "}
                 nëse doni ta ndryshoni.
@@ -172,7 +172,7 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
                 onChange={(e) => setEstYear(e.target.value)}
               />
               {!yearValid && (
-                <span className="block text-xs text-red-400 mt-1">
+                <span className="block text-xs text-red-600 mt-1">
                   Duhet numër 4-shifror mes 1800 dhe {currentYear}.
                 </span>
               )}
@@ -203,12 +203,12 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
           <Section title="Kontakti">
             <Field label="Telefon">
               <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+355 67 204 6333" />
-              {!phoneValid && <span className="block text-xs text-red-400 mt-1">Lejohen vetëm numra, hapësira, &apos;+&apos; dhe &apos;-&apos;.</span>}
+              {!phoneValid && <span className="block text-xs text-red-600 mt-1">Lejohen vetëm numra, hapësira, &apos;+&apos; dhe &apos;-&apos;.</span>}
             </Field>
 
             <Field label="WhatsApp">
               <input className={inputClass} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="355672046333" />
-              <span className={`block text-xs mt-1 ${whatsappValid ? "text-alpine-cream/50" : "text-red-400"}`}>
+              <span className={`block text-xs mt-1 ${whatsappValid ? "text-muted" : "text-red-600"}`}>
                 Numër ndërkombëtar i plotë pa &apos;+&apos;, vetëm shifra (p.sh. 355672046333) — përndryshe
                 butoni &quot;Rezervo Tavolinë&quot; s&apos;do funksionojë saktë.
               </span>
@@ -227,19 +227,19 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
               type="button"
               onClick={() => setIsPublished((v) => !v)}
               className={`w-full flex items-center justify-between rounded-xl border px-5 py-4 transition ${
-                isPublished ? "border-green-400/50 bg-green-400/10" : "border-red-400/40 bg-red-400/5"
+                isPublished ? "border-green-400/50 bg-green-50" : "border-red-400/40 bg-red-400/5"
               }`}
             >
               <span className="text-left">
                 <span className="block font-heading text-xl">
                   {isPublished ? "Menu Aktive" : "Menu Jo Aktive"}
                 </span>
-                <span className="block text-xs text-alpine-cream/50 mt-0.5">
+                <span className="block text-xs text-muted mt-0.5">
                   Kliko për të {isPublished ? "fikur" : "ndezur"}
                 </span>
               </span>
               <span
-                className={`relative h-7 w-12 rounded-full transition ${isPublished ? "bg-green-400" : "bg-alpine-cream/25"}`}
+                className={`relative h-7 w-12 rounded-full transition ${isPublished ? "bg-green-400" : "bg-black/5"}`}
               >
                 <span
                   className={`absolute top-0.5 h-6 w-6 rounded-full bg-white transition-all ${isPublished ? "left-[22px]" : "left-0.5"}`}
@@ -248,16 +248,16 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
             </button>
 
             {!isPublished && (
-              <div className="rounded-lg border border-red-400/30 bg-midnight p-3 text-xs text-alpine-cream/70 leading-relaxed">
-                Kur është fikur, faqja juaj publike (<span className="text-alpine-cream">/m/{initial.slug}</span>)
+              <div className="rounded-lg border border-red-400/30 bg-canvas p-3 text-xs text-muted leading-relaxed">
+                Kur është fikur, faqja juaj publike (<span className="text-ink">/m/{initial.slug}</span>)
                 do t&apos;u shfaqë vizitorëve mesazhin &quot;Menu përkohësisht jo aktive&quot; në vend të menusë.
                 Përdoreni nëse jeni mbyllur përkohësisht ose po bëni ndryshime të mëdha.
               </div>
             )}
 
-            <p className="text-xs text-alpine-cream/40 leading-relaxed">
-              Ky është i ndarë nga statusi i <span className="text-alpine-cream/60">abonimit</span> (shih te{" "}
-              <span className="text-alpine-cream/60">Abonimi</span>). Faqja publike shfaqet vetëm kur
+            <p className="text-xs text-muted leading-relaxed">
+              Ky është i ndarë nga statusi i <span className="text-muted">abonimit</span> (shih te{" "}
+              <span className="text-muted">Abonimi</span>). Faqja publike shfaqet vetëm kur
               menuja është aktive DHE abonimi është aktiv.
             </p>
           </Section>
@@ -269,8 +269,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-alpine-cream/12 bg-midnight-soft p-5 space-y-5">
-      <h2 className="font-heading text-xl text-alpine-gold">{title}</h2>
+    <div className="rounded-xl border border-line bg-surface p-5 space-y-5">
+      <h2 className="font-heading text-xl text-primary">{title}</h2>
       {children}
     </div>
   );
@@ -289,7 +289,7 @@ function CountedField({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm text-alpine-cream/70 mb-1">{label}</span>
+      <span className="block text-sm text-muted mb-1">{label}</span>
       <input
         className={inputClass}
         value={value}
@@ -297,7 +297,7 @@ function CountedField({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
-      <span className="block text-[11px] text-alpine-cream/35 mt-1 text-right">
+      <span className="block text-[11px] text-muted mt-1 text-right">
         {value.length}/{MAX}
       </span>
     </label>
@@ -323,7 +323,7 @@ function HeroMiniPreview({
 }) {
   return (
     <div>
-      <span className="block text-xs text-alpine-cream/40 mb-1.5">Parapamje (Shqip)</span>
+      <span className="block text-xs text-muted mb-1.5">Parapamje (Shqip)</span>
       <div className="rounded-xl px-5 py-7 text-center" style={{ background: primary }}>
         {estYear.trim() && /^\d{4}$/.test(estYear.trim()) && (
           <div style={{ color: accent, letterSpacing: 3, fontSize: 10, fontFamily: '"Jost", sans-serif' }} className="uppercase mb-1.5">

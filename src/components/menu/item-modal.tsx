@@ -121,13 +121,13 @@ export function ItemModal({
           <Checkbox checked={isVisible} onChange={setIsVisible} label="I dukshëm në menunë publike" />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-alpine-cream/70 hover:text-alpine-cream">
+          <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-muted hover:text-ink">
             Anulo
           </button>
-          <button type="submit" disabled={saving} className="rounded-lg bg-alpine-gold px-5 py-2 text-midnight font-medium hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={saving} className="rounded-lg bg-primary px-5 py-2 text-white font-medium hover:opacity-90 disabled:opacity-50">
             {saving ? "Duke ruajtur…" : "Ruaj"}
           </button>
         </div>
@@ -146,12 +146,12 @@ function Checkbox({
   label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-alpine-cream/80 cursor-pointer">
+    <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 accent-alpine-gold"
+        className="h-4 w-4 accent-primary"
       />
       {label}
     </label>

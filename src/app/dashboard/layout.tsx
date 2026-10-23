@@ -20,12 +20,12 @@ export default async function DashboardLayout({
   const memberships = await listMemberships(session.user.id);
 
   return (
-    <div className="min-h-screen bg-midnight text-alpine-cream lg:flex">
+    <div className="min-h-screen bg-canvas text-ink lg:flex">
       {/* Sidebar në desktop; top-bar horizontal në mobile. */}
-      <aside className="border-b border-alpine-cream/10 p-4 lg:min-h-screen lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-5 lg:flex lg:flex-col">
+      <aside className="border-b border-line bg-surface p-4 lg:min-h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-5 lg:flex lg:flex-col">
         <div className="flex items-center justify-between gap-3 lg:block">
-          <div className="font-heading text-lg lg:mb-8">
-            Menu<span className="text-alpine-gold">Digjitale</span>
+          <div className="font-display text-lg lg:mb-6">
+            Menu<span className="text-primary">Digjitale</span>
           </div>
           {/* Në mobile: dalja në krye-djathtas */}
           <div className="lg:hidden">
@@ -38,18 +38,13 @@ export default async function DashboardLayout({
         <DashboardNav isAdmin={isAdmin} />
 
         {/* Footer-i i sidebar-it: vetëm desktop */}
-        <div className="mt-auto hidden lg:block pt-6 border-t border-alpine-cream/10 space-y-2">
+        <div className="mt-auto hidden lg:block pt-6 border-t border-line space-y-2">
           {isAdmin && (
-            <Link
-              href="/admin"
-              className="block text-sm text-alpine-gold hover:underline"
-            >
+            <Link href="/admin" className="block text-sm text-primary hover:underline">
               → Paneli Admin
             </Link>
           )}
-          <div className="text-xs text-alpine-cream/50 truncate">
-            {session.user.email}
-          </div>
+          <div className="text-xs text-muted truncate">{session.user.email}</div>
           <LogoutButton />
         </div>
       </aside>

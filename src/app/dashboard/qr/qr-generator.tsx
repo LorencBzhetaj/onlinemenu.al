@@ -83,7 +83,7 @@ export function QrGenerator({ slug }: { slug: string }) {
     <div className="max-w-md mx-auto lg:mx-0 space-y-6">
       <div>
         <h1 className="font-heading text-3xl">QR Kod</h1>
-        <p className="text-alpine-cream/60 text-sm mt-1">
+        <p className="text-muted text-sm mt-1">
           QR-i që çon te faqja juaj publike e menusë.
         </p>
       </div>
@@ -100,7 +100,7 @@ export function QrGenerator({ slug }: { slug: string }) {
             className="w-[300px] h-[300px] max-w-full"
           />
         ) : (
-          <div className="w-[300px] h-[300px] grid place-items-center text-midnight/40 text-sm">
+          <div className="w-[300px] h-[300px] grid place-items-center text-white/40 text-sm">
             Duke gjeneruar…
           </div>
         )}
@@ -108,16 +108,16 @@ export function QrGenerator({ slug }: { slug: string }) {
 
       {/* URL + kopjo */}
       <div>
-        <span className="block text-xs text-alpine-cream/40 mb-1">Adresa e koduar</span>
+        <span className="block text-xs text-muted mb-1">Adresa e koduar</span>
         <div className="flex gap-2">
           <input
             readOnly
             value={url}
-            className="min-w-0 flex-1 rounded-lg bg-midnight-soft border border-alpine-cream/20 px-3 py-2 text-sm text-alpine-cream/90 outline-none"
+            className="min-w-0 flex-1 rounded-lg bg-surface border border-line px-3 py-2 text-sm text-muted outline-none"
           />
           <button
             onClick={copyLink}
-            className="shrink-0 min-h-11 rounded-lg border border-alpine-cream/25 px-4 text-sm hover:border-alpine-gold transition"
+            className="shrink-0 min-h-11 rounded-lg border border-line px-4 text-sm hover:border-primary transition"
           >
             {copied ? "✔ Kopjuar" : "Kopjo Link"}
           </button>
@@ -129,24 +129,24 @@ export function QrGenerator({ slug }: { slug: string }) {
         <button
           onClick={downloadPng}
           disabled={!!busy}
-          className="min-h-11 rounded-lg bg-alpine-gold px-4 py-2 text-midnight font-medium hover:opacity-90 disabled:opacity-50"
+          className="min-h-11 rounded-lg bg-primary px-4 py-2 text-white font-medium hover:opacity-90 disabled:opacity-50"
         >
           {busy === "png" ? "Duke përgatitur…" : "Shkarko PNG"}
         </button>
         <button
           onClick={downloadSvg}
           disabled={!!busy}
-          className="min-h-11 rounded-lg border border-alpine-gold/50 px-4 py-2 text-alpine-gold font-medium hover:bg-alpine-gold/10 disabled:opacity-50"
+          className="min-h-11 rounded-lg border border-primary/40 px-4 py-2 text-primary font-medium hover:bg-primary/10 disabled:opacity-50"
         >
           {busy === "svg" ? "Duke përgatitur…" : "Shkarko SVG"}
         </button>
       </div>
 
       {/* Udhëzime */}
-      <p className="text-sm text-alpine-cream/60 leading-relaxed rounded-lg border border-alpine-cream/10 bg-midnight-soft p-4">
+      <p className="text-sm text-muted leading-relaxed rounded-lg border border-line bg-surface p-4">
         Printojeni këtë QR-kod dhe vendoseni në tavolinat tuaja. Klientët do ta
         skanojnë me kamerën e telefonit dhe do t&apos;u hapet menuja direkt.
-        <span className="block mt-2 text-xs text-alpine-cream/40">
+        <span className="block mt-2 text-xs text-muted">
           PNG për printim standard · SVG për madhësi të mëdha (banderolë, tabelë) pa
           humbje cilësie.
         </span>

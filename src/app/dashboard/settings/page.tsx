@@ -35,7 +35,7 @@ export default async function SettingsPage({
   });
 
   if (!restaurant) {
-    return <div className="text-alpine-cream/70">Restoranti nuk u gjet.</div>;
+    return <div className="text-muted">Restoranti nuk u gjet.</div>;
   }
 
   const initial: SettingsInitial = restaurant;

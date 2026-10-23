@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const inputClass =
-  "w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold";
+  "w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary";
 
 export function ResetForm({ token }: { token: string }) {
   const router = useRouter();
@@ -64,11 +64,11 @@ export function ResetForm({ token }: { token: string }) {
         onChange={(e) => setConfirm(e.target.value)}
         className={inputClass}
       />
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-red-600 text-sm">{error}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="w-full min-h-11 rounded-lg bg-alpine-gold py-3 text-midnight font-medium hover:opacity-90 transition disabled:opacity-50"
+        className="w-full min-h-11 rounded-lg bg-primary py-3 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
       >
         {loading ? "Duke ruajtur…" : "Ruaj password-in e ri"}
       </button>

@@ -52,17 +52,17 @@ export default function VerifyEmailClient() {
     return (
       <Shell>
         <h1 className="font-heading text-2xl sm:text-3xl mb-3">Konfirmo verifikimin</h1>
-        <p className="text-sm leading-relaxed text-alpine-cream/70 mb-6">
+        <p className="text-sm leading-relaxed text-muted mb-6">
           Kliko më poshtë për të verifikuar email-in dhe aktivizuar llogarinë.
         </p>
         <button
           onClick={() => verify({ token })}
           disabled={loading}
-          className="w-full min-h-11 rounded-lg bg-alpine-gold py-3 text-midnight font-medium hover:opacity-90 transition disabled:opacity-50"
+          className="w-full min-h-11 rounded-lg bg-primary py-3 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
         >
           {loading ? "Duke verifikuar..." : "Verifiko email-in"}
         </button>
-        {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         <BackLinks />
       </Shell>
     );
@@ -72,7 +72,7 @@ export default function VerifyEmailClient() {
   return (
     <Shell>
       <h1 className="font-heading text-2xl sm:text-3xl mb-3">Vendos kodin</h1>
-      <p className="text-sm leading-relaxed text-alpine-cream/70 mb-6">
+      <p className="text-sm leading-relaxed text-muted mb-6">
         Fut email-in dhe kodin 6-shifror që të dërguam.
       </p>
       <form
@@ -88,7 +88,7 @@ export default function VerifyEmailClient() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 outline-none focus:border-alpine-gold"
+          className="w-full rounded-lg bg-surface border border-line px-4 py-3 outline-none focus:border-primary"
         />
         <input
           type="text"
@@ -100,13 +100,13 @@ export default function VerifyEmailClient() {
           required
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="w-full rounded-lg bg-midnight-soft border border-alpine-cream/20 px-4 py-3 text-center text-2xl tracking-[0.4em] outline-none focus:border-alpine-gold"
+          className="w-full rounded-lg bg-surface border border-line px-4 py-3 text-center text-2xl tracking-[0.4em] outline-none focus:border-primary"
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={loading || code.length !== 6}
-          className="w-full min-h-11 rounded-lg bg-alpine-gold py-3 text-midnight font-medium hover:opacity-90 transition disabled:opacity-50"
+          className="w-full min-h-11 rounded-lg bg-primary py-3 text-white font-medium hover:opacity-90 transition disabled:opacity-50"
         >
           {loading ? "Duke verifikuar..." : "Verifiko"}
         </button>
@@ -118,7 +118,7 @@ export default function VerifyEmailClient() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen grid place-items-center bg-midnight text-alpine-cream px-6">
+    <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm text-center">{children}</div>
     </main>
   );
@@ -127,9 +127,9 @@ function Shell({ children }: { children: React.ReactNode }) {
 function BackLinks({ email }: { email?: string }) {
   const href = email ? `/register/check-email?email=${encodeURIComponent(email)}` : "/register/check-email";
   return (
-    <p className="mt-8 text-sm text-alpine-cream/60">
+    <p className="mt-8 text-sm text-muted">
       S&apos;mori email-in?{" "}
-      <Link href={href} className="text-alpine-gold hover:underline">
+      <Link href={href} className="text-primary hover:underline">
         Ridërgo
       </Link>
     </p>

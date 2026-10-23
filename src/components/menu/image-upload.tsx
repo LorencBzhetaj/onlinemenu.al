@@ -69,7 +69,7 @@ export function ImageUpload({
     <div className="space-y-2">
       {value && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="Parapamje" className="h-32 w-full object-cover rounded-lg border border-alpine-cream/15" />
+        <img src={value} alt="Parapamje" className="h-32 w-full object-cover rounded-lg border border-line" />
       )}
 
       {cloudinaryConfigured ? (
@@ -79,7 +79,7 @@ export function ImageUpload({
               type="button"
               onClick={() => cameraRef.current?.click()}
               disabled={!!busy}
-              className="min-h-11 rounded-lg border border-alpine-cream/20 px-3 py-2 text-sm text-alpine-cream/80 hover:border-alpine-gold disabled:opacity-50"
+              className="min-h-11 rounded-lg border border-line px-3 py-2 text-sm text-muted hover:border-primary disabled:opacity-50"
             >
               📷 Bëj Foto
             </button>
@@ -87,7 +87,7 @@ export function ImageUpload({
               type="button"
               onClick={() => galleryRef.current?.click()}
               disabled={!!busy}
-              className="min-h-11 rounded-lg border border-alpine-cream/20 px-3 py-2 text-sm text-alpine-cream/80 hover:border-alpine-gold disabled:opacity-50"
+              className="min-h-11 rounded-lg border border-line px-3 py-2 text-sm text-muted hover:border-primary disabled:opacity-50"
             >
               🖼 Zgjidh nga Pajisja
             </button>
@@ -97,19 +97,19 @@ export function ImageUpload({
           {/* Galeria / file system */}
           <input ref={galleryRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
           {busy && (
-            <p className="text-xs text-alpine-gold">
+            <p className="text-xs text-primary">
               {busy === "compress" ? "Duke kompresuar…" : "Duke ngarkuar…"}
             </p>
           )}
         </>
       ) : (
-        <p className="text-xs text-alpine-cream/40">
+        <p className="text-xs text-muted">
           Cloudinary s&apos;është konfiguruar — përdor URL manuale më poshtë.
         </p>
       )}
 
       <div>
-        <span className="block text-xs text-alpine-cream/40 mb-1">ose vendos një URL:</span>
+        <span className="block text-xs text-muted mb-1">ose vendos një URL:</span>
         <input
           type="url"
           placeholder="https://…"
@@ -120,11 +120,11 @@ export function ImageUpload({
       </div>
 
       {value && (
-        <button type="button" onClick={() => onChange(null)} className="text-xs text-red-400 hover:underline">
+        <button type="button" onClick={() => onChange(null)} className="text-xs text-red-600 hover:underline">
           Hiq imazhin
         </button>
       )}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

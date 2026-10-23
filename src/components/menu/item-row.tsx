@@ -22,11 +22,11 @@ export function ItemRow({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border border-alpine-cream/10 bg-midnight px-3 py-2 mb-2 ${
+      className={`flex items-center gap-3 rounded-lg border border-line bg-canvas px-3 py-2 mb-2 ${
         item.isVisible ? "" : "opacity-50"
       }`}
     >
-      <span {...handleProps} className="touch-none px-1 cursor-grab active:cursor-grabbing text-alpine-cream/30 hover:text-alpine-cream/70 text-lg">
+      <span {...handleProps} className="touch-none px-1 cursor-grab active:cursor-grabbing text-muted hover:text-muted text-lg">
         ⠿
       </span>
 
@@ -34,29 +34,29 @@ export function ItemRow({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={item.imageUrl} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
       ) : (
-        <div className="h-10 w-10 rounded bg-alpine-cream/5 shrink-0" />
+        <div className="h-10 w-10 rounded bg-black/5 shrink-0" />
       )}
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-alpine-cream truncate">{item.nameAl}</span>
+          <span className="text-ink truncate">{item.nameAl}</span>
           {item.isChefPick && (
-            <span className="text-[10px] rounded-full border border-alpine-gold/50 text-alpine-gold px-1.5 py-0.5">
+            <span className="text-[10px] rounded-full border border-primary/40 text-primary px-1.5 py-0.5">
               Shefi
             </span>
           )}
           {item.isDailyMenu && (
-            <span className="text-[10px] rounded-full border border-alpine-cream/30 text-alpine-cream/60 px-1.5 py-0.5">
+            <span className="text-[10px] rounded-full border border-line text-muted px-1.5 py-0.5">
               Ditore
             </span>
           )}
         </div>
         {item.descAl && (
-          <p className="text-xs text-alpine-cream/50 truncate">{item.descAl}</p>
+          <p className="text-xs text-muted truncate">{item.descAl}</p>
         )}
       </div>
 
-      <span className="text-alpine-gold whitespace-nowrap text-sm">
+      <span className="text-primary whitespace-nowrap text-sm">
         {formatPrice(item.price)}
       </span>
 
@@ -91,8 +91,8 @@ function IconButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`rounded-md px-2 py-1 text-sm hover:bg-alpine-cream/10 transition ${
-        danger ? "text-red-400" : "text-alpine-cream/70"
+      className={`rounded-md px-2 py-1 text-sm hover:bg-black/5 transition ${
+        danger ? "text-red-600" : "text-muted"
       }`}
     >
       {children}
