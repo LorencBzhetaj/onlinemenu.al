@@ -90,8 +90,8 @@ npx tsc --noEmit
 # 3) Teste (kundrejt Postgres LOKAL testimi; guard refuzon DB jo-lokale) — shih tests/README.md
 export DATABASE_URL="postgresql://postgres@127.0.0.1:5433/onlinemenu_test"
 export DIRECT_URL="$DATABASE_URL"
-npx prisma migrate deploy   # apliko skemën te DB lokale
-npm test
+npm run db:deploy:test   # guard (DATABASE_URL+DIRECT_URL lokale) + migrate deploy
+npm test                 # `pretest` rikontrollon guard-in
 
 # 4) Build (s'ekzekuton migrate deploy; s'prek DB live)
 npm run build

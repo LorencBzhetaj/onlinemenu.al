@@ -25,20 +25,24 @@ runuser -u postgres -- pg_ctl -D "$BASE/pgdata" -o "-p 5433 -c listen_addresses=
 psql "postgresql://postgres@127.0.0.1:5433/postgres" -c "CREATE DATABASE onlinemenu_test;"
 ```
 
-Apliko skemën (migrime), pa prekur asnjë DB tjetër:
+Apliko skemën (migrime) me komandën e GUARD-uar — kontrollon që DATABASE_URL **dhe**
+DIRECT_URL janë lokale PARA `migrate deploy` (migrate deploy përdor DIRECT_URL):
 
 ```bash
 export DATABASE_URL="postgresql://postgres@127.0.0.1:5433/onlinemenu_test"
 export DIRECT_URL="$DATABASE_URL"
-npx prisma migrate deploy
+npm run db:deploy:test   # = require-local-db guard + prisma migrate deploy
 ```
+
+> Mos përdor `npx prisma migrate deploy` të pa-guard-uar për testim — mund të godasë prod.
+> `npm run db:deploy` (pa `:test`) është VETËM për deploy-in e qëllimshëm te prod.
 
 ## Ekzekutimi
 
 ```bash
 export DATABASE_URL="postgresql://postgres@127.0.0.1:5433/onlinemenu_test"
 export DIRECT_URL="$DATABASE_URL"
-npm test
+npm test   # `pretest` ekzekuton guard-in e DB-së lokale automatikisht
 ```
 
 ## Çfarë mbulohet

@@ -41,6 +41,32 @@ Shënime të shkurtra vendimesh me arsye dhe pasoja. Një vendim ndryshohet me n
 **Arsye:** shmang gabime rrumbullakimi; përputhet me masterplanin.
 **Pasojë:** multi-currency do kërkojë migrim eksplicit, jo riemërtim të paqartë.
 
+## ADR-008 — Autoriteti i lejeve: `requireRestaurantAccess` në server (Faza 1)
+**Vendim:** çdo lexim privat DHE mutacion kalon nga `requireRestaurantAccess(action, restaurantId)`; JWT/middleware janë vetëm hint.
+**Arsye:** JWT mund të jetë i ndenjur; revokimi duhet të vlejë menjëherë.
+**Pasojë:** membership rilexohet nga DB në çdo kërkesë private; action i panjohur refuzohet (deny-by-default).
+
+## ADR-009 — Restoranti aktiv i lidhur me kërkesën (anti cross-tab) (Faza 1)
+**Vendim:** restaurantId vjen shprehimisht nga faqja/formulari i hapur dhe verifikohet me membership; `User.activeRestaurantId` është vetëm default navigimi.
+**Arsye:** ndryshimi i "aktiv" në një tab s'duhet të ridrejtojë shkrime te tenant tjetër.
+**Pasojë:** asnjë fallback i heshtur te activeRestaurantId për lexime/shkrime private.
+
+## ADR-010 — Invariant `ownerId` ↔ OWNER membership (Faza 1)
+**Vendim:** çdo Restaurant ka një OWNER membership = `ownerId`; në Fazën 1 ndalohet transferim/fshirje/revokim që e lë restorantin pa pronar.
+**Pasojë:** krijimi atomik e krijon OWNER-in; `team:write` s'prek rreshtin OWNER.
+
+## ADR-011 — `hasEntitlement` me tabelë vendimesh; backfill s'riaktivizon (Faza 1)
+**Vendim:** vendimi merr parasysh suspension, subscription status/expiry, module status/expiry, null-expiry (shih spec-in §5). Backfill-i pasqyron gjendjen e abonimit, s'riaktivizon abonime joaktive.
+**Pasojë:** moduli joaktiv ndalon shkrimet, lejon lexim historik; statusi lexohet në server.
+
+## ADR-012 — Krijim atomik i restorantit në të gjitha rrjedhat (Faza 1)
+**Vendim:** `createRestaurantForOwner` krijon Restaurant+Subscription+OWNER membership+entitlements brenda një tx; përdoret nga email-verification, onboarding, admin dhe seed.
+**Pasojë:** asnjë gjendje e pjesshme; `invitations/accept` shtyhet në Fazën 7.
+
+## ADR-013 — Guard i DB-së së testit para `migrate deploy`
+**Vendim:** `scripts/require-local-db.mjs` kontrollon DATABASE_URL DHE DIRECT_URL të jenë lokale; testimi përdor `npm run db:deploy:test` + `pretest`. `db:deploy` (pa `:test`) mbetet vetëm për deploy-in e qëllimshëm prod.
+**Arsye:** `migrate deploy` përdor DIRECT_URL; një DATABASE_URL lokal nuk mjafton për të shmangur migrim prod.
+
 ## Të hapura (vendosen në fazën përkatëse me prova)
 - Versionet përfundimtare kur integrohet `restorant` (auth/dnd/React/Prisma) — Faza 4.
 - Hosting (Vercel/VPS) pas kontrollit të worker runtime/kufijve — Faza 8.

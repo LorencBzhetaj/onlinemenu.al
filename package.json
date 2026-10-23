@@ -10,8 +10,10 @@
     "lint": "next lint",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:deploy:test": "node scripts/require-local-db.mjs && prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
+    "pretest": "node scripts/require-local-db.mjs",
     "test": "tsx tests/verification.test.ts"
   },
   "prisma": {
