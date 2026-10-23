@@ -14,7 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "pretest": "node scripts/require-local-db.mjs",
-    "test": "tsx tests/verification.test.ts"
+    "test": "tsx tests/verification.test.ts && tsx tests/phase1.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

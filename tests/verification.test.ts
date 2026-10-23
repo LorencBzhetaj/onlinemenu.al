@@ -17,7 +17,11 @@ import {
   createPendingRegistration,
   MAX_CODE_ATTEMPTS,
 } from "@/lib/email-verification";
-import { ensureRestaurantWithTrial } from "@/lib/restaurant";
+import { createRestaurantForOwner } from "@/modules/restaurants/provision";
+
+// Provisionim brenda një transaksioni (createRestaurantForOwner kërkon tx për lock-un).
+const provision = (ownerId: string, name: string) =>
+  prisma.$transaction((tx) => createRestaurantForOwner(tx, ownerId, name));
 import { rateLimit } from "@/lib/rate-limit";
 import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
@@ -278,12 +282,12 @@ async function main() {
     ok("verifikimi në fluturim u fshi", (await prisma.emailVerification.count({ where: { userId: u4.id } })) === 0);
   }
 
-  // ── T13: ensureRestaurantWithTrial idempotent ──
-  console.log("\nT13 ensureRestaurantWithTrial idempotent:");
+  // ── T13: createRestaurantForOwner idempotent ──
+  console.log("\nT13 createRestaurantForOwner idempotent:");
   {
     const u = await makeUnverifiedOwner(`t13${SUF}`);
-    const a = await ensureRestaurantWithTrial(prisma, u.id, "Resto X");
-    const b = await ensureRestaurantWithTrial(prisma, u.id, "Resto X");
+    const a = await provision(u.id, "Resto X");
+    const b = await provision(u.id, "Resto X");
     ok("1-i created=true", a.created === true);
     ok("2-i created=false", b.created === false);
     ok("1 restaurant", (await restaurantCount(u.id)) === 1);
@@ -293,7 +297,7 @@ async function main() {
   console.log("\nT14 limited backfill:");
   {
     const owner = await makeUnverifiedOwner(`bf-owner${SUF}`);
-    await ensureRestaurantWithTrial(prisma, owner.id, "Legacy Resto"); // legacy: zotëron restaurant
+    await provision(owner.id, "Legacy Resto"); // legacy: zotëron restaurant
     await prisma.user.update({ where: { id: owner.id }, data: { emailVerified: false } }); // rikthe false për testin
     const fresh = await makeUnverifiedOwner(`bf-new${SUF}`); // regjistrim i ri: pa restaurant
     const admin = await prisma.user.create({

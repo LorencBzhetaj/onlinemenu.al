@@ -17,8 +17,36 @@ Dokumenti kryesor i statusit. Referenca:
 |---|---|
 | Verifikim i detyrueshëm i email-it (link + kod) | ✅ i plotë + i forcuar; **lokal, pa push** |
 | Faza 0 — baseline & spec i zbatueshëm | ✅ i dokumentuar sipas kodit aktual |
-| Faza 1 — tenant/rol/entitlement | 📋 spec + plan teknik gati **për review** (pa implementim) |
+| Faza 1 — tenant/rol/entitlement | ✅ **implementuar** në ambient të izoluar; 49/49 teste; **lokal, pa push/migrim live** |
 | Booking (Faza 4) | ⛔ jo i nisur; repo `restorant` jashtë scope-it të sesionit |
+
+---
+
+## 0. Faza 1 — tenant context, role, entitlements (e implementuar)
+
+Modeli i pronësisë 1:1 u shndërrua në **membership + rol + restorant aktiv** me **izolim tenant në server për çdo lexim privat dhe mutacion**, dhe **entitlement MENU/BOOKING** të ndara. Vendimet e miratimit (§2 e spec-it) janë zbatuar.
+
+**Modulet e reja:** `src/modules/memberships/{permissions,access,active-restaurant}.ts`, `src/modules/subscriptions/entitlements.ts`, `src/modules/restaurants/provision.ts`.
+
+**Mekanizmi i autorizimit:** `requireRestaurantAccess(action, restaurantId)` / `guardRestaurant(req, action)` rilexon membership-in nga DB; `restaurantId` vjen shprehimisht nga header-i `x-restaurant-id` (klienti përmes `useApiFetch`/`RestaurantProvider`) ose nga faqja (`pageAccess`). `hasEntitlement` me allowlist. Deny-by-default për veprime të panjohura.
+
+### Inventari i rrugëve/faqeve të përshtatura
+**API private (header + requireRestaurantAccess + entitlement për menu):** `categories[/id]`, `subcategories[/id]`, `menu-items[/id]`, `menu/reorder` (menu:write + MENU; reorder me ID të huaja → refuzim i plotë), `restaurant/branding` (branding:write), `restaurant/settings` (settings:write). **E re:** `dashboard/active-restaurant` (POST).
+**Faqe (pageAccess + rol):** `/dashboard` (menu:read), `/dashboard/menu` (menu:read), `/dashboard/branding` (branding:read), `/dashboard/settings` (settings:read), `/dashboard/qr` (qr:read), `/dashboard/billing` (billing:read — OWNER). Layout-i jep `RestaurantProvider` + `RestaurantSwitcher`.
+**Pa ndryshim:** `admin/*` (SUPER_ADMIN + rrugë të audituara), `onboarding` (session.user.id), publike `/m/[slug]`.
+**Krijim atomik** (Restaurant+OWNER+Subscription+entitlements): `consumeVerification`, `onboarding`, `seed` (super admin tani `emailVerified=true`).
+
+### Migrimi i Fazës 1 (për shqyrtim)
+`prisma/migrations/20261024000000_phase1_memberships_entitlements` — `RestaurantMembership`, `ModuleEntitlement`, `User.activeRestaurantId`, `Restaurant.suspendedAt` + backfill i kufizuar (OWNER membership nga `ownerId`; MENU pasqyron statusin e abonimit, s'riaktivizon; BOOKING `disabled`). **Aplikuar vetëm lokal me `npm run db:deploy:test`.**
+
+### Teste — **49/49** (`tests/phase1.test.ts`)
+Cross-tenant lexim+shkrim i refuzuar · revoked private reads · rol→veprim (STAFF/MANAGER/OWNER) · action i panjohur/bad_request · tabela e entitlement-it · **cancelled-subscription backfill (s'riaktivizon)** · provisionim atomik+idempotent+**concurrency** · invariant ownerId↔OWNER · selectActiveRestaurant · **krijim pas verifikimit → membership+entitlements**.
+
+### Kufizime të Fazës 1
+- MANAGER/STAFF **provisionohen** vetëm në Fazën 7 (`invitations/accept` i shtyrë); Faza 1 krijon vetëm OWNER; rolet e tjera testohen duke shtuar membership direkt.
+- Testet e autorizimit mbulojnë `resolveAccess` (logjika); testet HTTP end-to-end me cookie sesioni kërkojnë server në këmbë (jashtë scope-it të testit lokal).
+- `requireRestaurantAccess` bën 1 query membership për kërkesë private (pa cache); optimizim nëse duhet, më vonë.
+- Faqet `analytics`/`tasting-menus` janë placeholder (pa të dhëna); gate-i i rolit shtohet kur të marrin të dhëna.
 
 ---
 
