@@ -20,13 +20,32 @@ datasource db {
 // Përdoruesit dhe rolet
 // ─────────────────────────────────────────────────────────────
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  passwordHash String? // null për përdoruesit që kyçen vetëm me Google OAuth
-  role         String       @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
+  id            String  @id @default(cuid())
+  email         String  @unique
+  passwordHash  String? // null për përdoruesit që kyçen vetëm me Google OAuth
+  role          String  @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
+  emailVerified Boolean @default(false) // Google users = true; email signup verifikohet
+  // Emri i restorantit i ruajtur në regjistrim; restoranti krijohet pas verifikimit.
+  pendingRestaurantName String?
+
   restaurants  Restaurant[]
   resetTokens  PasswordResetToken[]
+  verifications EmailVerification[]
   createdAt    DateTime     @default(now())
+}
+
+// Verifikim email-i në regjistrim — link (token) DHE kod 6-shifror te i njëjti rekord.
+model EmailVerification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String   @unique // për linkun (random 32 bytes hex)
+  code      String // 6 shifra
+  expiresAt DateTime // 1 orë
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Token për rivendosjen e password-it (Forgot/Reset Password).
