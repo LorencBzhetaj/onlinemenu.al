@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Modal, Field, inputClass } from "./modal";
+import { useApiFetch } from "@/components/restaurant-context";
 import type { SubcategoryDTO } from "@/lib/menu-types";
 
 export function SubcategoryModal({
@@ -20,12 +21,13 @@ export function SubcategoryModal({
   const [nameEn, setNameEn] = useState(initial?.nameEn ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const api = useApiFetch();
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
-    const res = await fetch(
+    const res = await api(
       editing ? `/api/subcategories/${initial!.id}` : "/api/subcategories",
       {
         method: editing ? "PUT" : "POST",

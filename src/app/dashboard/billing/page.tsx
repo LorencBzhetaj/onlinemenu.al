@@ -1,14 +1,14 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pageAccess } from "@/modules/memberships/access";
+import { DashboardNotice } from "@/components/dashboard-notice";
 
 export default async function BillingPage() {
-  const session = await getServerSession(authOptions);
-  const subscription = session?.user.restaurantId
-    ? await prisma.subscription.findUnique({
-        where: { restaurantId: session.user.restaurantId },
-      })
-    : null;
+  // billing:read → vetëm OWNER (STAFF/MANAGER refuzohen).
+  const access = await pageAccess("billing:read");
+  if (!access.ok) return <DashboardNotice reason={access.reason} />;
+  const subscription = await prisma.subscription.findUnique({
+    where: { restaurantId: access.ctx.restaurantId },
+  });
 
   return (
     <div className="space-y-6">

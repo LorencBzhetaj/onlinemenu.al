@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthedRestaurantId } from "@/lib/api-auth";
+import { guardRestaurant } from "@/modules/memberships/access";
+import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 
 type ReorderType = "category" | "subcategory" | "item";
 
 /**
  * POST — ri-rendit një listë. Body: { type, ids: [id në rendin e ri] }.
- * sortOrder caktohet sipas indeksit. Vetëm objektet që i përkasin restorantit
- * të loguar preken (të tjerët injorohen në heshtje).
+ * sortOrder caktohet sipas indeksit. Nëse NDONJË id nuk i përket restorantit,
+ * kërkesa refuzohet E TËRË (jo sukses i pjesshëm i heshtur).
  */
 export async function POST(req: Request) {
-  const restaurantId = await getAuthedRestaurantId();
-  if (!restaurantId) {
-    return NextResponse.json({ error: "I paautorizuar." }, { status: 401 });
+  const g = await guardRestaurant(req, "menu:write");
+  if ("error" in g) return g.error;
+  const { restaurantId } = g.ctx;
+  if (!(await hasEntitlement(restaurantId, "MENU"))) {
+    return NextResponse.json({ error: "MODULE_INACTIVE" }, { status: 403 });
   }
 
   const body = await req.json().catch(() => ({}));
@@ -51,9 +54,13 @@ export async function POST(req: Request) {
     ownedIds = new Set(rows.map((r) => r.id));
   }
 
-  const updates = ids
-    .map((id, index) => ({ id, sortOrder: index }))
-    .filter((u) => ownedIds.has(u.id));
+  // Refuzim i tërë nëse ndonjë id nuk i përket restorantit (pa sukses të pjesshëm).
+  const foreign = ids.filter((id) => !ownedIds.has(id));
+  if (foreign.length > 0) {
+    return NextResponse.json({ error: "Disa objekte nuk i përkasin restorantit." }, { status: 403 });
+  }
+
+  const updates = ids.map((id, index) => ({ id, sortOrder: index }));
 
   await prisma.$transaction(
     updates.map((u) => {

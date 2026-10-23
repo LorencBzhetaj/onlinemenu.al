@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ensureRestaurantWithTrial } from "@/lib/restaurant";
+import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -23,8 +23,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Helper-i i njëjtë që përdor edhe verifikimi i email-it (idempotent, pa dublim).
-  const { slug, created } = await ensureRestaurantWithTrial(prisma, session.user.id, restaurantName);
+  // Krijim atomik (brenda një transaksioni; createRestaurantForOwner kërkon tx për lock-un).
+  const ownerId = session.user.id;
+  const { slug, created } = await prisma.$transaction((tx) =>
+    createRestaurantForOwner(tx, ownerId, restaurantName)
+  );
 
   return NextResponse.json({ ok: true, slug }, { status: created ? 201 : 200 });
 }

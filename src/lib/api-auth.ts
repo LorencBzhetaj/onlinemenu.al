@@ -1,19 +1,8 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/**
- * Konteksti i autorizuar për mutacione në menu.
- * Kthen restaurantId të pronarit të loguar, ose null nëse s'ka autorizim.
- *
- * KRITIKE për izolimin multi-tenant: çdo rrugë API duhet ta thërrasë këtë dhe
- * të filtrojë/verifikojë çdo objekt sipas këtij restaurantId.
- */
-export async function getAuthedRestaurantId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  return session.user.restaurantId ?? null;
-}
+// Verifikim pronësie i objekteve brenda një tenant-i. Autorizimi i tenant-it/rolit
+// bëhet nga @/modules/memberships/access (requireRestaurantAccess/guardRestaurant);
+// këto helper-a sigurojnë që objekti i prekur i përket restaurantId-së së autorizuar.
 
 /** Verifikon që një kategori i përket restorantit të dhënë. */
 export async function categoryBelongsTo(

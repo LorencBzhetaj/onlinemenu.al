@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthedRestaurantId } from "@/lib/api-auth";
+import { guardRestaurant } from "@/modules/memberships/access";
+import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 
 export async function POST(req: Request) {
-  const restaurantId = await getAuthedRestaurantId();
-  if (!restaurantId) {
-    return NextResponse.json({ error: "I paautorizuar." }, { status: 401 });
+  const g = await guardRestaurant(req, "menu:write");
+  if ("error" in g) return g.error;
+  const { restaurantId } = g.ctx;
+  if (!(await hasEntitlement(restaurantId, "MENU"))) {
+    return NextResponse.json({ error: "MODULE_INACTIVE" }, { status: 403 });
   }
 
   const body = await req.json().catch(() => ({}));

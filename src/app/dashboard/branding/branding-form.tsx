@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ColorField } from "@/components/branding/color-field";
 import { FontSelect } from "@/components/branding/font-select";
+import { useApiFetch } from "@/components/restaurant-context";
 import { LivePreview } from "@/components/branding/live-preview";
 import { ImageUpload } from "@/components/menu/image-upload";
 import {
@@ -46,6 +47,7 @@ function useFontPreview(fonts: string[]) {
 
 export function BrandingForm({ initial }: { initial: BrandingInitial }) {
   const router = useRouter();
+  const api = useApiFetch();
   const [primaryColor, setPrimaryColor] = useState(initial.primaryColor ?? "#0f1720");
   const [accentColor, setAccentColor] = useState(initial.accentColor ?? "#c9a24b");
   const [fontHeading, setFontHeading] = useState(initial.fontHeading ?? DEFAULT_HEADING);
@@ -74,7 +76,7 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
       return;
     }
     setSaving(true);
-    const res = await fetch("/api/restaurant/branding", {
+    const res = await api("/api/restaurant/branding", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ primaryColor, accentColor, fontHeading, fontBody, logoUrl, menuPhotoStyle }),

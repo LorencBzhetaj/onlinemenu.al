@@ -1,25 +1,18 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pageAccess } from "@/modules/memberships/access";
+import { DashboardNotice } from "@/components/dashboard-notice";
 import { MenuManager } from "./menu-manager";
 import type { CategoryDTO } from "@/lib/menu-types";
 
 export const dynamic = "force-dynamic";
 
 export default async function MenuPage() {
-  const session = await getServerSession(authOptions);
-  const restaurantId = session?.user.restaurantId ?? null;
+  const access = await pageAccess("menu:read");
+  if (!access.ok) return <DashboardNotice reason={access.reason} />;
+  const { restaurantId } = access.ctx;
 
-  if (!restaurantId) {
-    return (
-      <div className="rounded-lg border border-alpine-cream/10 bg-midnight-soft p-6 text-alpine-cream/70">
-        Nuk u gjet asnjë restorant i lidhur me këtë llogari.
-      </div>
-    );
-  }
-
-  // KRITIKE: skopim te restaurantId i sesionit. Dashboard-i shfaq edhe artikujt
-  // e fshehur (pa filtër isVisible).
+  // KRITIKE: skopim te restaurantId i validuar me membership. Dashboard-i shfaq edhe
+  // artikujt e fshehur (pa filtër isVisible).
   const categories = await prisma.category.findMany({
     where: { restaurantId },
     orderBy: { sortOrder: "asc" },

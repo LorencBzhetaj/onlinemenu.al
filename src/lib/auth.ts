@@ -136,15 +136,32 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Per-request: restoranti i pronarit (reflekton onboarding/verifikim menjëherë).
+      // Per-request HINT (jo autoritet lejesh): restoranti aktiv + roli, nga membership-et.
+      // Autorizimi real bëhet nga requireRestaurantAccess në server për çdo lexim/shkrim privat.
       if (token.role === "RESTAURANT_OWNER" && token.sub) {
-        const restaurant = await prisma.restaurant.findFirst({
-          where: { ownerId: token.sub },
-          select: { id: true, slug: true },
+        const user = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: {
+            activeRestaurantId: true,
+            memberships: {
+              where: { status: "active" },
+              orderBy: { createdAt: "asc" },
+              select: { restaurantId: true, role: true, restaurant: { select: { slug: true } } },
+            },
+          },
         });
-        token.restaurantId = restaurant?.id ?? null;
-        token.restaurantSlug = restaurant?.slug ?? null;
+        const memberships = user?.memberships ?? [];
+        // Aktivi = activeRestaurantId nëse ka membership aktiv për të; ndryshe i pari.
+        const active =
+          memberships.find((m) => m.restaurantId === user?.activeRestaurantId) ?? memberships[0] ?? null;
+        token.activeRestaurantId = active?.restaurantId ?? null;
+        token.activeRole = active?.role ?? null;
+        // Compat: kodi ekzistues lexon restaurantId/Slug nga sesioni.
+        token.restaurantId = active?.restaurantId ?? null;
+        token.restaurantSlug = active?.restaurant.slug ?? null;
       } else {
+        token.activeRestaurantId = null;
+        token.activeRole = null;
         token.restaurantId = null;
         token.restaurantSlug = null;
       }
@@ -158,6 +175,7 @@ export const authOptions: NextAuthOptions = {
         session.user.emailVerified = (token.emailVerified as boolean | undefined) ?? false;
         session.user.restaurantId = (token.restaurantId as string | null) ?? null;
         session.user.restaurantSlug = (token.restaurantSlug as string | null) ?? null;
+        session.user.activeRole = (token.activeRole as string | null) ?? null;
       }
       return session;
     },

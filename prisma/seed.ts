@@ -9,10 +9,11 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // Super admin i seed-it është i besuar → emailVerified=true (përndryshe bllokohet nga login gate-i).
   const admin = await prisma.user.upsert({
     where: { email },
-    update: { role: "SUPER_ADMIN" },
-    create: { email, passwordHash, role: "SUPER_ADMIN" },
+    update: { role: "SUPER_ADMIN", emailVerified: true },
+    create: { email, passwordHash, role: "SUPER_ADMIN", emailVerified: true },
   });
 
   console.log(`✔ Super Admin gati: ${admin.email}`);

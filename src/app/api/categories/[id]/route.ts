@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthedRestaurantId, categoryBelongsTo } from "@/lib/api-auth";
+import { categoryBelongsTo } from "@/lib/api-auth";
+import { guardRestaurant } from "@/modules/memberships/access";
+import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const restaurantId = await getAuthedRestaurantId();
-  if (!restaurantId) {
-    return NextResponse.json({ error: "I paautorizuar." }, { status: 401 });
+  const g = await guardRestaurant(req, "menu:write");
+  if ("error" in g) return g.error;
+  const { restaurantId } = g.ctx;
+  if (!(await hasEntitlement(restaurantId, "MENU"))) {
+    return NextResponse.json({ error: "MODULE_INACTIVE" }, { status: 403 });
   }
   if (!(await categoryBelongsTo(params.id, restaurantId))) {
     return NextResponse.json({ error: "Nuk lejohet." }, { status: 403 });
@@ -35,12 +39,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
-  const restaurantId = await getAuthedRestaurantId();
-  if (!restaurantId) {
-    return NextResponse.json({ error: "I paautorizuar." }, { status: 401 });
+  const g = await guardRestaurant(req, "menu:write");
+  if ("error" in g) return g.error;
+  const { restaurantId } = g.ctx;
+  if (!(await hasEntitlement(restaurantId, "MENU"))) {
+    return NextResponse.json({ error: "MODULE_INACTIVE" }, { status: 403 });
   }
   if (!(await categoryBelongsTo(params.id, restaurantId))) {
     return NextResponse.json({ error: "Nuk lejohet." }, { status: 403 });

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field, inputClass } from "@/components/menu/modal";
 import { googleFontsHref, DEFAULT_HEADING, DEFAULT_BODY } from "@/lib/branding";
+import { useApiFetch } from "@/components/restaurant-context";
 
 export type SettingsInitial = {
   name: string;
@@ -43,6 +44,7 @@ function useFontPreview(fonts: string[]) {
 
 export function SettingsForm({ initial }: { initial: SettingsInitial }) {
   const router = useRouter();
+  const api = useApiFetch();
   const [name, setName] = useState(initial.name);
   const [estYear, setEstYear] = useState(initial.estYear ? String(initial.estYear) : "");
   const [taglineAl, setTaglineAl] = useState(initial.taglineAl ?? "");
@@ -81,7 +83,7 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
       return;
     }
     setSaving(true);
-    const res = await fetch("/api/restaurant/settings", {
+    const res = await api("/api/restaurant/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

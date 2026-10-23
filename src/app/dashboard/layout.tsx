@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
+import { RestaurantProvider } from "@/components/restaurant-context";
+import { RestaurantSwitcher } from "@/components/restaurant-switcher";
+import { listMemberships } from "@/modules/memberships/active-restaurant";
 
 const NAV = [
   { href: "/dashboard", label: "Përmbledhje" },
@@ -24,6 +27,7 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   const isAdmin = session.user.role === "SUPER_ADMIN";
+  const memberships = await listMemberships(session.user.id);
 
   return (
     <div className="min-h-screen bg-midnight text-alpine-cream lg:flex">
@@ -38,6 +42,8 @@ export default async function DashboardLayout({
             <LogoutButton />
           </div>
         </div>
+
+        <RestaurantSwitcher memberships={memberships} activeId={session.user.restaurantId} />
 
         <nav className="mt-3 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-0 lg:flex-col lg:overflow-visible lg:pb-0">
           {NAV.map((item) => (
@@ -77,7 +83,10 @@ export default async function DashboardLayout({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 p-5 lg:p-8">{children}</main>
+      {/* Restoranti aktiv përcillet te komponentët klient (header x-restaurant-id). */}
+      <RestaurantProvider restaurantId={session.user.restaurantId}>
+        <main className="min-w-0 flex-1 p-5 lg:p-8">{children}</main>
+      </RestaurantProvider>
     </div>
   );
 }

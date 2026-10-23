@@ -8,6 +8,7 @@ import { CategoryModal } from "@/components/menu/category-modal";
 import { SubcategoryModal } from "@/components/menu/subcategory-modal";
 import { ItemModal } from "@/components/menu/item-modal";
 import { CategoryIcon } from "@/lib/menu-icons";
+import { useApiFetch } from "@/components/restaurant-context";
 import type { CategoryDTO, SubcategoryDTO, ItemDTO } from "@/lib/menu-types";
 
 type Modal =
@@ -19,16 +20,17 @@ type Modal =
   | { kind: "item-edit"; item: ItemDTO }
   | null;
 
-async function postReorder(type: "category" | "subcategory" | "item", ids: string[]) {
-  await fetch("/api/menu/reorder", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type, ids }),
-  });
-}
-
 export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
   const router = useRouter();
+  const api = useApiFetch();
+
+  async function postReorder(type: "category" | "subcategory" | "item", ids: string[]) {
+    await api("/api/menu/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, ids }),
+    });
+  }
   const [tree, setTree] = useState<CategoryDTO[]>(initialTree);
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(initialTree.map((c) => c.id))
@@ -99,7 +101,7 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
 
   // ---- Veprime ----
   async function toggleVisible(item: ItemDTO) {
-    await fetch(`/api/menu-items/${item.id}`, {
+    await api(`/api/menu-items/${item.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ isVisible: !item.isVisible }),
@@ -109,7 +111,7 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
 
   async function del(url: string, confirmMsg: string) {
     if (!confirm(confirmMsg)) return;
-    await fetch(url, { method: "DELETE" });
+    await api(url, { method: "DELETE" });
     router.refresh();
   }
 

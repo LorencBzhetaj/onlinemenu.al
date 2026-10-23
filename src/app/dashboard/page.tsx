@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { pageAccess } from "@/modules/memberships/access";
 
 export default async function DashboardHome() {
-  const session = await getServerSession(authOptions);
-
-  const restaurant = session?.user.restaurantId
+  const access = await pageAccess("menu:read");
+  const restaurant = access.ok
     ? await prisma.restaurant.findUnique({
-        where: { id: session.user.restaurantId },
+        where: { id: access.ctx.restaurantId },
         include: {
           subscription: true,
           _count: { select: { categories: true, tastingMenus: true } },

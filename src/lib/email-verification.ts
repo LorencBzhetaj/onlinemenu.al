@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { ensureRestaurantWithTrial } from "@/lib/restaurant";
+import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 
 export const VERIFICATION_TTL_MS = 60 * 60 * 1000; // 1 orë
 export const MAX_CODE_ATTEMPTS = 5; // tentativa të gabuara kodi para lock-ut (kërkohet ridërgim)
@@ -206,7 +206,8 @@ export async function consumeVerification(input: ConsumeInput): Promise<ConsumeR
         data: { emailVerified: true },
       });
 
-      await ensureRestaurantWithTrial(
+      // Krijim atomik: Restaurant + Subscription(trial) + OWNER membership + entitlements.
+      await createRestaurantForOwner(
         tx,
         record!.userId,
         record!.user.pendingRestaurantName?.trim() || "Restoranti im"

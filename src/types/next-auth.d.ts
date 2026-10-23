@@ -17,6 +17,7 @@ declare module "next-auth" {
       emailVerified: boolean;
       restaurantId: string | null;
       restaurantSlug: string | null;
+      activeRole: string | null; // "OWNER" | "MANAGER" | "STAFF" | null — hint; jo autoritet lejesh
     };
   }
 }
@@ -27,5 +28,7 @@ declare module "next-auth/jwt" {
     emailVerified?: boolean;
     restaurantId?: string | null;
     restaurantSlug?: string | null;
+    activeRestaurantId?: string | null;
+    activeRole?: string | null;
   }
 }

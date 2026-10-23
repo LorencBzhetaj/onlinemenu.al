@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal, Field, inputClass } from "./modal";
 import { ImageUpload } from "./image-upload";
+import { useApiFetch } from "@/components/restaurant-context";
 import type { ItemDTO } from "@/lib/menu-types";
 
 type Parent = { categoryId?: string; subcategoryId?: string };
@@ -30,6 +31,7 @@ export function ItemModal({
   const [isVisible, setIsVisible] = useState(initial?.isVisible ?? true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const api = useApiFetch();
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +61,7 @@ export function ItemModal({
       if (parent.subcategoryId) payload.subcategoryId = parent.subcategoryId;
     }
 
-    const res = await fetch(
+    const res = await api(
       editing ? `/api/menu-items/${initial!.id}` : "/api/menu-items",
       {
         method: editing ? "PUT" : "POST",

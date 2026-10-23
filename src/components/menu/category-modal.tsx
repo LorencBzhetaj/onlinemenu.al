@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal, Field, inputClass } from "./modal";
 import { CATEGORY_ICON_OPTIONS, CategoryIcon } from "@/lib/menu-icons";
+import { useApiFetch } from "@/components/restaurant-context";
 import type { CategoryDTO } from "@/lib/menu-types";
 
 export function CategoryModal({
@@ -20,12 +21,13 @@ export function CategoryModal({
   const [icon, setIcon] = useState(initial?.icon ?? "other");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const api = useApiFetch();
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
-    const res = await fetch(
+    const res = await api(
       editing ? `/api/categories/${initial!.id}` : "/api/categories",
       {
         method: editing ? "PUT" : "POST",

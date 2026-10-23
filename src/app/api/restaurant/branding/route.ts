@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthedRestaurantId } from "@/lib/api-auth";
+import { guardRestaurant } from "@/modules/memberships/access";
 import { isValidHex, ALLOWED_FONTS, ALLOWED_PHOTO_STYLES } from "@/lib/branding";
 
 export async function PUT(req: Request) {
-  // restaurantId merret nga sesioni (JWT), JO nga body — parandalon manipulim.
-  const restaurantId = await getAuthedRestaurantId();
-  if (!restaurantId) {
-    return NextResponse.json({ error: "I paautorizuar." }, { status: 401 });
-  }
+  // restaurantId përcillet shprehimisht (header x-restaurant-id) dhe validohet me membership.
+  const g = await guardRestaurant(req, "branding:write");
+  if ("error" in g) return g.error;
+  const { restaurantId } = g.ctx;
 
   const body = await req.json().catch(() => ({}));
   const primaryColor = String(body.primaryColor ?? "").trim();
