@@ -49,6 +49,62 @@ export async function issueVerification(
   return { token, code };
 }
 
+export type PendingRegistrationResult =
+  | { status: "ok"; token: string; code: string; isNew: boolean }
+  | { status: "already_verified" };
+
+/**
+ * Krijon ose rifreskon ATOMIKISHT një regjistrim të papërfunduar (të paverifikuar).
+ *
+ * KRITIKE (siguria): ndryshimi i password-it/pendingRestaurantName DHE ri-lëshimi i
+ * kredencialit bëhen në TË NJËJTIN transaksion. Kështu nuk ekziston asnjë dritare ku
+ * një password i ri bashkëjeton me një kredencial të vjetër ende të vlefshëm — një
+ * link i vjetër nuk mund të verifikojë një password të vendosur nga një kërkesë tjetër
+ * ("latest-wins" atomik). `issueVerification` mbishkruan tokenHash-in dhe rrit version-in,
+ * pra kredenciali i mëparshëm bëhet i pavlefshëm në çastin e commit-it.
+ *
+ * Nuk krijon Restaurant — ai krijohet vetëm pas verifikimit (shih consumeVerification).
+ */
+export async function createPendingRegistration(
+  email: string,
+  password: string,
+  restaurantName: string
+): Promise<PendingRegistrationResult> {
+  const normEmail = email.toLowerCase().trim();
+  const existing = await prisma.user.findUnique({
+    where: { email: normEmail },
+    select: { id: true, emailVerified: true },
+  });
+  // Email i regjistruar DHE i verifikuar → marrë vërtet (s'mbishkruhet password-i i tij).
+  if (existing?.emailVerified) return { status: "already_verified" };
+
+  // Hash-imi (CPU) jashtë transaksionit që transaksioni të mbetet i shkurtër.
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const { token, code } = await prisma.$transaction(async (tx) => {
+    const user = existing
+      ? await tx.user.update({
+          where: { id: existing.id },
+          data: { passwordHash, pendingRestaurantName: restaurantName },
+          select: { id: true },
+        })
+      : await tx.user.create({
+          data: {
+            email: normEmail,
+            passwordHash,
+            role: "RESTAURANT_OWNER",
+            emailVerified: false,
+            pendingRestaurantName: restaurantName,
+          },
+          select: { id: true },
+        });
+    // I njëjti tx: ri-lëshimi invalidon atomikisht kredencialin e vjetër (tokenHash + version++).
+    return issueVerification(user.id, tx);
+  });
+
+  return { status: "ok", token, code, isNew: !existing };
+}
+
 export type ConsumeInput = { token: string } | { email: string; code: string };
 
 export type ConsumeResult =

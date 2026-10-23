@@ -46,9 +46,10 @@ const providers: NextAuthOptions["providers"] = [
       code: { label: "Code", type: "text" },
     },
     async authorize(credentials, req) {
-      // Rate limit i përbashkët për verifikimin (kundër brute-force të kodit nga një IP).
+      // Rate limit i verifikimit — fail-CLOSED: kur kufiri s'mund të garantohet (DB e
+      // rate-limit-it s'arrihet), REFUZOJMË pa e konsumuar kredencialin (throw para consume).
       const ip = clientIpFromHeaders(req?.headers);
-      if (!(await rateLimit(`verify:ip:${ip}`, 10, 10 * 60 * 1000))) {
+      if (!(await rateLimit(`verify:ip:${ip}`, 10, 10 * 60 * 1000, { failOpen: false }))) {
         throw new Error("rate_limited");
       }
 

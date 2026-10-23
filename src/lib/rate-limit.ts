@@ -11,9 +11,22 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * Kthen true nëse lejohet, false nëse u kalua kufiri brenda dritares.
- * Fail-open: nëse DB-ja dështon, lejon (nuk bllokon rrugën kritike) por logon.
+ *
+ * Sjellja kur DB-ja s'arrihet varet nga `failOpen`:
+ *  - failOpen=true (parazgjedhje): LEJON — për disponueshmëri te rrugët jo kritike
+ *    (register, resend, forgot). Nuk e dobëson kufirin e tentativave të kodit, sepse
+ *    verifikimi vetë është fail-CLOSED (shih më poshtë): kur limiter-i s'arrihet, resend
+ *    mund të lëshojë kode të reja, por ASNJË verifikim/guess s'lejohet.
+ *  - failOpen=false: REFUZON (kthen false) — për verifikimin. Kur s'mund të garantojmë
+ *    kufirin e tentativave, refuzojmë përkohësisht PA e konsumuar kredencialin.
  */
-export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+export async function rateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+  opts: { failOpen?: boolean } = {}
+): Promise<boolean> {
+  const failOpen = opts.failOpen ?? true;
   const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
   try {
     const rows = await prisma.$queryRaw<{ count: number }[]>`
@@ -30,8 +43,8 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
     const count = Number(rows[0]?.count ?? 1);
     return count <= limit;
   } catch (err) {
-    console.error("rateLimit DB error (fail-open):", err);
-    return true;
+    console.error(`rateLimit DB error (failOpen=${failOpen}):`, err);
+    return failOpen;
   }
 }
 

@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import {
   issueVerification,
   consumeVerification,
+  createPendingRegistration,
   MAX_CODE_ATTEMPTS,
 } from "@/lib/email-verification";
 import { ensureRestaurantWithTrial } from "@/lib/restaurant";
@@ -324,6 +325,66 @@ async function main() {
     const key2 = "test:rl:concurrent";
     const many = await Promise.all(Array.from({ length: 10 }, () => rateLimit(key2, 5, 60_000)));
     ok("concurrency: saktësisht 5 lejohen", many.filter(Boolean).length === 5, `allowed=${many.filter(Boolean).length}`);
+  }
+
+  // ── T16: Re-registration "latest-wins" — invalidim atomik i kredencialit të vjetër ──
+  console.log("\nT16 re-registration latest-wins (atomic):");
+  {
+    const email = `t16${SUF}`;
+    const r1 = await createPendingRegistration(email, "password-ONE", "Resto One");
+    const r2 = await createPendingRegistration(email, "password-TWO", "Resto Two");
+    ok("të dyja ok", r1.status === "ok" && r2.status === "ok");
+    if (r1.status === "ok" && r2.status === "ok") {
+      ok("tokenat ndryshojnë", r1.token !== r2.token);
+      // Linku/kodi i VJETËR s'duhet të verifikojë (password-i tani është i kërkesës së dytë).
+      ok("token i vjetër → invalid", (await consumeVerification({ token: r1.token })).status === "invalid");
+      ok("kod i vjetër → s'kalon", ["wrong_code", "invalid", "expired"].includes((await consumeVerification({ email, code: r1.code })).status));
+      // Password-i aktiv është i kërkesës së fundit (latest-wins).
+      const u = await prisma.user.findUnique({ where: { email } });
+      ok("passwordHash = i kërkesës së dytë", u ? await bcrypt.compare("password-TWO", u.passwordHash!) : false);
+      ok("jo i kërkesës së parë", u ? !(await bcrypt.compare("password-ONE", u.passwordHash!)) : false);
+      // Kredenciali i RI verifikon dhe krijon restorantin e kërkesës së dytë.
+      ok("token i ri → ok", (await consumeVerification({ token: r2.token })).status === "ok");
+      ok("slug nga 'Resto Two'", (await prisma.restaurant.findFirst({ where: { ownerId: u!.id } }))?.slug === "resto-two");
+      // Pas verifikimit: re-registration → already_verified (s'mbishkruhet).
+      ok("re-register pas verifikimit → already_verified", (await createPendingRegistration(email, "x-nope", "X")).status === "already_verified");
+    }
+  }
+
+  // ── T17: Verify fail-CLOSED kur limiter-i s'arrihet (pa konsumim kredenciali) ──
+  console.log("\nT17 verify fail-closed (limiter i padisponueshëm):");
+  {
+    const authorize = authorizeOf("verify-login");
+    const req = { headers: { "x-forwarded-for": "9.9.9.9" } };
+    const u = await makeUnverifiedOwner(`t17${SUF}`);
+    const { token } = await issueVerification(u.id);
+
+    // Rate-limit direkt: me tabelën të rënë, failOpen=false → false, failOpen=true → true.
+    await prisma.$executeRawUnsafe('DROP TABLE "RateLimit"');
+    try {
+      ok("rateLimit failOpen=false → false", (await rateLimit("test:fc", 3, 60_000, { failOpen: false })) === false);
+      ok("rateLimit failOpen=true → true", (await rateLimit("test:fo", 3, 60_000, { failOpen: true })) === true);
+
+      // Verifikimi REFUZOHET (rate_limited) dhe kredenciali NUK konsumohet.
+      let msg = "";
+      try { await authorize({ token }, req); } catch (e: any) { msg = e.message; }
+      ok("verify → throw rate_limited", msg === "rate_limited", `=${msg}`);
+      const rec = await prisma.emailVerification.findUnique({ where: { userId: u.id } });
+      ok("kredenciali s'u konsumua (used=false)", rec?.used === false);
+      ok("user s'u verifikua", (await prisma.user.findUnique({ where: { id: u.id } }))?.emailVerified === false);
+      ok("s'u krijua restaurant", (await restaurantCount(u.id)) === 0);
+    } finally {
+      // Rikrijo tabelën (siç te migrimi).
+      await prisma.$executeRawUnsafe(
+        'CREATE TABLE "RateLimit" ("key" TEXT NOT NULL, "count" INTEGER NOT NULL, "resetAt" TIMESTAMP(3) NOT NULL, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "RateLimit_pkey" PRIMARY KEY ("key"))'
+      );
+      await prisma.$executeRawUnsafe('CREATE INDEX "RateLimit_resetAt_idx" ON "RateLimit"("resetAt")');
+    }
+
+    // Pas rikthimit të limiter-it, kredenciali ende i vlefshëm verifikon normalisht.
+    const after = await authorize({ token }, req);
+    ok("pas rikthimit → verifikon (auto-login)", !!after && after.id === u.id);
+    ok("tani u krijua restaurant", (await restaurantCount(u.id)) === 1);
   }
 
   await cleanup();

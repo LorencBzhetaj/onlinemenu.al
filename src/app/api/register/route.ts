@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { issueVerification } from "@/lib/email-verification";
+import { createPendingRegistration } from "@/lib/email-verification";
 import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
@@ -33,45 +31,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const existing = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true, emailVerified: true },
-    });
-    // Email i regjistruar DHE i verifikuar → marrë vërtet.
-    if (existing?.emailVerified) {
+    // Krijim/rifreskim ATOMIK i regjistrimit të papërfunduar (password + kredencial në një tx).
+    // Restaurant+trial krijohen VETËM pas verifikimit të email-it (shih consumeVerification).
+    const reg = await createPendingRegistration(email, password, restaurantName);
+    if (reg.status === "already_verified") {
       return NextResponse.json(
         { error: "Ky email është i regjistruar tashmë." },
         { status: 409 }
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Krijo (ose rifresko një regjistrim të papërfunduar) User-in — PA Restaurant.
-    // Restaurant+trial krijohen VETËM pas verifikimit të email-it (shih consumeVerification).
-    const user = existing
-      ? await prisma.user.update({
-          where: { id: existing.id },
-          data: { passwordHash, pendingRestaurantName: restaurantName },
-          select: { id: true },
-        })
-      : await prisma.user.create({
-          data: {
-            email,
-            passwordHash,
-            role: "RESTAURANT_OWNER",
-            emailVerified: false,
-            pendingRestaurantName: restaurantName,
-          },
-          select: { id: true },
-        });
-
-    // Gjenero kredencialin e verifikimit (link + kod) dhe dërgo email-in.
-    const { token, code } = await issueVerification(user.id);
+    // Dërgo email-in me kredencialin e sapolëshuar (link + kod).
     const base = (process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
-    const verifyLink = `${base}/verify-email?token=${token}`;
-
-    const result = await sendVerificationEmail(email, verifyLink, code);
+    const verifyLink = `${base}/verify-email?token=${reg.token}`;
+    const result = await sendVerificationEmail(email, verifyLink, reg.code);
     if (!result.ok) {
       // Logo për debug — por mos e blloko regjistrimin (përdoruesi mund të ridërgojë).
       console.error("Verification email error:", result.error);
