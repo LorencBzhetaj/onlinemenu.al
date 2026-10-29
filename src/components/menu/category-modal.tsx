@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { Modal, Field, inputClass } from "./modal";
 import { CATEGORY_ICON_OPTIONS, CategoryIcon } from "@/lib/menu-icons";
+import { formatSchedule } from "./schedule-format";
 import { useApiFetch } from "@/components/restaurant-context";
-import type { CategoryDTO } from "@/lib/menu-types";
+import type { CategoryDTO, ScheduleDTO } from "@/lib/menu-types";
 
 export function CategoryModal({
   initial,
+  schedules,
   onClose,
   onSaved,
 }: {
   initial?: CategoryDTO;
+  schedules: ScheduleDTO[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -19,6 +22,7 @@ export function CategoryModal({
   const [nameAl, setNameAl] = useState(initial?.nameAl ?? "");
   const [nameEn, setNameEn] = useState(initial?.nameEn ?? "");
   const [icon, setIcon] = useState(initial?.icon ?? "other");
+  const [scheduleId, setScheduleId] = useState<string>(initial?.scheduleId ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const api = useApiFetch();
@@ -32,7 +36,7 @@ export function CategoryModal({
       {
         method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nameAl, nameEn, icon }),
+        body: JSON.stringify({ nameAl, nameEn, icon, scheduleId: scheduleId || null }),
       }
     );
     setSaving(false);
@@ -73,6 +77,19 @@ export function CategoryModal({
             ))}
           </div>
         </Field>
+
+        {schedules.length > 0 && (
+          <Field label="Orari i menusë" hint="opsional — kategoria shfaqet publikisht vetëm brenda orarit">
+            <select className={inputClass} value={scheduleId} onChange={(e) => setScheduleId(e.target.value)}>
+              <option value="">Gjithmonë e dukshme</option>
+              {schedules.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label} · {formatSchedule(s)}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

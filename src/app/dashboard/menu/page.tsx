@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { pageAccess, restaurantIdFromSearchParams } from "@/modules/memberships/access";
 import { DashboardNotice } from "@/components/dashboard-notice";
 import { MenuManager } from "./menu-manager";
-import type { CategoryDTO } from "@/lib/menu-types";
+import type { CategoryDTO, ItemDTO, AllergenDTO, ScheduleDTO } from "@/lib/menu-types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,23 +17,28 @@ export default async function MenuPage({
 
   // KRITIKE: skopim te restaurantId i validuar me membership. Dashboard-i shfaq edhe
   // artikujt e fshehur (pa filtër isVisible).
-  const categories = await prisma.category.findMany({
-    where: { restaurantId },
-    orderBy: { sortOrder: "asc" },
-    include: {
-      items: { orderBy: { sortOrder: "asc" } },
-      subcategories: {
-        orderBy: { sortOrder: "asc" },
-        include: { items: { orderBy: { sortOrder: "asc" } } },
+  const [categories, allergens, schedules] = await Promise.all([
+    prisma.category.findMany({
+      where: { restaurantId },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        items: { orderBy: { sortOrder: "asc" }, include: { allergens: { select: { allergenId: true } } } },
+        subcategories: {
+          orderBy: { sortOrder: "asc" },
+          include: { items: { orderBy: { sortOrder: "asc" }, include: { allergens: { select: { allergenId: true } } } } },
+        },
       },
-    },
-  });
+    }),
+    prisma.allergen.findMany({ where: { restaurantId }, orderBy: { sortOrder: "asc" } }),
+    prisma.menuSchedule.findMany({ where: { restaurantId }, orderBy: { label: "asc" } }),
+  ]);
 
   const tree: CategoryDTO[] = categories.map((c) => ({
     id: c.id,
     nameAl: c.nameAl,
     nameEn: c.nameEn,
     icon: c.icon,
+    scheduleId: c.scheduleId,
     sortOrder: c.sortOrder,
     items: c.items.map(toItem),
     subcategories: c.subcategories.map((s) => ({
@@ -45,7 +50,16 @@ export default async function MenuPage({
     })),
   }));
 
-  return <MenuManager initialTree={tree} />;
+  const allergenDtos: AllergenDTO[] = allergens.map((a) => ({ id: a.id, nameAl: a.nameAl, nameEn: a.nameEn, icon: a.icon }));
+  const scheduleDtos: ScheduleDTO[] = schedules.map((s) => ({
+    id: s.id,
+    label: s.label,
+    days: s.days,
+    startMinutes: s.startMinutes,
+    endMinutes: s.endMinutes,
+  }));
+
+  return <MenuManager initialTree={tree} allergens={allergenDtos} schedules={scheduleDtos} />;
 }
 
 function toItem(i: {
@@ -59,8 +73,10 @@ function toItem(i: {
   isChefPick: boolean;
   isDailyMenu: boolean;
   isVisible: boolean;
+  isAvailable: boolean;
   sortOrder: number;
-}) {
+  allergens: { allergenId: string }[];
+}): ItemDTO {
   return {
     id: i.id,
     nameAl: i.nameAl,
@@ -72,6 +88,8 @@ function toItem(i: {
     isChefPick: i.isChefPick,
     isDailyMenu: i.isDailyMenu,
     isVisible: i.isVisible,
+    isAvailable: i.isAvailable,
+    allergenIds: i.allergens.map((a) => a.allergenId),
     sortOrder: i.sortOrder,
   };
 }

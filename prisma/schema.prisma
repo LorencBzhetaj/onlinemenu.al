@@ -114,6 +114,11 @@ model Restaurant {
   phone        String?
   whatsapp     String?
   address      String?
+  // Koordinata opsionale (profil/Informacion). Lidhja e hartës ruhet si RestaurantExternalLink(MAPS).
+  mapsUrl      String?
+  // Përshkrim i shkurtër i restorantit për faqen e profilit/informacionit (opsional, per-gjuhë).
+  aboutAl      String?
+  aboutEn      String?
   isPublished  Boolean @default(false) // owner mund ta fikë/ndezë menunë
 
   // Përmbajtje e Hero-s publike (opsionale; do të editohen te moduli Settings).
@@ -129,16 +134,87 @@ model Restaurant {
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
 
-  subscription Subscription?
-  memberships  RestaurantMembership[]
-  categories   Category[]
-  tastingMenus TastingMenu[]
-  analytics    MenuView[]
+  subscription  Subscription?
+  memberships   RestaurantMembership[]
+  categories    Category[]
+  tastingMenus  TastingMenu[]
+  analytics     MenuView[]
+  externalLinks RestaurantExternalLink[]
+  allergens     Allergen[]
+  menuSchedules MenuSchedule[]
+  qrCode        QrCode?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Lidhje të jashtme opsionale (Wolt, Maps, Instagram, Website)
+// Hapen nga shfletuesi; serveri s'merr menu/porosi prej tyre. Validim URL në service
+// (HTTPS + host allowlist për Wolt/Instagram). Telefoni ruhet te Restaurant.phone (tel:).
+// ─────────────────────────────────────────────────────────────
+model RestaurantExternalLink {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  type         String // "WOLT" | "MAPS" | "INSTAGRAM" | "WEBSITE"
+  url          String
+  enabled      Boolean    @default(true)
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([restaurantId, type])
+  @@index([restaurantId])
+}
+
+// Kod QR opak dhe i pandryshueshëm → resolver `/q/[code]` çon te profili i restorantit.
+// Një rekord për restorant. `/m/[slug]` ruhet si alias historik (redirect te profili).
+model QrCode {
+  code         String     @id // kod opak (nuk kodon datë/tavolinë/rezervim)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String     @unique
+  createdAt    DateTime   @default(now())
+}
+
+// Alergjenë të përcaktuar nga restoranti (tenant-scoped); lidhen me artikuj (M:N).
+model Allergen {
+  id           String             @id @default(cuid())
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  nameAl       String
+  nameEn       String
+  icon         String?
+  sortOrder    Int                @default(0)
+  items        MenuItemAllergen[]
+
+  @@index([restaurantId])
+}
+
+model MenuItemAllergen {
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  menuItemId String
+  allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: Cascade)
+  allergenId String
+
+  @@id([menuItemId, allergenId])
+  @@index([allergenId])
+}
+
+// Orari i menusë: dritare kohore javore. Kategoritë mund të lidhen me një orar —
+// shfaqen në menunë publike vetëm kur ora aktuale (Europe/Tirane) bie brenda dritares.
+// Kategoritë pa orar shfaqen gjithmonë. days: 0=E Diel … 6=E Shtunë; minuta nga mesnata.
+model MenuSchedule {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  label        String
+  days         Int[]
+  startMinutes Int // 0..1439
+  endMinutes   Int // 0..1440; nëse < startMinutes → dritare që kalon mesnatën
+  categories   Category[]
+
+  @@index([restaurantId])
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -181,11 +257,15 @@ model Category {
   nameEn       String
   icon         String?
   sortOrder    Int        @default(0)
+  // Orar opsional i menusë: kategoria shfaqet publikisht vetëm brenda dritares së orarit.
+  schedule     MenuSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  scheduleId   String?
 
   subcategories Subcategory[]
   items         MenuItem[] // përdoret nëse s'ka subcategories
 
   @@index([restaurantId])
+  @@index([scheduleId])
 }
 
 model Subcategory {
@@ -217,10 +297,14 @@ model MenuItem {
   imageUrl    String?
   isChefPick  Boolean @default(false) // "Rekomandimet e Shefit"
   isDailyMenu Boolean @default(false) // "Menu Ditore"
-  isVisible   Boolean @default(true)
+  isVisible   Boolean @default(true) // false = fshehur plotësisht nga menuja publike
+  // false = shfaqet por i shënuar "përkohësisht i padisponueshëm" (ndryshe nga fshehja).
+  isAvailable Boolean @default(true)
   avgRating   Float?  @default(0) // vlerësim me yje
   ratingCount Int     @default(0)
   sortOrder   Int     @default(0)
+
+  allergens MenuItemAllergen[]
 
   @@index([categoryId])
   @@index([subcategoryId])

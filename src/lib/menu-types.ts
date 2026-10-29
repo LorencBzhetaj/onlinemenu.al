@@ -11,7 +11,18 @@ export type ItemDTO = {
   isChefPick: boolean;
   isDailyMenu: boolean;
   isVisible: boolean;
+  isAvailable: boolean;
+  allergenIds: string[];
   sortOrder: number;
+};
+
+export type AllergenDTO = { id: string; nameAl: string; nameEn: string; icon: string | null };
+export type ScheduleDTO = {
+  id: string;
+  label: string;
+  days: number[];
+  startMinutes: number;
+  endMinutes: number;
 };
 
 export type SubcategoryDTO = {
@@ -27,6 +38,7 @@ export type CategoryDTO = {
   nameAl: string;
   nameEn: string;
   icon: string | null;
+  scheduleId: string | null;
   sortOrder: number;
   items: ItemDTO[];
   subcategories: SubcategoryDTO[];

@@ -50,6 +50,16 @@ export function ItemRow({
               Ditore
             </span>
           )}
+          {!item.isAvailable && (
+            <span className="text-[10px] rounded-full border border-amber-400/50 bg-amber-50 text-amber-700 px-1.5 py-0.5">
+              Pa stok
+            </span>
+          )}
+          {item.allergenIds.length > 0 && (
+            <span className="text-[10px] rounded-full border border-line text-muted px-1.5 py-0.5">
+              {item.allergenIds.length} alergjen{item.allergenIds.length === 1 ? "" : "ë"}
+            </span>
+          )}
         </div>
         {item.descAl && (
           <p className="text-xs text-muted truncate">{item.descAl}</p>

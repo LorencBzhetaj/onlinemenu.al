@@ -657,3 +657,198 @@
   width: 16px;
   height: 16px;
 }
+
+/* ===== KËRKIMI ===== */
+.qm-search-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 18px 20px 0;
+}
+.qm-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 16px;
+  box-shadow: var(--shadow);
+}
+.qm-search svg {
+  width: 18px;
+  height: 18px;
+  color: var(--olive-dark);
+  flex-shrink: 0;
+}
+.qm-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  min-height: 48px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.qm-search input::placeholder {
+  color: var(--ink-soft);
+}
+.qm-search-clear {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.qm-search-cat {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--olive-dark);
+  margin-bottom: 6px;
+}
+.qm-search-empty {
+  text-align: center;
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-soft);
+  padding: 20px;
+}
+
+/* ===== ALERGJENËT ===== */
+.qm-item-allergens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.qm-allergen-chip {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  letter-spacing: 0.5px;
+  color: var(--olive-dark);
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.qm-allergen-legend {
+  max-width: 640px;
+  margin: 34px auto 0;
+  padding: 18px 20px;
+}
+.qm-allergen-legend-title {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--olive-dark);
+  margin-bottom: 10px;
+  text-align: center;
+}
+.qm-allergen-legend-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* ===== DISPONUESHMËRIA ===== */
+.qm-unavail {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8a5a1c;
+  background: rgba(167, 121, 52, 0.12);
+  border: 1px solid rgba(167, 121, 52, 0.3);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.qm-card.is-unavailable,
+.qm-item-row.is-unavailable {
+  opacity: 0.6;
+}
+
+/* Yll për rekomandimin e shefit */
+.qm-chef {
+  color: var(--gold);
+  margin-right: 5px;
+}
+
+/* ===== TABS PUBLIKE (Restoranti · Menuja · Informacion) =====
+   Navigim i njëtrajtshëm, phone-first: shirit i fiksuar poshtë në telefon,
+   pill lundrues në qendër-poshtë në desktop. Faqet shtojnë padding-bottom. */
+.rpub-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  background: var(--charcoal, #0f1720);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.rpub-tabs a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 60px;
+  justify-content: center;
+  text-decoration: none;
+  font-family: var(--font-ui, sans-serif);
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.2s ease;
+}
+.rpub-tabs a svg {
+  width: 20px;
+  height: 20px;
+}
+.rpub-tabs a.active {
+  color: var(--gold, #c9a24b);
+}
+@media (min-width: 900px) {
+  .rpub-tabs {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    bottom: 18px;
+    width: auto;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  }
+  .rpub-tabs a {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 20px;
+    border-radius: 999px;
+    font-size: 0.66rem;
+  }
+  .rpub-tabs a.active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Hapësirë poshtë që shiriti i fiksuar të mos mbulojë përmbajtjen. */
+.qr-menu,
+.rprofile {
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
+}

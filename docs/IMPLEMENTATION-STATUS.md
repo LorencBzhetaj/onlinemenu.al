@@ -19,7 +19,39 @@ Dokumenti kryesor i statusit. Referenca:
 | Faza 0 — baseline & spec i zbatueshëm | ✅ i dokumentuar sipas kodit aktual |
 | Faza 1 — tenant/rol/entitlement | ✅ **implementuar** + kontroll integrimi (E2E 19/19); **lokal, pa push/migrim live** |
 | Faza 2 — design system + layout-e | ✅ **implementuar** (krem/jeshile); 0 overflow @390/1440; build OK |
+| Faza 3 — profil QR, lidhje, menu e plotë | ✅ **implementuar**; teste 41/41 + E2E 23/23; 0 overflow @390/1440; **lokal, pa push/migrim live** |
 | Booking (Faza 4) | ⛔ jo i nisur; repo `restorant` jashtë scope-it të sesionit |
+
+---
+
+## 0.2 Faza 3 — Profili QR, lidhjet dhe menuja e plotë (e implementuar)
+
+Klienti hap **profilin** e restorantit nga QR; menuja, informacioni dhe lidhjet hapen prej tij. Brandi i restorantit ka përparësi; trupi përdor formatin e miratuar (sfond krem, karta të buta, cepa të rrumbullakosur, navigim i njëtrajtshëm në telefon).
+
+**Rrugë publike të reja:**
+- `/restaurants/[slug]` — profili (hero i brenduar + veprime Menu/Informacion + lidhje + telefon; rezervim vetëm kur ka modul + destinacion funksional).
+- `/restaurants/[slug]/menu` — menuja e brenduar (kërkim pjatash, alergjenë, disponueshmëri, orare menuje).
+- `/restaurants/[slug]/info` — informacion & kontakt (adresë/hartë, telefon, WhatsApp, lidhje).
+- `/q/[code]` — **QR resolver** (kod opak → redirect te profili).
+- `/m/[slug]` — **alias historik**: QR-të e printuara ruhen funksionale, tani ridrejtojnë te profili (slug i pandryshueshëm).
+
+**QR hap profilin, jo menunë.** Kodi QR është **opak e i pandryshueshëm** (`QrCode.code`); ndryshimi i emrit/menusë nuk e prek. QR-i tani kodon `/q/[code]`; `/m/[slug]` i vjetër redirekton te profili.
+
+**Lidhjet e jashtme (Wolt/Maps/Instagram/Website):** opsionale, hapen nga shfletuesi; serveri **nuk** bën fetch. Validim: **vetëm HTTPS** + **host allowlist** për Wolt (`wolt.com`), Instagram (`instagram.com`), Maps (Google). Telefoni → `tel:` (i normalizuar). **Wolt = vetëm lidhje e jashtme.**
+
+**Rezervimi (gated):** shfaqet **vetëm** kur entitlement **BOOKING** është aktiv **DHE** ka destinacion funksional (WhatsApp/telefon i restorantit) — kontakt, jo motor rezervimesh. **NUK** lidhet me booking-un live të Gjeçaj. Meqë BOOKING është `disabled` për të gjithë (Faza 1), butoni nuk shfaqet në praktikë; motori i plotë `/reserve` → Faza 5.
+
+**Menu e plotë:** alergjenë (tenant-scoped, M:N me artikujt) · **hidden (`isVisible=false`) kundrejt temporarily unavailable (`isAvailable=false`)** · orare menuje (dritare javore Europe/Tirane; kategoria shfaqet publikisht vetëm brenda dritares) · kërkim pjatash (emër/përshkrim) · menu degustuese CRUD · çmimet mbajnë njësinë ALL.
+
+**Paneli:** `/dashboard/links` (lidhjet, validim + aktivizo/fshi), `/dashboard/tasting-menus` (CRUD kurse/çmim/persona), menaxherë **Alergjenët** + **Oraret** te faqja Menu, alergjenë + disponueshmëri te forma e artikullit, orar te forma e kategorisë, përshkrim profili (about AL/EN) te Cilësime, QR tani kodon `/q/[code]`.
+
+**Module të reja:** `src/modules/restaurants/{public-profile,external-links,qr}.ts`, `src/modules/menu/schedule.ts`, `src/lib/public-theme.ts`, `src/components/public/*`.
+
+**Migrimi (lokal):** `prisma/migrations/20261025000000_phase3_...` — `RestaurantExternalLink`, `QrCode`, `Allergen`, `MenuItemAllergen`, `MenuSchedule` + `Category.scheduleId` + `MenuItem.isAvailable` + `Restaurant.{mapsUrl,aboutAl,aboutEn}` + backfill QR-kod për restorantet ekzistuese. **Aplikuar vetëm lokal me `npm run db:deploy:test`.**
+
+**Akses:** API-të e reja përdorin `guardRestaurant(header)` + entitlement **MENU** për shkrimet e menusë (alergjenë/orare/tasting/menu-items); lidhjet/profili = `links/settings:write` (pa MENU). Alergjenët e lidhur me artikuj filtrohen me tenant (s'lidhen cross-tenant).
+
+**Kontroll verifikimi:** `tests/phase3.test.ts` **41/41** (validim URL, QR resolver + ndryshim emri, orare, profil/gate, reserveDestination, menu data, izolim tenant). `tests/e2e/phase3.e2e.ts` **23/23** (QR→profil, `/m`→profil, profil/menu/info, Wolt jashtme, rezervim i gated-uar, kërkim, alergjen, disponueshmëri, akses API; screenshots @390/1440 → **0 overflow**). `tsc` 0 · `next build` OK.
 
 ---
 

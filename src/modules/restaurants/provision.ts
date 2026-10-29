@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { slugify } from "@/lib/slug";
+import { generateQrCode } from "./qr";
 
 export const TRIAL_DAYS = 30;
 
@@ -61,6 +62,8 @@ export async function createRestaurantForOwner(
       memberships: {
         create: { role: "OWNER", status: "active", user: { connect: { id: ownerId } } },
       },
+      // Kod QR opak, krijuar atomikisht → `/q/[code]` çon te profili publik.
+      qrCode: { create: { code: generateQrCode() } },
     },
     select: { id: true, slug: true },
   });

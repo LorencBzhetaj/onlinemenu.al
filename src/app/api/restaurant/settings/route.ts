@@ -65,6 +65,10 @@ export async function PUT(req: Request) {
 
   const address = optText(body.address, 200);
 
+  // ── Përshkrimi i profilit (opsional, më i gjatë) ──
+  const aboutAl = optText(body.aboutAl, 600);
+  const aboutEn = optText(body.aboutEn, 600);
+
   // ── Publikimi ──
   const isPublished = Boolean(body.isPublished);
 
@@ -80,6 +84,8 @@ export async function PUT(req: Request) {
       phone,
       whatsapp,
       address,
+      aboutAl,
+      aboutEn,
       isPublished,
     },
     select: {
@@ -92,6 +98,8 @@ export async function PUT(req: Request) {
       phone: true,
       whatsapp: true,
       address: true,
+      aboutAl: true,
+      aboutEn: true,
       isPublished: true,
     },
   });

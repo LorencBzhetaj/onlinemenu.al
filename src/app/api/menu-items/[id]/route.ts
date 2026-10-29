@@ -53,10 +53,27 @@ export async function PUT(
   if (body.isChefPick !== undefined) data.isChefPick = Boolean(body.isChefPick);
   if (body.isDailyMenu !== undefined) data.isDailyMenu = Boolean(body.isDailyMenu);
   if (body.isVisible !== undefined) data.isVisible = Boolean(body.isVisible);
+  if (body.isAvailable !== undefined) data.isAvailable = Boolean(body.isAvailable);
 
-  const item = await prisma.menuItem.update({
-    where: { id: params.id },
-    data,
+  // Alergjenët (opsional): kur jepet array, zëvendëson plotësisht; vetëm ata të tenant-it.
+  const replaceAllergens = Array.isArray(body.allergenIds);
+  const allergenIds: string[] = replaceAllergens ? body.allergenIds.map(String) : [];
+
+  const item = await prisma.$transaction(async (tx) => {
+    const updated = await tx.menuItem.update({ where: { id: params.id }, data });
+    if (replaceAllergens) {
+      const owned = await tx.allergen.findMany({
+        where: { id: { in: allergenIds }, restaurantId },
+        select: { id: true },
+      });
+      await tx.menuItemAllergen.deleteMany({ where: { menuItemId: params.id } });
+      if (owned.length > 0) {
+        await tx.menuItemAllergen.createMany({
+          data: owned.map((a) => ({ menuItemId: params.id, allergenId: a.id })),
+        });
+      }
+    }
+    return updated;
   });
 
   return NextResponse.json(item);

@@ -7,6 +7,7 @@ const NAV = [
   { href: "/dashboard", label: "Përmbledhje" },
   { href: "/dashboard/menu", label: "Menu" },
   { href: "/dashboard/tasting-menus", label: "Menu Degustuese" },
+  { href: "/dashboard/links", label: "Lidhje" },
   { href: "/dashboard/branding", label: "Personalizim" },
   { href: "/dashboard/qr", label: "QR Kod" },
   { href: "/dashboard/analytics", label: "Analitika" },

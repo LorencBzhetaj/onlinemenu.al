@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CategoryIcon } from "@/lib/menu-icons";
 import { getInitials } from "@/lib/branding";
+import { useLang } from "./use-lang";
 
 // ── Tipat e të dhënave publike (vetëm artikuj të dukshëm vijnë nga serveri) ──
 export type PubItem = {
@@ -13,9 +14,13 @@ export type PubItem = {
   descEn: string | null;
   price: number;
   imageUrl: string | null;
+  isChefPick: boolean;
+  isAvailable: boolean;
+  allergenIds: string[];
 };
 
 export type MenuPhotoStyle = "large" | "thumbnail" | "none";
+export type PubAllergen = { id: string; nameAl: string; nameEn: string; icon: string | null };
 export type PubSubcat = { id: string; nameAl: string; nameEn: string; items: PubItem[] };
 export type PubCategory = {
   id: string;
@@ -36,66 +41,63 @@ export type PubTasting = {
 export type PubRestaurant = {
   name: string;
   logoUrl: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  address: string | null;
   estYear: number | null;
-  taglineAl: string | null;
-  taglineEn: string | null;
-  subtitleAl: string | null;
-  subtitleEn: string | null;
 };
 
-type Lang = "al" | "en";
-const STORAGE_KEY = "menu-lang";
-
-/** Gjuha: default 'al' (SSR-safe), pastaj sinkronizohet me localStorage. */
-function useLang() {
-  const [lang, setLang] = useState<Lang>("al");
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem(STORAGE_KEY);
-      if (s === "al" || s === "en") setLang(s);
-    } catch {
-      /* private mode */
-    }
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, lang);
-    } catch {
-      /* ignore */
-    }
-    document.documentElement.lang = lang === "al" ? "sq" : "en";
-  }, [lang]);
-  return { lang, setLang };
-}
+type Suffix = "Al" | "En";
 
 export function PublicMenu({
   restaurant,
   categories,
   tastingMenus,
+  allergens,
   photoStyle,
 }: {
   restaurant: PubRestaurant;
   categories: PubCategory[];
   tastingMenus: PubTasting[];
+  allergens: PubAllergen[];
   photoStyle: MenuPhotoStyle;
 }) {
   const { lang, setLang } = useLang();
   const [mode, setMode] = useState<"main" | "tasting">("main");
   const [activeCat, setActiveCat] = useState(categories[0]?.id ?? "");
+  const [query, setQuery] = useState("");
 
-  // Vetëm gjuha e zgjedhur rendon kurdoherë (React conditional, jo CSS toggle).
   const t = (al: string, en: string) => (lang === "al" ? al : en);
-  const suffix = lang === "al" ? "Al" : "En";
+  const suffix: Suffix = lang === "al" ? "Al" : "En";
+
+  const allergenMap = useMemo(() => {
+    const m = new Map<string, PubAllergen>();
+    allergens.forEach((a) => m.set(a.id, a));
+    return m;
+  }, [allergens]);
 
   const active = useMemo(
     () => categories.find((c) => c.id === activeCat) ?? categories[0],
     [categories, activeCat]
   );
 
+  // Kërkimi i pjatave: emër/përshkrim në gjuhën aktive + emri i kategorisë. Rezultate të sheshta.
+  const q = query.trim().toLowerCase();
+  const searchResults = useMemo(() => {
+    if (!q) return [];
+    const out: { item: PubItem; catName: string }[] = [];
+    const match = (i: PubItem) =>
+      (i[`name${suffix}`] ?? "").toLowerCase().includes(q) ||
+      (i[`desc${suffix}`] ?? "").toLowerCase().includes(q);
+    for (const c of categories) {
+      const catName = c[`name${suffix}`];
+      c.items.forEach((i) => match(i) && out.push({ item: i, catName }));
+      c.subcategories.forEach((s) =>
+        s.items.forEach((i) => match(i) && out.push({ item: i, catName: `${catName} · ${s[`name${suffix}`]}` }))
+      );
+    }
+    return out;
+  }, [q, categories, suffix]);
+
   const hasTasting = tastingMenus.length > 0;
+  const searching = q.length > 0;
 
   return (
     <>
@@ -113,7 +115,7 @@ export function PublicMenu({
           <div>
             <div className="qm-brand-name">{restaurant.name}</div>
             <span className="qm-brand-sub">
-              {t("RESTORANT", "RESTAURANT")}
+              {t("MENUJA", "MENU")}
               {restaurant.estYear ? ` · EST. ${restaurant.estYear}` : ""}
             </span>
           </div>
@@ -129,49 +131,49 @@ export function PublicMenu({
         </div>
       </header>
 
-      {/* ===== HERO ===== */}
-      <section className="qm-hero">
-        {restaurant.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="qm-hero-crest" src={restaurant.logoUrl} alt={restaurant.name} width={78} height={78} />
-        ) : (
-          <div className="qm-hero-crest-fallback">{getInitials(restaurant.name)}</div>
-        )}
-
-        {restaurant.estYear && <div className="qm-hero-est">EST. {restaurant.estYear}</div>}
-        <h1>{restaurant.name}</h1>
-        <div className="qm-hero-divider" />
-        {/* Fallback per-gjuhë: shfaq vetëm nëse gjuha AKTIVE e ka vlerën (jo "ndonjëra"). */}
-        {restaurant[`tagline${suffix}`] && (
-          <div className="qm-hero-script">{restaurant[`tagline${suffix}`]}</div>
-        )}
-        {restaurant[`subtitle${suffix}`] && (
-          <div className="qm-hero-tagline">{restaurant[`subtitle${suffix}`]}</div>
-        )}
-
-        {/* Toggle Main / Tasting (vetëm nëse ka menu degustuese) */}
-        {hasTasting && (
-          <div className="qm-menu-toggle">
-            <button type="button" className={mode === "main" ? "active" : ""} aria-pressed={mode === "main"} onClick={() => setMode("main")}>
-              {t("MENU KRYESORE", "MAIN MENU")}
-              <span className="qm-toggle-sub">{t("Antipasta, sallata, pjata & pije", "Starters, salads, mains & drinks")}</span>
+      {/* ===== KËRKIMI ===== */}
+      <div className="qm-search-wrap">
+        <div className="qm-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("Kërko pjatë…", "Search a dish…")}
+            aria-label={t("Kërko pjatë", "Search a dish")}
+          />
+          {query && (
+            <button type="button" className="qm-search-clear" onClick={() => setQuery("")} aria-label={t("Pastro", "Clear")}>
+              ×
             </button>
-            <button type="button" className={mode === "tasting" ? "active" : ""} aria-pressed={mode === "tasting"} onClick={() => setMode("tasting")}>
-              {t("MENU DEGUSTUESE", "TASTING MENU")}
-              <span className="qm-toggle-sub">{t("Menu fikse, për 2 persona", "Fixed menu, for 2 people")}</span>
-            </button>
-          </div>
-        )}
-      </section>
+          )}
+        </div>
+      </div>
 
       {/* ===== PËRMBAJTJA ===== */}
       <main>
-        {mode === "main" || !hasTasting ? (
+        {searching ? (
+          <SearchResults results={searchResults} suffix={suffix} t={t} allergenMap={allergenMap} photoStyle={photoStyle} />
+        ) : mode === "main" || !hasTasting ? (
           <>
             <div className="qm-section-heading">
               <div className="qm-section-eyebrow">{t("MENUJA", "THE MENU")}</div>
               <h2 className="qm-section-title">{t("Zbuloni Shijet Tona", "Discover Our Flavours")}</h2>
             </div>
+
+            {hasTasting && (
+              <div className="qm-menu-toggle">
+                <button type="button" className={mode === "main" ? "active" : ""} aria-pressed={mode === "main"} onClick={() => setMode("main")}>
+                  {t("MENU KRYESORE", "MAIN MENU")}
+                </button>
+                <button type="button" className={mode === "tasting" ? "active" : ""} aria-pressed={mode === "tasting"} onClick={() => setMode("tasting")}>
+                  {t("MENU DEGUSTUESE", "TASTING MENU")}
+                </button>
+              </div>
+            )}
 
             {categories.length > 1 && (
               <div className="qm-tabs-wrap">
@@ -196,16 +198,14 @@ export function PublicMenu({
 
             {active && (
               <>
-                {/* Artikuj direkt nën kategori -> karta */}
                 {active.items.length > 0 && (
                   <div className="qm-items">
                     {active.items.map((item) => (
-                      <MenuCard key={item.id} item={item} suffix={suffix} photoStyle={photoStyle} />
+                      <MenuCard key={item.id} item={item} suffix={suffix} photoStyle={photoStyle} allergenMap={allergenMap} t={t} />
                     ))}
                   </div>
                 )}
 
-                {/* Nën-kategoritë -> layout 2-kolonësh */}
                 {active.subcategories.length > 0 && (
                   <div className="qm-subcats-wrap">
                     {chunkPairs(active.subcategories).map((pair, i) => (
@@ -214,13 +214,7 @@ export function PublicMenu({
                           <div className="qm-subcat-col" key={sub.id}>
                             <div className="qm-subcat-title">{sub[`name${suffix}`]}</div>
                             {sub.items.map((item) => (
-                              <div className="qm-item-row" key={item.id}>
-                                <div className="qm-item-row-top">
-                                  <span className="qm-item-name">{item[`name${suffix}`]}</span>
-                                  <span className="qm-item-price">{item.price}</span>
-                                </div>
-                                {item[`desc${suffix}`] && <p className="qm-item-desc-sm">{item[`desc${suffix}`]}</p>}
-                              </div>
+                              <ItemRow key={item.id} item={item} suffix={suffix} allergenMap={allergenMap} t={t} />
                             ))}
                           </div>
                         ))}
@@ -235,7 +229,7 @@ export function PublicMenu({
           <>
             <div className="qm-section-heading">
               <div className="qm-section-eyebrow">{t("DEGUSTIM", "TASTING")}</div>
-              <h2 className="qm-section-title">{t("Sofra e Malësisë", "The Highland Table")}</h2>
+              <h2 className="qm-section-title">{t("Menu Degustuese", "Tasting Menus")}</h2>
             </div>
             <div className="qm-tasting-wrap">
               {tastingMenus.map((menu) => (
@@ -258,59 +252,114 @@ export function PublicMenu({
             </div>
           </>
         )}
-      </main>
 
-      {/* ===== FOOTER ===== */}
-      <Footer restaurant={restaurant} t={t} />
+        {/* Legjenda e alergjenëve */}
+        {allergens.length > 0 && !searching && (
+          <div className="qm-allergen-legend">
+            <div className="qm-allergen-legend-title">{t("Alergjenët", "Allergens")}</div>
+            <div className="qm-allergen-legend-list">
+              {allergens.map((a) => (
+                <span key={a.id} className="qm-allergen-chip">
+                  {a.icon ? `${a.icon} ` : ""}
+                  {a[`name${suffix}` as "nameAl" | "nameEn"]}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
     </>
   );
 }
 
-function Footer({
-  restaurant,
+function SearchResults({
+  results,
+  suffix,
   t,
+  allergenMap,
+  photoStyle,
 }: {
-  restaurant: PubRestaurant;
+  results: { item: PubItem; catName: string }[];
+  suffix: Suffix;
   t: (al: string, en: string) => string;
+  allergenMap: Map<string, PubAllergen>;
+  photoStyle: MenuPhotoStyle;
 }) {
-  const waDigits = restaurant.whatsapp?.replace(/[^0-9]/g, "") ?? "";
-  const reserveMsg = t(
-    `Përshëndetje! Dua të rezervoj një tavolinë te ${restaurant.name}.`,
-    `Hello! I'd like to reserve a table at ${restaurant.name}.`
-  );
-  const reserveHref = waDigits
-    ? `https://wa.me/${waDigits}?text=${encodeURIComponent(reserveMsg)}`
-    : restaurant.phone
-      ? `tel:${restaurant.phone}`
-      : null;
-
   return (
-    <footer className="qm-footer">
-      <div className="qm-footer-note">
-        {t(
-          "✓ Produktet tona janë të kultivuara dhe të korrura në vend",
-          "✓ Our products are locally grown and harvested"
-        )}
+    <>
+      <div className="qm-section-heading">
+        <div className="qm-section-eyebrow">{t("KËRKIMI", "SEARCH")}</div>
+        <h2 className="qm-section-title">
+          {results.length} {t("rezultate", "results")}
+        </h2>
       </div>
-      <div className="qm-script">{t("Shijoni gatimet tona", "Enjoy our dishes")}</div>
-      {(restaurant.address || restaurant.phone) && (
-        <div className="qm-contact">
-          {restaurant.address && <span>{restaurant.address}</span>}
-          {restaurant.address && restaurant.phone && " · "}
-          {restaurant.phone && <a href={`tel:${restaurant.phone}`}>{restaurant.phone}</a>}
+      {results.length === 0 ? (
+        <p className="qm-search-empty">{t("Asnjë pjatë nuk përputhet.", "No dish matches.")}</p>
+      ) : (
+        <div className="qm-items">
+          {results.map(({ item, catName }) => (
+            <div key={item.id}>
+              <div className="qm-search-cat">{catName}</div>
+              <MenuCard item={item} suffix={suffix} photoStyle={photoStyle} allergenMap={allergenMap} t={t} />
+            </div>
+          ))}
         </div>
       )}
+    </>
+  );
+}
 
-      {reserveHref && (
-        <a className="qm-reserve-btn" href={reserveHref} target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="16" rx="2" />
-            <path d="M8 3v4M16 3v4M3 10h18" />
-          </svg>
-          {t("REZERVO TAVOLINË", "RESERVE A TABLE")}
-        </a>
-      )}
-    </footer>
+function AllergenTags({
+  ids,
+  allergenMap,
+  suffix,
+}: {
+  ids: string[];
+  allergenMap: Map<string, PubAllergen>;
+  suffix: Suffix;
+}) {
+  const list = ids.map((id) => allergenMap.get(id)).filter(Boolean) as PubAllergen[];
+  if (list.length === 0) return null;
+  return (
+    <div className="qm-item-allergens">
+      {list.map((a) => (
+        <span key={a.id} className="qm-allergen-chip">
+          {a.icon ? `${a.icon} ` : ""}
+          {a[`name${suffix}` as "nameAl" | "nameEn"]}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function UnavailableBadge({ t }: { t: (al: string, en: string) => string }) {
+  return <span className="qm-unavail">{t("Përkohësisht i padisponueshëm", "Temporarily unavailable")}</span>;
+}
+
+function ItemRow({
+  item,
+  suffix,
+  allergenMap,
+  t,
+}: {
+  item: PubItem;
+  suffix: Suffix;
+  allergenMap: Map<string, PubAllergen>;
+  t: (al: string, en: string) => string;
+}) {
+  return (
+    <div className={`qm-item-row ${item.isAvailable ? "" : "is-unavailable"}`}>
+      <div className="qm-item-row-top">
+        <span className="qm-item-name">
+          {item.isChefPick && <span className="qm-chef" title={t("Rekomandim i Shefit", "Chef's pick")}>★</span>}
+          {item[`name${suffix}`]}
+        </span>
+        <span className="qm-item-price">{item.price}</span>
+      </div>
+      {item[`desc${suffix}`] && <p className="qm-item-desc-sm">{item[`desc${suffix}`]}</p>}
+      {!item.isAvailable && <UnavailableBadge t={t} />}
+      <AllergenTags ids={item.allergenIds} allergenMap={allergenMap} suffix={suffix} />
+    </div>
   );
 }
 
@@ -325,10 +374,14 @@ function MenuCard({
   item,
   suffix,
   photoStyle,
+  allergenMap,
+  t,
 }: {
   item: PubItem;
-  suffix: "Al" | "En";
+  suffix: Suffix;
   photoStyle: MenuPhotoStyle;
+  allergenMap: Map<string, PubAllergen>;
+  t: (al: string, en: string) => string;
 }) {
   const name = item[`name${suffix}`];
   const desc = item[`desc${suffix}`];
@@ -343,19 +396,34 @@ function MenuCard({
     </div>
   );
 
+  const nameEl = (
+    <h3 className="qm-card-name">
+      {item.isChefPick && <span className="qm-chef" title={t("Rekomandim i Shefit", "Chef's pick")}>★</span>}
+      {name}
+    </h3>
+  );
+
+  const extras = (
+    <>
+      {!item.isAvailable && <UnavailableBadge t={t} />}
+      <AllergenTags ids={item.allergenIds} allergenMap={allergenMap} suffix={suffix} />
+    </>
+  );
+
   if (showThumb) {
     return (
-      <article className="qm-card">
+      <article className={`qm-card ${item.isAvailable ? "" : "is-unavailable"}`}>
         <div className="qm-card-thumbrow">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="qm-card-thumb" src={item.imageUrl!} alt="" />
           <div className="qm-card-thumbmain">
             <div className="qm-card-top">
-              <h3 className="qm-card-name">{name}</h3>
+              {nameEl}
               {priceBadge}
             </div>
             <div className="qm-card-rule" />
             {desc && <p className="qm-card-desc">{desc}</p>}
+            {extras}
           </div>
         </div>
       </article>
@@ -363,17 +431,18 @@ function MenuCard({
   }
 
   return (
-    <article className={`qm-card ${showLarge ? "qm-card--photo" : ""}`}>
+    <article className={`qm-card ${showLarge ? "qm-card--photo" : ""} ${item.isAvailable ? "" : "is-unavailable"}`}>
       {showLarge && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="qm-card-photo" src={item.imageUrl!} alt="" />
       )}
       <div className="qm-card-top">
-        <h3 className="qm-card-name">{name}</h3>
+        {nameEl}
         {priceBadge}
       </div>
       <div className="qm-card-rule" />
       {desc && <p className="qm-card-desc">{desc}</p>}
+      {extras}
     </article>
   );
 }

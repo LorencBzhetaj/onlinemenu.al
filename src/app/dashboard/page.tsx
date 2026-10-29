@@ -35,11 +35,18 @@ export default async function DashboardHome({
           </div>
 
           <Card className="p-5">
-            <h2 className="mb-2 font-display text-lg text-ink">Faqja jote publike</h2>
-            <p className="mb-3 text-sm text-muted">URL-ja që skanohet nga QR (nuk ndryshon kurrë):</p>
-            <Link href={`/m/${restaurant.slug}`} className="break-all font-medium text-primary hover:underline">
-              /m/{restaurant.slug}
-            </Link>
+            <h2 className="mb-2 font-display text-lg text-ink">Profili yt publik</h2>
+            <p className="mb-3 text-sm text-muted">
+              QR-ja hap profilin; menuja, informacioni dhe lidhjet hapen prej tij.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/restaurants/${restaurant.slug}`} target="_blank" className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+                Shiko profilin
+              </Link>
+              <Link href={`/restaurants/${restaurant.slug}/menu`} target="_blank" className="rounded-full border border-line px-4 py-2 text-sm text-muted hover:border-primary hover:text-primary">
+                Shiko menunë
+              </Link>
+            </div>
           </Card>
         </div>
       ) : (

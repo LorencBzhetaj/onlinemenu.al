@@ -16,10 +16,10 @@ function triggerDownload(href: string, filename: string) {
   a.remove();
 }
 
-export function QrGenerator({ slug }: { slug: string }) {
-  // URL-ja e koduar mbetet e njëjtë përgjithmonë (slug është i pandryshueshëm) —
-  // ndryshimi i emrit te Cilësime NUK e prek këtë, pra QR-i i printuar s'skadon kurrë.
-  const url = `${BASE}/m/${slug}`;
+export function QrGenerator({ code, slug }: { code: string; slug: string }) {
+  // URL-ja e koduar është kod opak e i pandryshueshëm → `/q/[code]` ridrejton te PROFILI.
+  // Ndryshimi i emrit/slug-ut NUK e prek; QR-i i printuar s'skadon kurrë.
+  const url = `${BASE}/q/${code}`;
 
   const [preview, setPreview] = useState<string>("");
   const [copied, setCopied] = useState(false);
@@ -84,7 +84,7 @@ export function QrGenerator({ slug }: { slug: string }) {
       <div>
         <h1 className="font-heading text-3xl">QR Kod</h1>
         <p className="text-muted text-sm mt-1">
-          QR-i që çon te faqja juaj publike e menusë.
+          QR-i që hap profilin tuaj publik (menuja, informacioni dhe lidhjet hapen prej tij).
         </p>
       </div>
 
@@ -145,7 +145,7 @@ export function QrGenerator({ slug }: { slug: string }) {
       {/* Udhëzime */}
       <p className="text-sm text-muted leading-relaxed rounded-lg border border-line bg-surface p-4">
         Printojeni këtë QR-kod dhe vendoseni në tavolinat tuaja. Klientët do ta
-        skanojnë me kamerën e telefonit dhe do t&apos;u hapet menuja direkt.
+        skanojnë me kamerën e telefonit dhe do t&apos;u hapet profili i restorantit.
         <span className="block mt-2 text-xs text-muted">
           PNG për printim standard · SVG për madhësi të mëdha (banderolë, tabelë) pa
           humbje cilësie.

@@ -23,6 +23,8 @@ export async function POST(req: Request) {
   const isChefPick = Boolean(body.isChefPick);
   const isDailyMenu = Boolean(body.isDailyMenu);
   const isVisible = body.isVisible === undefined ? true : Boolean(body.isVisible);
+  const isAvailable = body.isAvailable === undefined ? true : Boolean(body.isAvailable);
+  const allergenIds = Array.isArray(body.allergenIds) ? body.allergenIds.map(String) : [];
 
   const categoryId = body.categoryId ? String(body.categoryId) : null;
   const subcategoryId = body.subcategoryId ? String(body.subcategoryId) : null;
@@ -56,6 +58,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nuk lejohet." }, { status: 403 });
   }
 
+  // Alergjenët: pranohen vetëm ata që i përkasin këtij restoranti (izolim tenant).
+  const validAllergenIds = await filterOwnedAllergenIds(allergenIds, restaurantId);
+
   const last = await prisma.menuItem.findFirst({
     where: categoryId ? { categoryId } : { subcategoryId },
     orderBy: { sortOrder: "desc" },
@@ -75,9 +80,21 @@ export async function POST(req: Request) {
       isChefPick,
       isDailyMenu,
       isVisible,
+      isAvailable,
       sortOrder: (last?.sortOrder ?? -1) + 1,
+      allergens: { create: validAllergenIds.map((allergenId) => ({ allergenId })) },
     },
   });
 
   return NextResponse.json(item, { status: 201 });
+}
+
+/** Mban vetëm allergenId-të që i përkasin restorantit (shmang lidhje cross-tenant). */
+async function filterOwnedAllergenIds(ids: string[], restaurantId: string): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const owned = await prisma.allergen.findMany({
+    where: { id: { in: ids }, restaurantId },
+    select: { id: true },
+  });
+  return owned.map((a) => a.id);
 }

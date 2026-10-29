@@ -7,9 +7,11 @@ import { ItemRow } from "@/components/menu/item-row";
 import { CategoryModal } from "@/components/menu/category-modal";
 import { SubcategoryModal } from "@/components/menu/subcategory-modal";
 import { ItemModal } from "@/components/menu/item-modal";
+import { AllergenManager } from "@/components/menu/allergen-manager";
+import { ScheduleManager } from "@/components/menu/schedule-manager";
 import { CategoryIcon } from "@/lib/menu-icons";
 import { useApiFetch } from "@/components/restaurant-context";
-import type { CategoryDTO, SubcategoryDTO, ItemDTO } from "@/lib/menu-types";
+import type { CategoryDTO, SubcategoryDTO, ItemDTO, AllergenDTO, ScheduleDTO } from "@/lib/menu-types";
 
 type Modal =
   | { kind: "category-new" }
@@ -18,11 +20,22 @@ type Modal =
   | { kind: "subcategory-edit"; categoryId: string; subcategory: SubcategoryDTO }
   | { kind: "item-new"; parent: { categoryId?: string; subcategoryId?: string } }
   | { kind: "item-edit"; item: ItemDTO }
+  | { kind: "allergens" }
+  | { kind: "schedules" }
   | null;
 
-export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
+export function MenuManager({
+  initialTree,
+  allergens,
+  schedules,
+}: {
+  initialTree: CategoryDTO[];
+  allergens: AllergenDTO[];
+  schedules: ScheduleDTO[];
+}) {
   const router = useRouter();
   const api = useApiFetch();
+  const scheduleById = new Map(schedules.map((s) => [s.id, s]));
 
   async function postReorder(type: "category" | "subcategory" | "item", ids: string[]) {
     await api("/api/menu/reorder", {
@@ -124,11 +137,35 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
             Menaxho kategoritë, nën-kategoritë dhe artikujt. Zvarrit ⠿ për të rirenditur.
           </p>
         </div>
-        <button
-          onClick={() => setModal({ kind: "category-new" })}
-          className="shrink-0 whitespace-nowrap min-h-11 rounded-full bg-primary px-4 text-sm text-white font-medium hover:bg-primary-dark transition"
-        >
-          + Kategori
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={() => setModal({ kind: "schedules" })}
+            className="hidden sm:inline-flex whitespace-nowrap min-h-11 items-center rounded-full border border-line px-4 text-sm text-muted hover:border-primary hover:text-primary transition"
+          >
+            Oraret
+          </button>
+          <button
+            onClick={() => setModal({ kind: "allergens" })}
+            className="hidden sm:inline-flex whitespace-nowrap min-h-11 items-center rounded-full border border-line px-4 text-sm text-muted hover:border-primary hover:text-primary transition"
+          >
+            Alergjenët
+          </button>
+          <button
+            onClick={() => setModal({ kind: "category-new" })}
+            className="whitespace-nowrap min-h-11 rounded-full bg-primary px-4 text-sm text-white font-medium hover:bg-primary-dark transition"
+          >
+            + Kategori
+          </button>
+        </div>
+      </div>
+
+      {/* Qasje te menaxherët edhe në telefon (butonat sipër fshihen nën sm). */}
+      <div className="flex gap-2 sm:hidden">
+        <button onClick={() => setModal({ kind: "schedules" })} className="flex-1 min-h-11 rounded-full border border-line text-sm text-muted">
+          Oraret
+        </button>
+        <button onClick={() => setModal({ kind: "allergens" })} className="flex-1 min-h-11 rounded-full border border-line text-sm text-muted">
+          Alergjenët
         </button>
       </div>
 
@@ -153,7 +190,14 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
                   </button>
                   <CategoryIcon icon={cat.icon} className="w-5 h-5 text-primary" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-ink truncate">{cat.nameAl}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-ink truncate">{cat.nameAl}</span>
+                      {cat.scheduleId && scheduleById.has(cat.scheduleId) && (
+                        <span className="shrink-0 rounded-full bg-primary-soft px-2 py-0.5 text-[0.65rem] text-primary">
+                          🕒 {scheduleById.get(cat.scheduleId)!.label}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted truncate">{cat.nameEn}</div>
                   </div>
                   <HeaderBtn onClick={() => setModal({ kind: "subcategory-new", categoryId: cat.id })}>
@@ -272,10 +316,10 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
 
       {/* Modalet */}
       {modal?.kind === "category-new" && (
-        <CategoryModal onClose={() => setModal(null)} onSaved={closeAndRefresh} />
+        <CategoryModal schedules={schedules} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
       )}
       {modal?.kind === "category-edit" && (
-        <CategoryModal initial={modal.category} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
+        <CategoryModal initial={modal.category} schedules={schedules} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
       )}
       {modal?.kind === "subcategory-new" && (
         <SubcategoryModal categoryId={modal.categoryId} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
@@ -289,11 +333,13 @@ export function MenuManager({ initialTree }: { initialTree: CategoryDTO[] }) {
         />
       )}
       {modal?.kind === "item-new" && (
-        <ItemModal parent={modal.parent} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
+        <ItemModal parent={modal.parent} allergens={allergens} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
       )}
       {modal?.kind === "item-edit" && (
-        <ItemModal parent={{}} initial={modal.item} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
+        <ItemModal parent={{}} initial={modal.item} allergens={allergens} onClose={() => setModal(null)} onSaved={closeAndRefresh} />
       )}
+      {modal?.kind === "allergens" && <AllergenManager allergens={allergens} onClose={() => setModal(null)} />}
+      {modal?.kind === "schedules" && <ScheduleManager schedules={schedules} onClose={() => setModal(null)} />}
     </div>
   );
 }

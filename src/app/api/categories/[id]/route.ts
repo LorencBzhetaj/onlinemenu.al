@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { categoryBelongsTo } from "@/lib/api-auth";
+import { categoryBelongsTo, resolveScheduleId, INVALID_SCHEDULE } from "@/lib/api-auth";
 import { guardRestaurant } from "@/modules/memberships/access";
 import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 
@@ -30,9 +30,19 @@ export async function PUT(
     );
   }
 
+  // scheduleId përditësohet vetëm kur dërgohet shprehimisht (undefined → pa ndryshim).
+  let scheduleData: { scheduleId?: string | null } = {};
+  if (body.scheduleId !== undefined) {
+    const scheduleId = await resolveScheduleId(body.scheduleId, restaurantId);
+    if (scheduleId === INVALID_SCHEDULE) {
+      return NextResponse.json({ error: "Orar i pavlefshëm." }, { status: 400 });
+    }
+    scheduleData = { scheduleId };
+  }
+
   const category = await prisma.category.update({
     where: { id: params.id },
-    data: { nameAl, nameEn, icon },
+    data: { nameAl, nameEn, icon, ...scheduleData },
   });
 
   return NextResponse.json(category);

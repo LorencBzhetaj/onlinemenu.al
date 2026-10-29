@@ -28,6 +28,22 @@ export async function subcategoryBelongsTo(
   return !!s;
 }
 
+export const INVALID_SCHEDULE = Symbol("invalid-schedule");
+
+/**
+ * Zgjidh një scheduleId të dërguar nga klienti: null (pa orar), id i vlefshëm i tenant-it,
+ * ose INVALID_SCHEDULE kur id-ja nuk i përket restorantit (duhet refuzuar nga route-i).
+ */
+export async function resolveScheduleId(
+  raw: unknown,
+  restaurantId: string
+): Promise<string | null | typeof INVALID_SCHEDULE> {
+  if (raw === undefined || raw === null || raw === "") return null;
+  const id = String(raw);
+  const s = await prisma.menuSchedule.findFirst({ where: { id, restaurantId }, select: { id: true } });
+  return s ? s.id : INVALID_SCHEDULE;
+}
+
 /** Verifikon që një artikull i përket restorantit (nëpërmjet kategori/nën-kategori). */
 export async function itemBelongsTo(
   itemId: string,

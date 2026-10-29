@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveScheduleId, INVALID_SCHEDULE } from "@/lib/api-auth";
 import { guardRestaurant } from "@/modules/memberships/access";
 import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 
@@ -23,6 +24,12 @@ export async function POST(req: Request) {
     );
   }
 
+  // Orari i menusë (opsional): vetëm një orar i këtij restoranti, ndryshe refuzohet.
+  const scheduleId = await resolveScheduleId(body.scheduleId, restaurantId);
+  if (scheduleId === INVALID_SCHEDULE) {
+    return NextResponse.json({ error: "Orar i pavlefshëm." }, { status: 400 });
+  }
+
   // sortOrder = fundi i listës aktuale.
   const last = await prisma.category.findFirst({
     where: { restaurantId },
@@ -36,6 +43,7 @@ export async function POST(req: Request) {
       nameAl,
       nameEn,
       icon,
+      scheduleId,
       sortOrder: (last?.sortOrder ?? -1) + 1,
     },
   });

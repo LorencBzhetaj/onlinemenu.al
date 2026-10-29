@@ -64,6 +64,12 @@ Mbulon me cookie reale: OWNER A↔B, header x-restaurant-id i mirë/i keq/i mung
 të tenant-it tjetër, MANAGER/STAFF/revoked, modul MENU joaktiv (route + publik), two-tab
 (shkrim/lexim mbeten te A + refresh + navigation), dhe gate-i publik (isPublished+suspendedAt+MENU).
 
+`tests/e2e/phase3.e2e.ts` (Faza 3) mbulon rrjedhën publike: QR `/q/[code]` → profil, alias `/m/[slug]` →
+profil, profil/menu/info, lidhje Wolt (jashtme), rezervim i gated-uar (BOOKING + destinacion), kërkim
+pjatash, alergjenë, disponueshmëri, orare menuje, dhe kontrolle aksesi për API-të e reja
+(links/allergens: pa sesion → 401, pa header → 400, tenant tjetër → 403, URL e palejuar → 400).
+Përfshin screenshots @390/1440 me kontroll overflow për profil/menu/info.
+
 `tests/e2e/visual.ts` bën kontrollin vizual (screenshots + overflow @390/1440). Ekzekuto si E2E (server + tsx).
 
 > **Varësi lokale Playwright (rregullo para CI/release):** `tests/e2e/*` importojnë Playwright nga

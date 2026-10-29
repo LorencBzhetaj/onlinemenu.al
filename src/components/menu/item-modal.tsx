@@ -4,18 +4,20 @@ import { useState } from "react";
 import { Modal, Field, inputClass } from "./modal";
 import { ImageUpload } from "./image-upload";
 import { useApiFetch } from "@/components/restaurant-context";
-import type { ItemDTO } from "@/lib/menu-types";
+import type { ItemDTO, AllergenDTO } from "@/lib/menu-types";
 
 type Parent = { categoryId?: string; subcategoryId?: string };
 
 export function ItemModal({
   parent,
   initial,
+  allergens,
   onClose,
   onSaved,
 }: {
   parent: Parent;
   initial?: ItemDTO;
+  allergens: AllergenDTO[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -29,9 +31,15 @@ export function ItemModal({
   const [isChefPick, setIsChefPick] = useState(initial?.isChefPick ?? false);
   const [isDailyMenu, setIsDailyMenu] = useState(initial?.isDailyMenu ?? false);
   const [isVisible, setIsVisible] = useState(initial?.isVisible ?? true);
+  const [isAvailable, setIsAvailable] = useState(initial?.isAvailable ?? true);
+  const [allergenIds, setAllergenIds] = useState<string[]>(initial?.allergenIds ?? []);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const api = useApiFetch();
+
+  function toggleAllergen(id: string) {
+    setAllergenIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +62,8 @@ export function ItemModal({
       isChefPick,
       isDailyMenu,
       isVisible,
+      isAvailable,
+      allergenIds,
     };
     // Prindi dërgohet vetëm gjatë krijimit.
     if (!editing) {
@@ -115,10 +125,35 @@ export function ItemModal({
           <ImageUpload value={imageUrl} onChange={setImageUrl} />
         </Field>
 
+        {allergens.length > 0 && (
+          <Field label="Alergjenët" hint="opsional">
+            <div className="flex flex-wrap gap-2">
+              {allergens.map((a) => {
+                const on = allergenIds.includes(a.id);
+                return (
+                  <button
+                    type="button"
+                    key={a.id}
+                    onClick={() => toggleAllergen(a.id)}
+                    aria-pressed={on}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      on ? "border-primary bg-primary-soft text-primary" : "border-line text-muted hover:border-primary"
+                    }`}
+                  >
+                    {a.icon ? `${a.icon} ` : ""}
+                    {a.nameAl}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+        )}
+
         <div className="space-y-2 pt-1">
           <Checkbox checked={isChefPick} onChange={setIsChefPick} label="Rekomandim i Shefit" />
           <Checkbox checked={isDailyMenu} onChange={setIsDailyMenu} label="Menu Ditore" />
           <Checkbox checked={isVisible} onChange={setIsVisible} label="I dukshëm në menunë publike" />
+          <Checkbox checked={isAvailable} onChange={setIsAvailable} label="I disponueshëm (çkyçe për 'përkohësisht i padisponueshëm')" />
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

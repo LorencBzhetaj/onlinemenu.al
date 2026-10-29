@@ -21,6 +21,8 @@ export type SettingsInitial = {
   phone: string | null;
   whatsapp: string | null;
   address: string | null;
+  aboutAl: string | null;
+  aboutEn: string | null;
   isPublished: boolean;
 };
 
@@ -54,6 +56,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
   const [phone, setPhone] = useState(initial.phone ?? "");
   const [whatsapp, setWhatsapp] = useState(initial.whatsapp ?? "");
   const [address, setAddress] = useState(initial.address ?? "");
+  const [aboutAl, setAboutAl] = useState(initial.aboutAl ?? "");
+  const [aboutEn, setAboutEn] = useState(initial.aboutEn ?? "");
   const [isPublished, setIsPublished] = useState(initial.isPublished);
 
   const [saving, setSaving] = useState(false);
@@ -96,6 +100,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
         phone,
         whatsapp,
         address,
+        aboutAl,
+        aboutEn,
         isPublished,
       }),
     });
@@ -148,7 +154,7 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
 
             <div>
               <span className="block text-sm text-muted mb-1">Slug (URL publike)</span>
-              <input className={`${inputClass} opacity-60 cursor-not-allowed`} value={`/m/${initial.slug}`} readOnly disabled />
+              <input className={`${inputClass} opacity-60 cursor-not-allowed`} value={`/restaurants/${initial.slug}`} readOnly disabled />
               <div className="mt-2 rounded-lg border border-primary/40 bg-canvas p-3 text-xs text-muted leading-relaxed">
                 Ky është pjesë e URL-së publike dhe QR-kodit tuaj. Ndryshimi i tij do të prishë
                 QR-in e printuar tashmë.{" "}
@@ -218,6 +224,16 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
               <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Theth, Shkodër" />
             </Field>
           </Section>
+
+          {/* ── PËRSHKRIMI I PROFILIT ── */}
+          <Section title="Përshkrimi i profilit">
+            <Field label="Rreth nesh (Shqip)" hint="opsional — shfaqet te profili/informacioni">
+              <textarea className={inputClass} rows={3} maxLength={600} value={aboutAl} onChange={(e) => setAboutAl(e.target.value)} placeholder="Një restorant tradicional në zemër të Thethit…" />
+            </Field>
+            <Field label="About (Anglisht)" hint="opsional">
+              <textarea className={inputClass} rows={3} maxLength={600} value={aboutEn} onChange={(e) => setAboutEn(e.target.value)} placeholder="A traditional restaurant in the heart of Theth…" />
+            </Field>
+          </Section>
         </div>
 
         {/* ── PUBLIKIMI (kolona e dytë) ── */}
@@ -249,8 +265,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
 
             {!isPublished && (
               <div className="rounded-lg border border-red-400/30 bg-canvas p-3 text-xs text-muted leading-relaxed">
-                Kur është fikur, faqja juaj publike (<span className="text-ink">/m/{initial.slug}</span>)
-                do t&apos;u shfaqë vizitorëve mesazhin &quot;Menu përkohësisht jo aktive&quot; në vend të menusë.
+                Kur është fikur, profili juaj publik (<span className="text-ink">/restaurants/{initial.slug}</span>)
+                do t&apos;u shfaqë vizitorëve mesazhin &quot;përkohësisht jo aktiv&quot; në vend të profilit.
                 Përdoreni nëse jeni mbyllur përkohësisht ose po bëni ndryshime të mëdha.
               </div>
             )}

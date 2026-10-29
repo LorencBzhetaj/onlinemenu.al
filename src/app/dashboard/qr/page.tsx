@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { pageAccess, restaurantIdFromSearchParams } from "@/modules/memberships/access";
+import { ensureQrCode } from "@/modules/restaurants/qr";
 import { DashboardNotice } from "@/components/dashboard-notice";
 import { QrGenerator } from "./qr-generator";
 
@@ -22,5 +23,8 @@ export default async function QrPage({
     return <div className="text-muted">Restoranti nuk u gjet.</div>;
   }
 
-  return <QrGenerator slug={restaurant.slug} />;
+  // Kodi QR opak (krijohet nëse mungon, p.sh. restorante të vjetra para Fazës 3).
+  const code = await ensureQrCode(prisma, access.ctx.restaurantId);
+
+  return <QrGenerator code={code} slug={restaurant.slug} />;
 }
