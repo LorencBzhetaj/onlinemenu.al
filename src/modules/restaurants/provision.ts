@@ -64,6 +64,8 @@ export async function createRestaurantForOwner(
       },
       // Kod QR opak, krijuar atomikisht → `/q/[code]` çon te profili publik.
       qrCode: { create: { code: generateQrCode() } },
+      // Politikat default të booking-ut (moduli BOOKING mbetet 'disabled' — jo aktivizim global).
+      bookingSettings: { create: {} },
     },
     select: { id: true, slug: true },
   });

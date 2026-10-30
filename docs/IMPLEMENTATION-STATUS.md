@@ -20,7 +20,32 @@ Dokumenti kryesor i statusit. Referenca:
 | Faza 1 — tenant/rol/entitlement | ✅ **implementuar** + kontroll integrimi (E2E 19/19); **lokal, pa push/migrim live** |
 | Faza 2 — design system + layout-e | ✅ **implementuar** (krem/jeshile); 0 overflow @390/1440; build OK |
 | Faza 3 — profil QR, lidhje, menu e plotë | ✅ **implementuar**; teste 41/41 + E2E 23/23; 0 overflow @390/1440; **lokal, pa push/migrim live** |
-| Booking (Faza 4) | ⛔ jo i nisur; repo `restorant` jashtë scope-it të sesionit |
+| Faza 4 — motori i rezervimeve (booking) | ✅ **motori + shërbimet** (multi-tenant); teste 36/36; **lokal, pa push/migrim live**; UI/njoftime → Faza 5 |
+
+---
+
+## 0.3 Faza 4 — Motori i rezervimeve (e implementuar: motori + shërbimet)
+
+Motori ekzistues i repo-s burim `github.com/LorencBzhetaj/restorant` (single-tenant, Villa Gjeçaj) u **ripërdor dhe u përshtat** në multi-tenant — **jo i rindërtuar nga zero**. Repo-ja burim u klonua VETËM për lexim te `/home/user/lorencbzhetaj/restorant` (jashtë repo-s onlinemenu.al). **Booking-u live i Gjeçaj nuk u prek** (pa ndryshime instalimi/DB/konfigurimi/rezervimesh live).
+
+**Përshtatja kryesore:** `restaurantId` në çdo entitet dhe operacion; lock-et këshillues per-slot të prefiksuar me restaurantId → izolim i plotë mes restoranteve.
+
+**Modele të reja (tenant-scoped):** `BookingSettings` (një/restorant: turnDuration, bookingInterval, seatingBuffer, maxPartySize, slot caps, timezone), `Area`, `AreaClosure`, `RestaurantTable`, `TableCombination`(+`Member`), `ReservationTable`, `Customer` (unik `restaurantId+phone`), `Reservation` (unik `restaurantId+idempotencyKey`, cancelToken global), `OpeningHour`, `Closure`, `SlotLimit`. Branding/kontaktet rrinë te `Restaurant` (BookingSettings mban vetëm politika).
+
+**Module** (`src/modules/booking/`):
+- `timezone.ts` — konvertim IANA i qartë, DST-korrekt (i portuar); zona per-restorant (default Europe/Tirane).
+- `availability.ts` — orë të lira, status per-tavolinë, gate orari, kombinime, slot caps; çdo query filtrohet me restaurantId.
+- `reservations.ts` — `createReservation` (publik), `createWalkIn` (staf), `cancelReservationByToken`, `rescheduleReservation`, `setReservationStatus`. **Atomik** (`$transaction` + `pg_advisory_xact_lock` per-slot + per-tavolinë në rend deterministik), **idempotent** (çelës per-tenant; garë → kthen fituesin), **i sigurt ndaj konkurrencës** (assignment brenda lock-ut; `findOrCreateCustomer` race-safe). **Pa njoftime** (Faza 5).
+- `config.ts` — shërbime CRUD tenant-scoped me validim pronësie (zona/tavolina/kombinime/orare/mbyllje/slot-limits).
+- `guards.ts` — `guardBooking`/`requireBookingAccess` = rol (Faza 1 `reservations:*`) + entitlement **BOOKING**; leximet s'kërkojnë modul aktiv, shkrimet po.
+
+**Aktivizim:** BOOKING mbetet `disabled` në provisionim (jo aktivizim global); `createRestaurantForOwner` tani krijon edhe `BookingSettings` default. Testet e aktivizojnë BOOKING **vetëm për restorantet testuese**.
+
+**Migrimi (lokal):** `prisma/migrations/20261030000000_phase4_booking_engine` — shtesë e pastër (tabela booking + FK cascade për fshirje të pastër restoranti). **Aplikuar vetëm lokal me `npm run db:deploy:test`.** (Edhe: rikthim i `@@index([resetAt])` te RateLimit — drift i mëparshëm skema↔DB; schema↔migrations tani pa diferencë.)
+
+**Kontroll verifikimi:** `tests/phase4.test.ts` **36/36** (Postgres i izoluar): izolim tenant (dy restorante; tavolinë/klient të ndarë), assignment single+kombinim, gate orari + mbyllje restoranti/zone, slot caps, kohëzgjatje+buffer, create/cancel/reschedule atomik, idempotencë (seri + paralele), konkurrencë (tavolinë e vetme → saktësisht një fiton), gate entitlement BOOKING. `tsc` 0 · `next build` OK.
+
+**Mbetet për Fazën 5 (jo e nisur):** formulari publik `/reserve`, paneli i plotë (rezervime/tavolina/zona/orare/klientë/plan salle), njoftime (confirmation/cancel/reschedule/reminders/digest), unifikim i BookingSettings me profilin, slot search në marketplace.
 
 ---
 

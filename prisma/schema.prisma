@@ -82,6 +82,8 @@ model RateLimit {
   count     Int
   resetAt   DateTime
   updatedAt DateTime @updatedAt
+
+  @@index([resetAt]) // prune-i ditor filtron sipas resetAt
 }
 
 // Token për rivendosjen e password-it (Forgot/Reset Password).
@@ -143,6 +145,18 @@ model Restaurant {
   allergens     Allergen[]
   menuSchedules MenuSchedule[]
   qrCode        QrCode?
+
+  // Booking (Faza 4) — gjithçka e izoluar me restaurantId.
+  bookingSettings BookingSettings?
+  areas           Area[]
+  tables          RestaurantTable[]
+  combinations    TableCombination[]
+  reservations    Reservation[]
+  customers       Customer[]
+  openingHours    OpeningHour[]
+  closures        Closure[]
+  areaClosures    AreaClosure[]
+  slotLimits      SlotLimit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -338,4 +352,234 @@ model MenuView {
 
   @@index([restaurantId])
   @@index([itemId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// BOOKING (Faza 4) — motori i rezervimeve, i përshtatur nga repo `restorant`
+// (single-tenant) në multi-tenant: restaurantId në çdo entitet dhe operacion.
+// Politikat e booking-ut rrinë te BookingSettings; brandi/kontaktet te Restaurant.
+// ─────────────────────────────────────────────────────────────
+
+// Politikat e rezervimit për një restorant (një rresht për restorant).
+model BookingSettings {
+  id                     String     @id @default(cuid())
+  restaurant             Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId           String     @unique
+  turnDurationMinutes    Int        @default(120) // sa mbahet një tavolinë për rezervim
+  bookingInterval        Int        @default(30) // granulariteti i slot-eve, minuta
+  seatingBuffer          Int        @default(15) // minuta mes rezervimeve në të njëjtën tavolinë
+  maxPartySize           Int        @default(12)
+  maxReservationsPerSlot Int        @default(0) // 0 = pa kufi (kufizon vetëm numri i tavolinave)
+  maxCoversPerSlot       Int        @default(0) // 0 = pa kufi
+  timezone               String     @default("Europe/Tirane")
+  updatedAt              DateTime   @updatedAt
+}
+
+// Zonë e restorantit (Brenda / Jashtë / Terrasë…). isOpen = status i përhershëm.
+model Area {
+  id               String     @id @default(cuid())
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId     String
+  name             String
+  kind             String     @default("indoor") // indoor | outdoor
+  isOpen           Boolean    @default(true)
+  weatherDependent Boolean    @default(false)
+  priority         Int        @default(0) // më i ulët = i preferuar për "pa preferencë"
+  sortOrder        Int        @default(0)
+
+  tables       RestaurantTable[]
+  closures     AreaClosure[]
+  combinations TableCombination[]
+
+  @@index([restaurantId])
+  @@index([kind])
+}
+
+// Mbyllje e përkohshme e një zone për një dritare datë/orë (mot, event privat…).
+model AreaClosure {
+  id            String     @id @default(cuid())
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  area          Area       @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  areaId        String
+  startDateTime DateTime
+  endDateTime   DateTime
+  reason        String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([restaurantId])
+  @@index([areaId])
+  @@index([startDateTime])
+  @@index([endDateTime])
+}
+
+model RestaurantTable {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  name         String
+  seats        Int
+  section      String     @default("")
+  area         Area?      @relation(fields: [areaId], references: [id])
+  areaId       String?
+  shape        String     @default("square") // square | round | rect
+  x            Int        @default(0)
+  y            Int        @default(0)
+  w            Int        @default(2)
+  h            Int        @default(2)
+  rotation     Int        @default(0)
+  isActive     Boolean    @default(true)
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  reservations       Reservation[]
+  reservationTables  ReservationTable[]
+  combinationMembers TableCombinationMember[]
+
+  @@index([restaurantId])
+  @@index([areaId])
+}
+
+// Grupim i para-përcaktuar i dy+ tavolinave reale për një grup të madh. I kuruar
+// nga stafi — motori s'shpik kombinime. Të gjithë anëtarët në të njëjtën zonë.
+model TableCombination {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  name         String
+  area         Area       @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  areaId       String
+  minSeats     Int?
+  maxSeats     Int
+  priority     Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  members TableCombinationMember[]
+
+  @@index([restaurantId])
+  @@index([areaId])
+  @@index([isActive])
+}
+
+model TableCombinationMember {
+  id            String @id @default(cuid())
+  combinationId String
+  tableId       String
+
+  combination TableCombination @relation(fields: [combinationId], references: [id], onDelete: Cascade)
+  table       RestaurantTable  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([combinationId, tableId])
+  @@index([tableId])
+}
+
+// Lidhja rezervim ↔ tavolina (burimi autoritativ multi-tavolinë).
+model ReservationTable {
+  id            String @id @default(cuid())
+  reservationId String
+  tableId       String
+
+  reservation Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  table       RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([reservationId, tableId])
+  @@index([tableId])
+  @@index([reservationId])
+}
+
+// Klient i ndarë sipas restorantit (nuk bashkohet globalisht nga telefoni).
+model Customer {
+  id             String     @id @default(cuid())
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId   String
+  firstName      String
+  lastName       String     @default("")
+  phone          String
+  whatsappNumber String?
+  email          String?
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  reservations Reservation[]
+
+  @@unique([restaurantId, phone])
+  @@index([restaurantId])
+}
+
+model Reservation {
+  id             String     @id @default(cuid())
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId   String
+  cancelToken    String     @unique @default(cuid())
+  // Idempotency unik PER TENANT: një ritentativë me të njëjtin çelës kthen të njëjtin rezervim.
+  idempotencyKey String?
+  tableId        String
+  customerId     String
+  startDateTime  DateTime
+  endDateTime    DateTime
+  partySize      Int
+  status         String     @default("Confirmed") // Confirmed | Seated | Completed | Cancelled | NoShow
+  notes          String?
+  source         String     @default("Online") // Online | Walk-in | Phone
+  requestedArea  String     @default("no_preference") // indoor | outdoor | no_preference
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  table    RestaurantTable    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  customer Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tables   ReservationTable[]
+
+  @@unique([restaurantId, idempotencyKey])
+  @@index([restaurantId])
+  @@index([tableId, startDateTime])
+  @@index([startDateTime])
+  @@index([customerId])
+  @@index([status])
+}
+
+// Orari i hapjes (mund të ketë disa periudha për ditë: drekë/darkë).
+model OpeningHour {
+  id              String     @id @default(cuid())
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+  dayOfWeek       Int // 0 = E Diel … 6 = E Shtunë
+  startTime       String // "HH:mm"
+  endTime         String // "HH:mm" (rezervimi mund të vazhdojë PAS kësaj)
+  lastBookingTime String? // ora e fundit e lejuar e fillimit (inclusive), opsionale
+  isActive        Boolean    @default(true)
+
+  @@index([restaurantId])
+  @@index([dayOfWeek])
+}
+
+// Mbyllje e të gjithë restorantit (një ditë ose interval).
+model Closure {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  startDate    DateTime
+  endDate      DateTime
+  reason       String?
+
+  @@index([restaurantId])
+}
+
+// Mbivendosje për kufijtë e slot-eve, p.sh. "max 4 rezervime në 18:00".
+model SlotLimit {
+  id              String     @id @default(cuid())
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+  dayOfWeek       Int? // null = çdo ditë
+  time            String // "HH:mm"
+  areaKind        String? // null = i gjithë restoranti; "indoor" | "outdoor"
+  maxReservations Int
+  maxCovers       Int?
+
+  @@index([restaurantId])
+  @@index([time])
 }

@@ -45,6 +45,14 @@ export DIRECT_URL="$DATABASE_URL"
 npm test   # `pretest` ekzekuton guard-in e DB-së lokale automatikisht
 ```
 
+`phase4.test.ts` — motori i rezervimeve (Faza 4), multi-tenant, kundrejt Postgres lokal.
+Mbulon: izolim tenant (dy restorante; tavolinë/klient të ndarë), assignment single+kombinim,
+gate orari + mbyllje restoranti/zone, slot caps, kohëzgjatje+buffer, create/cancel/reschedule
+atomik, idempotencë (seri + paralele), konkurrencë (tavolinë e vetme → saktësisht një fiton),
+dhe gate-in e entitlement-it BOOKING. BOOKING aktivizohet VETËM për restorantet testuese.
+Rreshtat `prisma:error` gjatë testit të konkurrencës janë P2002 të pritura (racer-i humbës),
+të trajtuara nga retry/re-read — jo dështime.
+
 ## E2E / HTTP (browser real, cookie sesioni)
 
 `tests/e2e/phase1.e2e.ts` kërkon serverin NË KËMBË mbi të njëjtën DB lokale:
