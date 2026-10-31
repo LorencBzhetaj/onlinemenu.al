@@ -170,13 +170,60 @@ Overflow horizontal: 0 në të gjitha.
 
 ---
 
-## 7. Hapat e radhës (pronari — kur jepet akses)
+## 7. Runbook i staging-ut (pronari — kërkon akses)
 
-1. Provizionizo DB staging të izoluar (Neon branch/projekt i ndarë); vendos env/sekretet në Vercel
-   (staging): `DATABASE_URL`/`DIRECT_URL` staging, `NEXTAUTH_SECRET`/`CRON_SECRET` të reja,
-   `NEXT_PUBLIC_BASE_URL`/`NEXTAUTH_URL` = domaini staging, `NOINDEX=1`, `EMAIL_SEND_LIVE` bosh.
-2. Deploy në staging; apliko migrimet vetëm te DB staging (`db:deploy`).
-3. Verifiko cron-in e njoftimeve në hosting (ose scheduler i jashtëm nëse Hobby) dhe një rrjedhë
-   reale rezervim → `Simulated` në staging.
-4. Për prod: verifiko DNS-në e Resend, vendos `EMAIL_FROM` zyrtar + `EMAIL_SEND_LIVE=1`.
-5. Pilot me një restorant të ri; Gjeçaj mbetet në sistemin ekzistues derisa cutover-i të planifikohet.
+### 7.0 Git/Vercel — gjendja (S1)
+
+- Remote `origin` = `github.com/LorencBzhetaj/onlinemenu.al`. `origin/main`, `origin/main-wes312` dhe
+  `main` lokal janë **të gjitha te `94b6b19`** (WIP i vjetër para Fazës 1). Të 17 commit-et e Fazave 1–8
+  janë **vetëm lokale**.
+- Një push i `main-wes312` do ishte **fast-forward i pastër** (pa divergjencë, pa force).
+- **Auto-deploy — KËRKON AKSES (dashboard Vercel):** sjellja default e Vercel është që çdo push te një
+  degë jo-prod krijon një **Preview deployment** automatikisht. RREZIKU i izolimit: nëse variablat e DB
+  janë caktuar për "All Environments" (ose vetëm Production pa Preview), Preview-i mund të godasë DB-në e
+  **prodhimit**. **Prandaj push-i mbetet i bllokuar derisa të konfirmohet** (pika 7.1).
+
+### 7.1 Gate para autorizimit të push-it (pronari verifikon në Vercel)
+
+1. Vercel → Project → Settings → Git: cila është **Production Branch** (pritet `main`), dhe a janë
+   **Preview Deployments** aktive për degët.
+2. Vercel → Settings → Environment Variables: sigurohu që `DATABASE_URL`/`DIRECT_URL` për **Preview** të
+   tregojnë te një **DB staging e izoluar**, JO prod. Nëse ndonjë ndryshore e DB është "All Environments"
+   me vlerë prod → **ndaje**: Production = prod, Preview = staging.
+3. Cakto për **Preview**: `NEXTAUTH_SECRET`/`CRON_SECRET` të reja, `NEXT_PUBLIC_BASE_URL`/`NEXTAUTH_URL` =
+   domaini Preview/staging, `NOINDEX=1`, `EMAIL_SEND_LIVE` bosh (sink).
+
+### 7.2 DB staging + migrime + të dhëna demo
+
+```bash
+# Migrime vetëm te DB staging (kurrë prod):
+DATABASE_URL=<staging> DIRECT_URL=<staging> npm run db:deploy
+# Të dhëna sintetike demo (A/B restorante, booking aktiv, orare):
+STAGING_SEED=1 DATABASE_URL=<staging> DIRECT_URL=<staging> npx tsx scripts/seed-staging.ts
+```
+
+### 7.3 Deploy staging + verifikim (smoke)
+
+Pas deploy-it në staging, ekzekuto smoke-test-in (HTTP + browser, pa akses DB):
+
+```bash
+STAGING_BASE_URL=https://<staging> CRON_SECRET=<staging-cron> \
+  npx tsx tests/e2e/staging-smoke.ts
+```
+
+Kontrollon: noindex (robots disallow all), cron 401/200, rrjedhën **rezervim → anulim**, dhe përpunimin e
+njoftimeve nga cron-i. _(I verifikuar lokalisht 8/8 kundrejt një serveri staging-like.)_
+Kujdes hosting: cron-et nën-ditore kërkojnë plan Vercel që i lejon (Pro+); në Hobby përdor një scheduler të
+jashtëm që godet `/api/cron/notifications` me `Authorization: Bearer <CRON_SECRET>`.
+
+### 7.4 Backup/restore + prod
+
+```bash
+DATABASE_URL=<staging> scripts/db-backup.sh ./backups      # para çdo ndryshimi të rrezikshëm
+scripts/db-restore.sh <dump> <target-bosh>                 # rikuperim (refuzon DB jo-bosh pa FORCE=1)
+```
+
+- Për prod: verifiko DNS-në e Resend, vendos `EMAIL_FROM` zyrtar + `EMAIL_SEND_LIVE=1`.
+- Pilot me një restorant të ri; **Gjeçaj mbetet në sistemin ekzistues** derisa cutover-i të planifikohet.
+
+> **Kufiri "pa push/deploy" mbetet** derisa të verifikohet 7.1 dhe të autorizosh publikimin në staging.
