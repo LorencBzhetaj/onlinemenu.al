@@ -30,6 +30,8 @@ export default async function SettingsPage({
       phone: true,
       whatsapp: true,
       address: true,
+      city: true,
+      cuisine: true,
       aboutAl: true,
       aboutEn: true,
       isPublished: true,

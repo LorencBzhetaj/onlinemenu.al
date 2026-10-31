@@ -22,13 +22,13 @@ export function SubscriptionForm({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  async function save(action?: "renew") {
     setError(null);
     setSaving(true);
     const res = await fetch(`/api/admin/restaurants/${restaurantId}/subscription`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, plan, lastPaymentNote: note }),
+      body: JSON.stringify(action === "renew" ? { action: "renew", plan, lastPaymentNote: note } : { status, plan, lastPaymentNote: note }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -92,16 +92,25 @@ export function SubscriptionForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
-          onClick={save}
+          onClick={() => save()}
           disabled={saving}
           className="min-h-11 rounded-lg bg-primary px-5 py-2 text-white font-medium hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Duke ruajtur…" : "Ruaj Ndryshimet e Abonimit"}
         </button>
+        <button
+          onClick={() => save("renew")}
+          disabled={saving}
+          title="Rinovim: statusi → active, +plan ditë mbi periudhën e mbetur (pa humbur ditët)"
+          className="min-h-11 rounded-lg border border-primary/40 px-5 py-2 font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+        >
+          Rinovo (+{PLAN_DAYS[plan]} ditë)
+        </button>
         {saved && <span className="text-sm text-green-700">✔ U ruajt</span>}
       </div>
+      <p className="text-xs text-muted">Rinovimi ruan periudhën e mbetur: ditët shtohen mbi skadimin aktual (ose nga sot nëse ka skaduar).</p>
     </div>
   );
 }

@@ -6,7 +6,9 @@ import {
   ALLOWED_STATUS,
   ALLOWED_PLAN,
   computeExpiresAt,
+  computeRenewalExpiresAt,
 } from "@/lib/subscription";
+import { recordAudit } from "@/modules/admin/audit";
 
 export async function PUT(
   req: Request,
@@ -27,15 +29,12 @@ export async function PUT(
   }
 
   const body = await req.json().catch(() => ({}));
-  const status = String(body.status ?? "").trim();
+  const isRenew = body.action === "renew";
   const plan = String(body.plan ?? "").trim();
   const lastPaymentNote = body.lastPaymentNote
     ? String(body.lastPaymentNote).trim().slice(0, 300)
     : null;
 
-  if (!ALLOWED_STATUS.has(status)) {
-    return NextResponse.json({ error: "Status i pavlefshëm." }, { status: 400 });
-  }
   if (!ALLOWED_PLAN.has(plan)) {
     return NextResponse.json({ error: "Plan i pavlefshëm." }, { status: 400 });
   }
@@ -45,8 +44,20 @@ export async function PUT(
     select: { expiresAt: true },
   });
 
-  // Një veprim i vetëm atomik: status + plan + expiresAt + note njëkohësisht.
-  const expiresAt = computeExpiresAt(status, plan, existing?.expiresAt ?? null);
+  // RINOVIM: statusi → active, expiresAt zgjatet PA HUMBUR periudhën e mbetur.
+  // Përndryshe: vendos statusin e dhënë (validuar) dhe rillogarit expiresAt sipas politikës.
+  let status: string;
+  let expiresAt: Date;
+  if (isRenew) {
+    status = "active";
+    expiresAt = computeRenewalExpiresAt(plan, existing?.expiresAt ?? null);
+  } else {
+    status = String(body.status ?? "").trim();
+    if (!ALLOWED_STATUS.has(status)) {
+      return NextResponse.json({ error: "Status i pavlefshëm." }, { status: 400 });
+    }
+    expiresAt = computeExpiresAt(status, plan, existing?.expiresAt ?? null);
+  }
 
   const subscription = await prisma.subscription.upsert({
     where: { restaurantId: params.id },
@@ -59,6 +70,18 @@ export async function PUT(
       lastPaymentNote,
       startedAt: new Date(),
     },
+  });
+
+  // Audit (pa sekrete): kush, çfarë, cili restorant, kur.
+  await recordAudit({
+    actorUserId: session.user.id,
+    actorEmail: session.user.email ?? null,
+    actorRole: "SUPER_ADMIN",
+    restaurantId: params.id,
+    action: isRenew ? "subscription.renew" : "subscription.update",
+    targetType: "Subscription",
+    targetId: subscription.id,
+    summary: `${isRenew ? "Rinovim" : "Përditësim"}: plan=${plan}, status=${status}, skadon=${expiresAt.toISOString().slice(0, 10)}`,
   });
 
   return NextResponse.json({ ok: true, subscription });

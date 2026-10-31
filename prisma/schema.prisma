@@ -100,6 +100,71 @@ model PasswordResetToken {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Faza 7 — Ekipi: ftesa me skadim + përdorim të vetëm
+// ─────────────────────────────────────────────────────────────
+// Ftesë për t'u bashkuar një restoranti me rol MANAGER/STAFF (kurrë OWNER — invarianti
+// i OWNER-it ruhet; pronari kanonik krijohet vetëm në provisionim). Tokeni ruhet VETËM
+// si SHA-256; pranimi është njëpërdorimësh (status → accepted) dhe skadon.
+model Invitation {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  email        String // marrësi i synuar (krahasim case-insensitive në pranim)
+  role         String // "MANAGER" | "STAFF"
+  tokenHash    String     @unique // SHA-256 hex e token-it të ftesës (kurrë teksti i plotë)
+  status       String     @default("pending") // "pending" | "accepted" | "revoked"
+  expiresAt    DateTime
+  invitedByUserId   String
+  acceptedByUserId  String?
+  acceptedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([restaurantId])
+  @@index([email])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Faza 7 — AuditLog: mutacionet administrative + ndryshimet kritike të roleve/abonimeve
+// ─────────────────────────────────────────────────────────────
+// Regjistron KUSH (aktori), ÇFARË (veprimi), KU (restoranti) dhe KUR. NUK ruan kurrë
+// sekrete, token apo password. `summary` është përshkrim i shkurtër pa të dhëna të ndjeshme.
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String? // null = sistem; pa relation (log-u mbijeton fshirjen e user-it)
+  actorEmail   String? // etiketë lexueshmërie e aktorit (identitet, jo sekret)
+  actorRole    String? // roli i aktorit në çastin e veprimit ("SUPER_ADMIN"|"OWNER"|...)
+  restaurantId String? // tenant-i i prekur (nëse ka)
+  action       String // p.sh. "subscription.update", "module.activate", "team.invite"
+  targetType   String? // p.sh. "Subscription" | "Membership" | "Invitation" | "Restaurant"
+  targetId     String?
+  summary      String? // përshkrim i shkurtër, pa sekrete/token/PII të panevojshme
+  createdAt    DateTime @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Faza 7 — AnalyticsEvent: evente reale, tenant-scoped, PA token/email/telefon
+// ─────────────────────────────────────────────────────────────
+// Një rresht për event. Pa PII: vetëm tipi, restoranti, (opsionalisht) itemId dhe një
+// etiketë e vogël jo-sensitive (p.sh. tipi i lidhjes). Agregimet llogariten mbi këto.
+model AnalyticsEvent {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  type         String // "profile_view" | "menu_view" | "item_view" | "wolt_click" | "booking_created"
+  itemId       String? // për item_view (cilat pjata klikohen më shumë)
+  meta         String? // etiketë e vogël jo-sensitive (p.sh. "WOLT"); kurrë token/email/telefon
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, type, createdAt])
+  @@index([restaurantId, itemId])
+}
+
+// ─────────────────────────────────────────────────────────────
 // Restoranti (tenant)
 // ─────────────────────────────────────────────────────────────
 model Restaurant {
@@ -145,6 +210,8 @@ model Restaurant {
   categories    Category[]
   tastingMenus  TastingMenu[]
   analytics     MenuView[]
+  analyticsEvents AnalyticsEvent[]
+  invitations   Invitation[]
   externalLinks RestaurantExternalLink[]
   allergens     Allergen[]
   menuSchedules MenuSchedule[]

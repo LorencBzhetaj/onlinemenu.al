@@ -64,6 +64,9 @@ export async function PUT(req: Request) {
   const whatsapp = whatsappRaw || null;
 
   const address = optText(body.address, 200);
+  // ── Zbulimi/kërkimi (Faza 6/7): qytet + kuzhinë që pronari plotëson të dhënat e kërkimit ──
+  const city = optText(body.city);
+  const cuisine = optText(body.cuisine);
 
   // ── Përshkrimi i profilit (opsional, më i gjatë) ──
   const aboutAl = optText(body.aboutAl, 600);
@@ -84,6 +87,8 @@ export async function PUT(req: Request) {
       phone,
       whatsapp,
       address,
+      city,
+      cuisine,
       aboutAl,
       aboutEn,
       isPublished,
@@ -98,6 +103,8 @@ export async function PUT(req: Request) {
       phone: true,
       whatsapp: true,
       address: true,
+      city: true,
+      cuisine: true,
       aboutAl: true,
       aboutEn: true,
       isPublished: true,

@@ -21,6 +21,8 @@ export type SettingsInitial = {
   phone: string | null;
   whatsapp: string | null;
   address: string | null;
+  city: string | null;
+  cuisine: string | null;
   aboutAl: string | null;
   aboutEn: string | null;
   isPublished: boolean;
@@ -56,6 +58,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
   const [phone, setPhone] = useState(initial.phone ?? "");
   const [whatsapp, setWhatsapp] = useState(initial.whatsapp ?? "");
   const [address, setAddress] = useState(initial.address ?? "");
+  const [city, setCity] = useState(initial.city ?? "");
+  const [cuisine, setCuisine] = useState(initial.cuisine ?? "");
   const [aboutAl, setAboutAl] = useState(initial.aboutAl ?? "");
   const [aboutEn, setAboutEn] = useState(initial.aboutEn ?? "");
   const [isPublished, setIsPublished] = useState(initial.isPublished);
@@ -100,6 +104,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
         phone,
         whatsapp,
         address,
+        city,
+        cuisine,
         aboutAl,
         aboutEn,
         isPublished,
@@ -222,6 +228,12 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
 
             <Field label="Adresa" hint="opsionale">
               <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Theth, Shkodër" />
+            </Field>
+            <Field label="Qyteti" hint="për kërkimin publik (opsional)">
+              <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Tiranë" maxLength={80} />
+            </Field>
+            <Field label="Kuzhina" hint="për kërkimin publik (opsional)">
+              <input className={inputClass} value={cuisine} onChange={(e) => setCuisine(e.target.value)} placeholder="Tradicionale, Peshk, Pica…" maxLength={80} />
             </Field>
           </Section>
 

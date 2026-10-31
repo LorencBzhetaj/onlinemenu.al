@@ -50,3 +50,19 @@ export function daysUntil(date: Date): number {
   const ms = new Date(date).getTime() - Date.now();
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
+
+/**
+ * RINOVIM (Faza 7) — zgjat abonimin PA HUMBUR periudhën e mbetur (politika e masterplanit).
+ * Ditët e planit shtohen mbi `max(sot, skadimi ekzistues)`:
+ *  - ende aktiv (skadim në të ardhmen) → shtohen mbi skadimin → mbahet periudha e mbetur;
+ *  - i skaduar prej kohësh (skadim në të kaluar) → shtohen nga sot (pa datë të gabuar).
+ */
+export function computeRenewalExpiresAt(plan: string, existingExpiresAt: Date | null): Date {
+  const now = new Date();
+  const base = existingExpiresAt && existingExpiresAt.getTime() > now.getTime() ? existingExpiresAt : now;
+  return addDays(base, PLAN_DAYS[plan] ?? 30);
+}
+
+// Modulet që aktivizohen/çaktivizohen VETËM per-restorant (kurrë globalisht).
+export const ALLOWED_MODULE = new Set(["MENU", "BOOKING"]);
+export const ALLOWED_MODULE_STATUS = new Set(["active", "disabled", "expired"]);

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CategoryIcon } from "@/lib/menu-icons";
 import { getInitials } from "@/lib/branding";
 import { useLang } from "./use-lang";
+import { sendEvent } from "./analytics-beacon";
 
 // ── Tipat e të dhënave publike (vetëm artikuj të dukshëm vijnë nga serveri) ──
 export type PubItem = {
@@ -52,14 +53,18 @@ export function PublicMenu({
   tastingMenus,
   allergens,
   photoStyle,
+  slug,
 }: {
   restaurant: PubRestaurant;
   categories: PubCategory[];
   tastingMenus: PubTasting[];
   allergens: PubAllergen[];
   photoStyle: MenuPhotoStyle;
+  slug?: string;
 }) {
   const { lang, setLang } = useLang();
+  // item_view: klikim real mbi një pjatë (analytics tenant-scoped, pa PII).
+  const onItemView = slug ? (id: string) => sendEvent(slug, "item_view", id) : undefined;
   const [mode, setMode] = useState<"main" | "tasting">("main");
   const [activeCat, setActiveCat] = useState(categories[0]?.id ?? "");
   const [query, setQuery] = useState("");
@@ -156,7 +161,7 @@ export function PublicMenu({
       {/* ===== PËRMBAJTJA ===== */}
       <main>
         {searching ? (
-          <SearchResults results={searchResults} suffix={suffix} t={t} allergenMap={allergenMap} photoStyle={photoStyle} />
+          <SearchResults results={searchResults} suffix={suffix} t={t} allergenMap={allergenMap} photoStyle={photoStyle} onItemView={onItemView} />
         ) : mode === "main" || !hasTasting ? (
           <>
             <div className="qm-section-heading">
@@ -201,7 +206,7 @@ export function PublicMenu({
                 {active.items.length > 0 && (
                   <div className="qm-items">
                     {active.items.map((item) => (
-                      <MenuCard key={item.id} item={item} suffix={suffix} photoStyle={photoStyle} allergenMap={allergenMap} t={t} />
+                      <MenuCard key={item.id} item={item} suffix={suffix} photoStyle={photoStyle} allergenMap={allergenMap} t={t} onItemView={onItemView} />
                     ))}
                   </div>
                 )}
@@ -214,7 +219,7 @@ export function PublicMenu({
                           <div className="qm-subcat-col" key={sub.id}>
                             <div className="qm-subcat-title">{sub[`name${suffix}`]}</div>
                             {sub.items.map((item) => (
-                              <ItemRow key={item.id} item={item} suffix={suffix} allergenMap={allergenMap} t={t} />
+                              <ItemRow key={item.id} item={item} suffix={suffix} allergenMap={allergenMap} t={t} onItemView={onItemView} />
                             ))}
                           </div>
                         ))}
@@ -278,12 +283,14 @@ function SearchResults({
   t,
   allergenMap,
   photoStyle,
+  onItemView,
 }: {
   results: { item: PubItem; catName: string }[];
   suffix: Suffix;
   t: (al: string, en: string) => string;
   allergenMap: Map<string, PubAllergen>;
   photoStyle: MenuPhotoStyle;
+  onItemView?: (id: string) => void;
 }) {
   return (
     <>
@@ -300,7 +307,7 @@ function SearchResults({
           {results.map(({ item, catName }) => (
             <div key={item.id}>
               <div className="qm-search-cat">{catName}</div>
-              <MenuCard item={item} suffix={suffix} photoStyle={photoStyle} allergenMap={allergenMap} t={t} />
+              <MenuCard item={item} suffix={suffix} photoStyle={photoStyle} allergenMap={allergenMap} t={t} onItemView={onItemView} />
             </div>
           ))}
         </div>
@@ -341,14 +348,16 @@ function ItemRow({
   suffix,
   allergenMap,
   t,
+  onItemView,
 }: {
   item: PubItem;
   suffix: Suffix;
   allergenMap: Map<string, PubAllergen>;
   t: (al: string, en: string) => string;
+  onItemView?: (id: string) => void;
 }) {
   return (
-    <div className={`qm-item-row ${item.isAvailable ? "" : "is-unavailable"}`}>
+    <div className={`qm-item-row ${item.isAvailable ? "" : "is-unavailable"}`} onClick={onItemView ? () => onItemView(item.id) : undefined}>
       <div className="qm-item-row-top">
         <span className="qm-item-name">
           {item.isChefPick && <span className="qm-chef" title={t("Rekomandim i Shefit", "Chef's pick")}>★</span>}
@@ -376,13 +385,16 @@ function MenuCard({
   photoStyle,
   allergenMap,
   t,
+  onItemView,
 }: {
   item: PubItem;
   suffix: Suffix;
   photoStyle: MenuPhotoStyle;
   allergenMap: Map<string, PubAllergen>;
   t: (al: string, en: string) => string;
+  onItemView?: (id: string) => void;
 }) {
+  const onClick = onItemView ? () => onItemView(item.id) : undefined;
   const name = item[`name${suffix}`];
   const desc = item[`desc${suffix}`];
   const hasImage = Boolean(item.imageUrl);
@@ -412,7 +424,7 @@ function MenuCard({
 
   if (showThumb) {
     return (
-      <article className={`qm-card ${item.isAvailable ? "" : "is-unavailable"}`}>
+      <article className={`qm-card ${item.isAvailable ? "" : "is-unavailable"}`} onClick={onClick}>
         <div className="qm-card-thumbrow">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="qm-card-thumb" src={item.imageUrl!} alt="" />
@@ -431,7 +443,7 @@ function MenuCard({
   }
 
   return (
-    <article className={`qm-card ${showLarge ? "qm-card--photo" : ""} ${item.isAvailable ? "" : "is-unavailable"}`}>
+    <article className={`qm-card ${showLarge ? "qm-card--photo" : ""} ${item.isAvailable ? "" : "is-unavailable"}`} onClick={onClick}>
       {showLarge && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="qm-card-photo" src={item.imageUrl!} alt="" />

@@ -6,6 +6,7 @@ import { publicThemeVars, publicFontsHref } from "@/lib/public-theme";
 import { PublicTabs } from "@/components/public/public-tabs";
 import { PublicFonts } from "@/components/public/public-fonts";
 import { Unavailable } from "@/components/public/unavailable";
+import { AnalyticsBeacon } from "@/components/public/analytics-beacon";
 import {
   PublicMenu,
   type PubCategory,
@@ -77,12 +78,14 @@ export default async function PublicMenuPage({ params }: { params: { slug: strin
   return (
     <div className="qr-menu" style={publicThemeVars(p)}>
       <PublicFonts href={publicFontsHref(p)} />
+      <AnalyticsBeacon slug={p.slug} type="menu_view" />
       <PublicMenu
         restaurant={{ name: p.name, logoUrl: p.logoUrl, estYear: p.estYear }}
         categories={pubCategories}
         tastingMenus={tastingMenus}
         allergens={allergens}
         photoStyle={(p.menuPhotoStyle as "large" | "thumbnail" | "none") ?? "none"}
+        slug={p.slug}
       />
       <PublicTabs slug={p.slug} active="menu" labels={{ profile: "Restoranti", menu: "Menuja", info: "Informacion" }} />
     </div>

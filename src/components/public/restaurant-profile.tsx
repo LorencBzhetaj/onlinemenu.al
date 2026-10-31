@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { getInitials } from "@/lib/branding";
 import { useLang } from "./use-lang";
+import { AnalyticsBeacon, sendEvent } from "./analytics-beacon";
 import type { LinkType } from "@/modules/restaurants/external-links";
 
 export type ProfileView = {
@@ -96,6 +97,7 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
 
   return (
     <>
+      <AnalyticsBeacon slug={profile.slug} type="profile_view" />
       <header className="rprofile-hero">
         <div className="rprofile-lang" role="group" aria-label={t("Zgjidh gjuhën", "Choose language")}>
           <button type="button" className={lang === "al" ? "active" : ""} aria-pressed={lang === "al"} onClick={() => setLang("al")}>
@@ -159,7 +161,14 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
           )}
 
           {profile.links.map((l) => (
-            <a key={l.type} className="rprofile-link" href={l.url} target="_blank" rel="noopener noreferrer">
+            <a
+              key={l.type}
+              className="rprofile-link"
+              href={l.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={l.type === "WOLT" ? () => sendEvent(profile.slug, "wolt_click") : undefined}
+            >
               <span className="rprofile-link-icon"><LinkIcon type={l.type} /></span>
               <span className="rprofile-link-text">
                 <span className="rprofile-link-label">{linkLabels[l.type]}</span>

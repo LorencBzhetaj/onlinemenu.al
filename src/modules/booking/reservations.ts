@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 import { enqueueJob } from "./notifications";
+import { recordEvent } from "@/modules/analytics/events";
 import {
   getSettings,
   isBookableStartTime,
@@ -243,6 +244,8 @@ export async function createReservation(
           },
         });
         await writeReservationTables(tx, created.id, assigned.tableIds);
+        // Analytics (Faza 7): event real booking_created, pa PII, në të njëjtin transaksion.
+        await recordEvent({ restaurantId, type: "booking_created" }, tx);
         // Njoftimet në TË NJËJTIN transaksion (dërgohen pas commit-it nga worker-i).
         await enqueueConfirmation(tx, {
           restaurantId,
@@ -327,6 +330,8 @@ export async function createWalkIn(raw: ReservationInput): Promise<ActionResult<
           },
         });
         await writeReservationTables(tx, created.id, assigned.tableIds);
+        // Analytics (Faza 7): booking_created edhe për walk-in/telefon.
+        await recordEvent({ restaurantId, type: "booking_created" }, tx);
         return created;
       },
       { timeout: 20000, maxWait: 12000 }

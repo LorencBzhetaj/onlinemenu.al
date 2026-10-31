@@ -23,6 +23,29 @@ Dokumenti kryesor i statusit. Referenca:
 | Faza 4 — motori i rezervimeve (booking) | ✅ **motori + shërbimet** (multi-tenant); teste 43/43 (+ ruajtja e historikut); **lokal, pa push/migrim live** |
 | Faza 5 — UX booking + njoftime | ✅ **implementuar** (formular publik, menaxhim nga klienti, panel, njoftime); teste 23/23 + E2E 15/15; 0 overflow; **lokal, pa push/migrim live** |
 | Faza 6 — marketplace & kërkimi | ✅ **implementuar** (kryefaqe zbulimi, `/restaurants` me filtra në URL, disponueshmëri reale, SEO/sitemap/JSON-LD); teste 30/30 + E2E 23/23; 0 overflow; **lokal, pa push/migrim live** |
+| Faza 7 — staf, abonime, admin & analitika | ✅ **implementuar** (ftesa/role/revokim, aktivizim modulesh + rinovim, AuditLog, analitika reale, qytet/kuzhinë te cilësimet); teste 43/43 + E2E 14/14; 0 overflow; **lokal, pa push/migrim live** |
+
+---
+
+## 0.6 Faza 7 — Stafi, abonimet, administrimi dhe analitika (e implementuar)
+
+**Skema (lokal):** `Invitation` (ftesë me skadim + token SHA-256 njëpërdorimësh), `AuditLog` (aktor/veprim/restorant/kohë, pa sekrete/token), `AnalyticsEvent` (tenant-scoped, pa PII). Migrim `20261102000000_phase7_team_audit_analytics` — **vetëm aditiv**, aplikuar **vetëm lokal**; schema↔migrations pa diferencë.
+
+**1. Ekipi** (`src/modules/memberships/invitations.ts` + `/dashboard/team` + `/invite/[token]`):
+- `createInvitation` (VETËM OWNER; role **MANAGER/STAFF**, kurrë OWNER → invarianti); token RAW kthehet një herë, ruhet vetëm SHA-256; skadim 7 ditë; anëtar aktiv → `already_member`.
+- `acceptInvitation` **atomik + njëpërdorimësh** (guard `updateMany` count===1; garë → një fiton); email i user-it duhet të përputhet; krijon/riaktivizon membership; pas pranimit rifreskohet JWT-ja (`update()`) që middleware të njohë membership-in e ri.
+- `revokeMembership` — **invarianti i OWNER** (OWNER s'revokohet; mbetet ≥1 OWNER aktiv); izolim tenant. `revokeInvitation` për ftesat pending. Anëtari i revokuar humb aksesin menjëherë (`resolveAccess` → no_membership).
+- Lejet: `team:read`/`team:write` **vetëm OWNER** (STAFF/MANAGER refuzohen).
+
+**2. Abonimet & modulet:** aktivizim i **ndarë** MENU/BOOKING **per-restorant** (kurrë global) — `setModuleStatus` + `/api/admin/restaurants/[id]/modules` (SUPER_ADMIN) + toggles te admin detail. **Rinovim pa humbur periudhën e mbetur**: `computeRenewalExpiresAt` = `max(sot, skadimi) + ditët e planit` (aktiv → zgjat nga skadimi; i skaduar → nga sot). Pa integrim pagesash (shënim manual).
+
+**3. AuditLog** (`src/modules/admin/audit.ts` + `/admin/audit`): regjistron `subscription.update/renew`, `module.activate/disable`, `team.invite/accept/revoke` me aktor (email+rol), restorant, veprim dhe kohë. **Pa sekrete/token** (verifikuar me test). Best-effort (s'rrëzon veprimin kryesor).
+
+**4. Analitika reale** (`src/modules/analytics/events.ts`): evente **profile_view, menu_view, item_view, wolt_click** (beacon publik `/api/public/events`, vetëm profile të publikuara, izolim tenant, pa PII) dhe **booking_created** (server-side, në tx-në e rezervimit). `getAnalyticsSummary` jep totale + pjatat më të klikuara (emra realë); faqja `/dashboard/analytics` zëvendëson placeholder-in me metrika reale + empty states. **Klikimet Wolt nuk etiketohen porosi/rezervime.**
+
+**5. Cilësimet:** fushat **qytet/kuzhinë** te `/dashboard/settings` (+ API) që pronari plotëson të dhënat e kërkimit (Faza 6). Nav: shtuar **Ekipi**.
+
+**Kontroll verifikimi:** `tests/phase7.test.ts` **43/43** (ftesa skadim/ripërdorim/konkurrencë, invarianti OWNER, revokim, leje, aktivizim modulesh, rinovim, trial i skaduar, audit pa token, agregime analitike + izolim tenant). `tests/e2e/phase7.e2e.ts` **14/14** (owner fton → staf pranon → leje të kufizuara; analitika reale; audit; aktivizim moduli nga admin; screenshots @390/1440 → **0 overflow**). `tsc` 0 · `next build` OK · suita e plotë njësi **305/305**.
 
 ---
 

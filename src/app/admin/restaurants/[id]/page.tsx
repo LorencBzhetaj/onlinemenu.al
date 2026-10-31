@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { daysUntil } from "@/lib/subscription";
+import { listModules } from "@/modules/subscriptions/modules";
 import { SubscriptionForm } from "./subscription-form";
+import { ModulesForm } from "./modules-form";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,7 @@ export default async function AdminRestaurantDetail({
   const sub = restaurant.subscription;
   const expiresAt = sub ? new Date(sub.expiresAt) : null;
   const days = expiresAt ? daysUntil(expiresAt) : null;
+  const modules = await listModules(restaurant.id);
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -85,6 +88,21 @@ export default async function AdminRestaurantDetail({
             lastPaymentNote: sub?.lastPaymentNote ?? null,
           }}
         />
+      </div>
+
+      {/* Modulet (aktivizim i ndarë, per-restorant) */}
+      <div className="rounded-lg border border-line bg-surface p-5 space-y-3">
+        <h2 className="font-heading text-lg">Modulet</h2>
+        <ModulesForm
+          restaurantId={restaurant.id}
+          initial={modules.map((m) => ({ module: m.module, status: m.status, expiresAt: m.expiresAt ? m.expiresAt.toISOString() : null }))}
+        />
+      </div>
+
+      <div>
+        <Link href={`/admin/audit?restaurantId=${restaurant.id}`} className="text-sm text-primary hover:underline">
+          → Shiko audit-in e këtij restoranti
+        </Link>
       </div>
     </div>
   );
