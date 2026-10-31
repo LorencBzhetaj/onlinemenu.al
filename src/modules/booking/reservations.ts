@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hasEntitlement } from "@/modules/subscriptions/entitlements";
+import { enqueueJob } from "./notifications";
 import {
   getSettings,
   isBookableStartTime,
@@ -11,6 +12,63 @@ import {
   toBusinessDateKey,
   type RequestedArea,
 } from "./availability";
+
+const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+
+/** Meta e restorantit për njoftime (emri + email-i i pronarit si marrës staf). */
+async function notifyMeta(restaurantId: string): Promise<{ restaurantName: string; ownerEmail: string | null }> {
+  const r = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { name: true, owner: { select: { email: true } } } });
+  return { restaurantName: r?.name ?? "Restoranti", ownerEmail: r?.owner?.email ?? null };
+}
+
+/**
+ * Vendos në radhë njoftimet për një rezervim të ri BRENDA transaksionit: konfirmim te
+ * mysafiri (nëse ka email) dhe te pronari, plus kujtesë 24h (kur fillimi është >24h larg).
+ */
+async function enqueueConfirmation(
+  tx: Prisma.TransactionClient,
+  args: { restaurantId: string; reservationId: string; cancelToken: string; start: Date; whenLabel: string; partySize: number; guestEmail: string | null; guestName: string; meta: { restaurantName: string; ownerEmail: string | null } }
+) {
+  const base = {
+    restaurantName: args.meta.restaurantName,
+    when: args.whenLabel,
+    partySize: args.partySize,
+    guestName: args.guestName,
+  };
+  const manageUrl = `${BASE_URL}/bookings/${args.cancelToken}`;
+  if (args.guestEmail) {
+    await enqueueJob(tx, {
+      restaurantId: args.restaurantId,
+      reservationId: args.reservationId,
+      type: "BookingConfirmation",
+      recipient: args.guestEmail,
+      payload: { ...base, manageUrl },
+      dedupeKey: `conf:g:${args.reservationId}`,
+    });
+    const remindAt = new Date(args.start.getTime() - 24 * 3600_000);
+    if (remindAt.getTime() > Date.now()) {
+      await enqueueJob(tx, {
+        restaurantId: args.restaurantId,
+        reservationId: args.reservationId,
+        type: "Reminder24h",
+        recipient: args.guestEmail,
+        payload: { ...base, manageUrl },
+        dedupeKey: `rem24:g:${args.reservationId}`,
+        scheduledAt: remindAt,
+      });
+    }
+  }
+  if (args.meta.ownerEmail) {
+    await enqueueJob(tx, {
+      restaurantId: args.restaurantId,
+      reservationId: args.reservationId,
+      type: "BookingConfirmation",
+      recipient: args.meta.ownerEmail,
+      payload: base,
+      dedupeKey: `conf:o:${args.reservationId}`,
+    });
+  }
+}
 
 /**
  * SHËRBIMET E REZERVIMIT (Faza 4) — krijim/anulim/riplanifikim atomik, idempotent dhe
@@ -148,6 +206,7 @@ export async function createReservation(
 
   try {
     const customer = await findOrCreateCustomer(prisma, restaurantId, raw);
+    const meta = await notifyMeta(restaurantId);
     const reservation = await prisma.$transaction(
       async (tx) => {
         // Serializon rezervimet paralele për TË NJËJTIN slot (caps + assignment të sigurt).
@@ -184,6 +243,18 @@ export async function createReservation(
           },
         });
         await writeReservationTables(tx, created.id, assigned.tableIds);
+        // Njoftimet në TË NJËJTIN transaksion (dërgohen pas commit-it nga worker-i).
+        await enqueueConfirmation(tx, {
+          restaurantId,
+          reservationId: created.id,
+          cancelToken: created.cancelToken,
+          start,
+          whenLabel: `${dateStr} ${time}`,
+          partySize: raw.partySize,
+          guestEmail: customer.email,
+          guestName: `${customer.firstName} ${customer.lastName}`.trim(),
+          meta,
+        });
         return created;
       },
       { timeout: 20000, maxWait: 12000 }
@@ -269,11 +340,26 @@ export async function createWalkIn(raw: ReservationInput): Promise<ActionResult<
 
 /** Anulim vetë-shërbimi me token (token unik global; nuk kërkon tenant). Idempotent. */
 export async function cancelReservationByToken(token: string): Promise<ActionResult> {
-  const res = await prisma.reservation.findUnique({ where: { cancelToken: token } });
+  const res = await prisma.reservation.findUnique({
+    where: { cancelToken: token },
+    include: { customer: { select: { email: true, firstName: true, lastName: true } }, restaurant: { select: { name: true, owner: { select: { email: true } } } } },
+  });
   if (!res) return { ok: false, error: "Rezervimi nuk u gjet." };
   if (res.status === "Cancelled") return { ok: true };
   if (res.status === "Completed") return { ok: false, error: "Ky rezervim ka ndodhur tashmë." };
-  await prisma.reservation.update({ where: { id: res.id }, data: { status: "Cancelled" } });
+
+  const settings = await getSettings(res.restaurantId);
+  const whenLabel = `${toBusinessDateKey(res.startDateTime, settings.timezone)} ${businessTimeOfDay(res.startDateTime, settings.timezone)}`;
+  await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({ where: { id: res.id }, data: { status: "Cancelled" } });
+    const base = { restaurantName: res.restaurant.name, when: whenLabel, partySize: res.partySize, guestName: `${res.customer.firstName} ${res.customer.lastName}`.trim() };
+    if (res.customer.email) {
+      await enqueueJob(tx, { restaurantId: res.restaurantId, reservationId: res.id, type: "Cancellation", recipient: res.customer.email, payload: base, dedupeKey: `cancel:g:${res.id}` });
+    }
+    if (res.restaurant.owner?.email) {
+      await enqueueJob(tx, { restaurantId: res.restaurantId, reservationId: res.id, type: "Cancellation", recipient: res.restaurant.owner.email, payload: base, dedupeKey: `cancel:o:${res.id}` });
+    }
+  });
   return { ok: true };
 }
 
@@ -298,19 +384,47 @@ export async function rescheduleReservation(
   if (!bookable) return { ok: false, error: "Ajo tavolinë/orë nuk është e disponueshme." };
 
   const end = new Date(start.getTime() + settings.turnDurationMinutes * 60000);
+  const meta = await notifyMeta(restaurantId);
+  const customer = await prisma.customer.findUnique({ where: { id: res.customerId }, select: { email: true, firstName: true, lastName: true } });
+  const whenLabel = `${toBusinessDateKey(start, settings.timezone)} ${businessTimeOfDay(start, settings.timezone)}`;
   await prisma.$transaction(async (tx) => {
     await tx.reservation.update({ where: { id }, data: { startDateTime: start, endDateTime: end, tableId } });
     await tx.reservationTable.deleteMany({ where: { reservationId: id } });
     await tx.reservationTable.create({ data: { reservationId: id, tableId } });
+    const base = { restaurantName: meta.restaurantName, when: whenLabel, partySize: res.partySize, guestName: customer ? `${customer.firstName} ${customer.lastName}`.trim() : "", manageUrl: `${BASE_URL}/bookings/${res.cancelToken}` };
+    // Çelës dedupe me "versionin" = instanti i ri → çdo riplanifikim është event i veçantë.
+    if (customer?.email) {
+      await enqueueJob(tx, { restaurantId, reservationId: id, type: "Reschedule", recipient: customer.email, payload: base, dedupeKey: `resched:g:${id}:${start.getTime()}` });
+    }
   });
   return { ok: true };
 }
 
-/** Ndryshim statusi (staf). Tenant-scoped. */
+/** Ndryshim statusi (staf). Tenant-scoped. Kalimi → Cancelled njofton klientin. */
 export async function setReservationStatus(restaurantId: string, id: string, status: ReservationStatus): Promise<ActionResult> {
   if (!STATUSES.includes(status)) return { ok: false, error: "Status i pavlefshëm." };
-  const res = await prisma.reservation.findFirst({ where: { id, restaurantId }, select: { id: true } });
+  const res = await prisma.reservation.findFirst({
+    where: { id, restaurantId },
+    select: { id: true, status: true, partySize: true, startDateTime: true, customer: { select: { email: true, firstName: true, lastName: true } }, restaurant: { select: { name: true } } },
+  });
   if (!res) return { ok: false, error: "Rezervimi nuk u gjet." };
-  await prisma.reservation.update({ where: { id }, data: { status } });
+
+  const nowCancelled = status === "Cancelled" && res.status !== "Cancelled";
+  const settings = await getSettings(restaurantId);
+  const whenLabel = `${toBusinessDateKey(res.startDateTime, settings.timezone)} ${businessTimeOfDay(res.startDateTime, settings.timezone)}`;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({ where: { id }, data: { status } });
+    if (nowCancelled && res.customer.email) {
+      await enqueueJob(tx, {
+        restaurantId,
+        reservationId: id,
+        type: "Cancellation",
+        recipient: res.customer.email,
+        payload: { restaurantName: res.restaurant.name, when: whenLabel, partySize: res.partySize, guestName: `${res.customer.firstName} ${res.customer.lastName}`.trim() },
+        dedupeKey: `cancel:g:${id}`,
+      });
+    }
+  });
   return { ok: true };
 }

@@ -157,6 +157,8 @@ model Restaurant {
   closures        Closure[]
   areaClosures    AreaClosure[]
   slotLimits      SlotLimit[]
+  notificationJobs NotificationJob[]
+  dailyReports    DailyReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -483,8 +485,10 @@ model ReservationTable {
   reservationId String
   tableId       String
 
+  // reservation→Cascade: fshirja e një rezervimi heq rreshtat e tij join.
+  // table→Restrict: një tavolinë me histori rezervimesh NUK fshihet (çaktivizohet).
   reservation Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  table       RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  table       RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Restrict)
 
   @@unique([reservationId, tableId])
   @@index([tableId])
@@ -530,9 +534,13 @@ model Reservation {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  table    RestaurantTable    @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  customer Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  tables   ReservationTable[]
+  // Restrict: ruajtja e historikut — një tavolinë/klient me rezervime NUK fshihet
+  // aksidentalisht. Fshirja e tenant-it bëhet rrjedhë e posaçme (fshin rezervimet
+  // e para, në rend), jo me cascade nga tavolina/klienti.
+  table            RestaurantTable   @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  tables           ReservationTable[]
+  notificationJobs NotificationJob[]
 
   @@unique([restaurantId, idempotencyKey])
   @@index([restaurantId])
@@ -582,4 +590,70 @@ model SlotLimit {
 
   @@index([restaurantId])
   @@index([time])
+}
+
+// ─────────────────────────────────────────────────────────────
+// NJOFTIME (Faza 5) — job-i krijohet NË TË NJËJTIN transaksion me rezervimin;
+// worker-i i dërgon PAS commit-it. Retry/lease/dedupe; dështimi i email-it NUK
+// anulon një rezervim të kryer. Në test: email sink, pa dërgime reale.
+// ─────────────────────────────────────────────────────────────
+model NotificationJob {
+  id            String       @id @default(cuid())
+  restaurant    Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservationId String?
+  type          String // BookingConfirmation | Cancellation | Reschedule | Reminder24h | Reminder2h | Completed | NoShow | DailyDigest
+  channel       String       @default("Email")
+  recipient     String
+  payload       Json
+  // Dedupe: një job për (rezervim, event, version). Ri-krijimi i të njëjtit event
+  // s'dyfishon dërgimin. Për digest: çelës sipas tenant+datë.
+  dedupeKey     String       @unique
+  status        String       @default("Pending") // Pending | Sending | Sent | Simulated | Failed | Dead
+  attempts      Int          @default(0)
+  maxAttempts   Int          @default(5)
+  scheduledAt   DateTime     @default(now()) // kur bëhet i gatshëm për dërgim (kujtesat në të ardhmen)
+  leaseUntil    DateTime? // lease: një worker e merr deri në këtë kohë (shmang dërgim i dyfishtë)
+  lastError     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  deliveries NotificationDelivery[]
+
+  @@index([restaurantId])
+  @@index([status, scheduledAt])
+  @@index([reservationId])
+}
+
+// Log per-tentativë i dërgimit (audit i vogël; pa exactly-once për SMTP).
+model NotificationDelivery {
+  id        String          @id @default(cuid())
+  job       NotificationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId     String
+  attempt   Int
+  outcome   String // sent | simulated | failed
+  detail    String?
+  createdAt DateTime        @default(now())
+
+  @@index([jobId])
+}
+
+// Një rresht për datë-lokale + tip raporti → raporti ditor idempotent (një email/datë).
+model DailyReport {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  reportDate   String // datë kalendarike lokale "YYYY-MM-DD" (zona e restorantit)
+  type         String     @default("DailyDigest")
+  status       String     @default("Pending") // Pending | Sent | Failed
+  reservations Int        @default(0)
+  guests       Int        @default(0)
+  startedAt    DateTime   @default(now())
+  sentAt       DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([restaurantId, reportDate, type])
+  @@index([restaurantId])
 }

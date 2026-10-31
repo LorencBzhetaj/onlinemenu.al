@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getPublicProfile, reserveDestination } from "@/modules/restaurants/public-profile";
+import { getPublicProfile } from "@/modules/restaurants/public-profile";
 import { publicThemeVars, publicFontsHref } from "@/lib/public-theme";
 import { RestaurantInfo } from "@/components/public/restaurant-info";
 import { PublicTabs } from "@/components/public/public-tabs";
@@ -38,7 +38,7 @@ export default async function RestaurantInfoPage({ params }: { params: { slug: s
           aboutAl: p.aboutAl,
           aboutEn: p.aboutEn,
           links: p.links,
-          reserveHref: reserveDestination({ gate: p.gate, whatsapp: p.whatsapp, phone: p.phone, name: p.name }),
+          reserveHref: p.gate.bookingActive ? `/restaurants/${p.slug}/reserve` : null,
         }}
       />
       <PublicTabs slug={p.slug} active="info" labels={{ profile: "Restoranti", menu: "Menuja", info: "Informacion" }} />

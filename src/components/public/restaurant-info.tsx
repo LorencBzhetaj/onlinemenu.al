@@ -125,13 +125,17 @@ export function RestaurantInfo({ info }: { info: InfoView }) {
         <>
           <div className="rprofile-section-title">{t("Rezervim", "Reservation")}</div>
           <div className="rprofile-links">
-            <a className="rprofile-link rprofile-link--reserve" href={info.reserveHref} target="_blank" rel="noopener noreferrer">
+            <a
+              className="rprofile-link rprofile-link--reserve"
+              href={info.reserveHref}
+              {...(info.reserveHref.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+            >
               <span className="rprofile-link-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4M16 3v4M3 10h18" /></svg>
               </span>
               <span className="rprofile-link-text">
                 <span className="rprofile-link-label">{t("Rezervo tavolinë", "Reserve a table")}</span>
-                <span className="rprofile-link-sub">{t("Na shkruaj për rezervim", "Message us to book")}</span>
+                <span className="rprofile-link-sub">{t("Zgjidh datën, orën dhe personat", "Pick date, time and party")}</span>
               </span>
               <svg className="rprofile-link-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
             </a>

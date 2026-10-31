@@ -21,10 +21,12 @@ export const PERMISSIONS: Record<string, Role[]> = {
   "subscription:read": ["OWNER"],
   "team:read": ["OWNER"],
   "team:write": ["OWNER"],
-  // Faza 5 (ende pa rrugë): operacionale për gjithë stafin.
+  // Booking (Faza 5): operacionale për gjithë stafin; konfigurimi vetëm OWNER/MANAGER.
   "reservations:read": ["OWNER", "MANAGER", "STAFF"],
   "reservations:write": ["OWNER", "MANAGER", "STAFF"],
   "customers:read": ["OWNER", "MANAGER", "STAFF"],
+  "customers:write": ["OWNER", "MANAGER"],
+  "booking:config": ["OWNER", "MANAGER"], // tavolina/zona/kombinime/orare/mbyllje/kufij/cilësime booking
 };
 
 export function isRole(x: unknown): x is Role {

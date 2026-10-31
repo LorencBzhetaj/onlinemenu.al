@@ -142,13 +142,17 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
         )}
 
         <div className="rprofile-links">
-          {/* Rezervimi: vetëm kur ka modul BOOKING + destinacion funksional (jo booking live i Gjeçaj). */}
+          {/* Rezervimi: vetëm kur BOOKING është aktiv → formulari i brendshëm (same-tab). */}
           {profile.reserveHref && (
-            <a className="rprofile-link rprofile-link--reserve" href={profile.reserveHref} target="_blank" rel="noopener noreferrer">
+            <a
+              className="rprofile-link rprofile-link--reserve"
+              href={profile.reserveHref}
+              {...(profile.reserveHref.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+            >
               <span className="rprofile-link-icon"><LinkIcon type="RESERVE" /></span>
               <span className="rprofile-link-text">
                 <span className="rprofile-link-label">{t("Rezervo tavolinë", "Reserve a table")}</span>
-                <span className="rprofile-link-sub">{t("Na shkruaj për rezervim", "Message us to book")}</span>
+                <span className="rprofile-link-sub">{t("Zgjidh datën, orën dhe personat", "Pick date, time and party")}</span>
               </span>
               <Chevron />
             </a>

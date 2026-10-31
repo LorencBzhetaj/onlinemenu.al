@@ -19,6 +19,7 @@ import {
   createClosure,
   createAreaClosure,
 } from "@/modules/booking/config";
+import { purgeRestaurantBookingData, deleteTable, setTableActive, deleteCustomer } from "@/modules/booking/config";
 import { getAvailableTimes, isTableBookable } from "@/modules/booking/availability";
 import { zonedTimeToUtc, toBusinessDateKey } from "@/modules/booking/timezone";
 
@@ -41,7 +42,12 @@ function ok(name: string, cond: boolean, extra = "") {
 
 const SUF = "@test.local";
 const TZ = "Europe/Tirane";
+// Pastrimi i fixtures në RENDIN e duhur (rezervimet të parat), pa dobësuar FK-të:
+// purge i të dhënave booking për çdo restorant testues, pastaj fshirja e user-ëve.
 async function cleanup() {
+  const users = await prisma.user.findMany({ where: { email: { endsWith: SUF } }, select: { id: true } });
+  const rests = await prisma.restaurant.findMany({ where: { ownerId: { in: users.map((u) => u.id) } }, select: { id: true } });
+  for (const r of rests) await purgeRestaurantBookingData(r.id);
   await prisma.user.deleteMany({ where: { email: { endsWith: SUF } } });
 }
 
@@ -228,6 +234,29 @@ async function main() {
   const subE = await prisma.subscription.findUnique({ where: { restaurantId: E.restaurantId }, select: { id: true } });
   await prisma.moduleEntitlement.update({ where: { subscriptionId_module: { subscriptionId: subE!.id, module: "BOOKING" } }, data: { status: "disabled" } });
   ok("BOOKING joaktiv → rezervim refuzohet", !(await createReservation({ restaurantId: E.restaurantId, start: at(D, 19), partySize: 2, ...guest("+355690000100") })).ok);
+
+  // ── 11) Ruajtja e historikut (regression) ──
+  console.log("\n11. Ruajtja e historikut:");
+  const Hx = await makeBookingRestaurant("p4hx", [{ name: "HX1", seats: 4 }]);
+  const hxBook = await createReservation({ restaurantId: Hx.restaurantId, start: at(D, 19), partySize: 2, ...guest("+355690000110") });
+  ok("rezervim ok", hxBook.ok);
+  // Tavolina me histori → fshirja refuzohet (sugjeron çaktivizim).
+  const delT = await deleteTable(Hx.restaurantId, Hx.tableIds[0]);
+  ok("fshirja e tavolinës me histori → refuzohet", !delT.ok, JSON.stringify(delT));
+  // FK e fortë: fshirja direkte në DB hedh gabim (nuk dobësohet).
+  let fkThrew = false;
+  try { await prisma.restaurantTable.delete({ where: { id: Hx.tableIds[0] } }); } catch { fkThrew = true; }
+  ok("FK RESTRICT pengon fshirjen direkte në DB", fkThrew);
+  // Rezervimi mbetet (historia ruhet).
+  ok("rezervimi (historia) ende ekziston", (await prisma.reservation.count({ where: { restaurantId: Hx.restaurantId } })) === 1);
+  // Çaktivizimi është rruga e duhur.
+  const deact = await setTableActive(Hx.restaurantId, Hx.tableIds[0], false);
+  ok("çaktivizimi i tavolinës → ok", deact.ok);
+  ok("tavolina u çaktivizua (isActive=false)", (await prisma.restaurantTable.findUnique({ where: { id: Hx.tableIds[0] }, select: { isActive: true } }))?.isActive === false);
+  // Klienti me rezervime → fshirja refuzohet (politikë eksplicite).
+  const cust = await prisma.customer.findFirst({ where: { restaurantId: Hx.restaurantId }, select: { id: true } });
+  const delC = await deleteCustomer(Hx.restaurantId, cust!.id);
+  ok("fshirja e klientit me rezervime → refuzohet", !delC.ok, JSON.stringify(delC));
 
   await cleanup();
   console.log(`\n──────── PHASE 4 RESULT: ${pass} passed, ${fail} failed ────────`);

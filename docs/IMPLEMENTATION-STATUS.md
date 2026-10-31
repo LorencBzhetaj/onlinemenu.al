@@ -20,7 +20,32 @@ Dokumenti kryesor i statusit. Referenca:
 | Faza 1 — tenant/rol/entitlement | ✅ **implementuar** + kontroll integrimi (E2E 19/19); **lokal, pa push/migrim live** |
 | Faza 2 — design system + layout-e | ✅ **implementuar** (krem/jeshile); 0 overflow @390/1440; build OK |
 | Faza 3 — profil QR, lidhje, menu e plotë | ✅ **implementuar**; teste 41/41 + E2E 23/23; 0 overflow @390/1440; **lokal, pa push/migrim live** |
-| Faza 4 — motori i rezervimeve (booking) | ✅ **motori + shërbimet** (multi-tenant); teste 36/36; **lokal, pa push/migrim live**; UI/njoftime → Faza 5 |
+| Faza 4 — motori i rezervimeve (booking) | ✅ **motori + shërbimet** (multi-tenant); teste 43/43 (+ ruajtja e historikut); **lokal, pa push/migrim live** |
+| Faza 5 — UX booking + njoftime | ✅ **implementuar** (formular publik, menaxhim nga klienti, panel, njoftime); teste 23/23 + E2E 15/15; 0 overflow; **lokal, pa push/migrim live** |
+
+---
+
+## 0.4 Faza 5 — UX booking + njoftime (e implementuar)
+
+Mbi motorin e Fazës 4: formulari publik, menaxhimi nga klienti, paneli i plotë dhe njoftimet. **BOOKING nuk aktivizohet globalisht** — vetëm restorantet testuese.
+
+**Korrigjim i historikut (para Fazës 5):** FK-të `Reservation/ReservationTable → tavolinë/klient` u kthyen në **RESTRICT** (tavolina/klient me rezervime NUK fshihen aksidentalisht). Shërbime: `setTableActive` (çaktivizim), `deleteTable`/`deleteCustomer` (refuzojnë me histori), `purgeRestaurantBookingData` (rrjedhë e posaçme fshirjeje tenant-i, në rend). Pastrimi i fixtures tani në rend (jo dobësim FK-je). Regression test në `phase4.test.ts` (7 kontrolle).
+
+**1. Rezervimi publik** — `/restaurants/[slug]/reserve`: hapa datë → persona/zonë/orë → kontakt → konfirmim. Disponueshmëria + krijimi përdorin motorin e Fazës 4; slot-i i zënë ndërkohë → mesazh + rifreskim. API: `GET /api/public/restaurants/[slug]/availability`, `POST .../reservations` (BOOKING aktiv + rate limit + idempotency).
+
+**2. Menaxhimi nga klienti** — `/bookings/[token]`: detajet, **anulim me POST** (`/api/public/bookings/[token]/cancel`), **shto në kalendar** (`/calendar.ics`), udhëzime. Ndryshimi nga klienti = kërkesë kontakti; **riplanifikimin e bën stafi** (v1).
+
+**3. Paneli** — `/dashboard/reservations` (lista e ditës, walk-in/telefon, statuset, riplanifikim), `/dashboard/customers` (kërkim, fshirje me politikë), `/dashboard/tables` (zona, tavolina, kombinime, plan salle me pozicion x/y/w/h), `/dashboard/hours` (orar, mbyllje, kufij slot-i, politika). **OWNER/MANAGER** ndryshojnë konfigurimin (`booking:config`); **STAFF** menaxhon vetëm rezervimet (`reservations:*`). Guard: `guardBooking` = rol + entitlement BOOKING (leximet s'kërkojnë modul aktiv, shkrimet po).
+
+**4. Njoftimet** — `NotificationJob` krijohet **në të njëjtin transaksion** me rezervimin; worker-i (`runNotificationWorker`) i dërgon **pas commit-it** me **lease + retry (backoff) + dedupe** (`dedupeKey` unik); dështim → Failed→backoff→Dead; **dështimi i email-it NUK anulon booking-un**. Evente: konfirmim, anulim, riplanifikim, kujtesë 24h, raport ditor (`generateDailyDigest`, idempotent me `DailyReport`). Dërguesi i **injektueshëm** → test sink, **pa dërgime reale**. Cron: `/api/cron/notifications` (CRON_SECRET). Rrugët publike bëjnë kick worker-it pas commit-it (best-effort).
+
+**5. Butoni Rezervo** i profilit/informacionit lidhet me **formularin e brendshëm** kur BOOKING është aktiv (jo kontakt wa.me).
+
+**Module/skedarë:** `src/modules/booking/{notifications,guards}.ts` + zgjerime te `reservations.ts`/`config.ts`; `src/components/public/{reserve-flow,cancel-booking}.tsx`; faqe publike `/reserve`, `/bookings/[token]`(+`.ics`); panel `/dashboard/{reservations,customers,tables,hours}`; API `/api/public/*`, `/api/dashboard/{reservations,customers,booking/*}`, `/api/cron/notifications`. Leje të reja: `booking:config`, `customers:write`.
+
+**Migrimi (lokal):** `prisma/migrations/20261031000000_phase5_booking_ux_notifications` — FK → RESTRICT + `NotificationJob`/`NotificationDelivery`/`DailyReport`. **Aplikuar vetëm lokal.** Schema↔migrations: pa diferencë.
+
+**Kontroll verifikimi:** `tests/phase5.test.ts` **23/23** (job në tx, worker/sink, dedupe, retry→Dead, lease/konkurrencë, email failure s'anulon booking, cancel/reschedule jobs, digest idempotent). `tests/e2e/phase5.e2e.ts` **15/15** (klient rezervon → stafi sheh/riplanifikon → klienti anulon; njoftime pas commit-it; cron 401/200; screenshots @390/1440 → **0 overflow**). `tsc` 0 · `next build` OK · suita e plotë njësi **232/232**.
 
 ---
 

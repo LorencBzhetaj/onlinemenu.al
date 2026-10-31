@@ -72,6 +72,16 @@ Mbulon me cookie reale: OWNER A↔B, header x-restaurant-id i mirë/i keq/i mung
 të tenant-it tjetër, MANAGER/STAFF/revoked, modul MENU joaktiv (route + publik), two-tab
 (shkrim/lexim mbeten te A + refresh + navigation), dhe gate-i publik (isPublished+suspendedAt+MENU).
 
+`phase5.test.ts` — njoftimet e Fazës 5 (job në tx, worker/sink, dedupe, retry→Dead, lease/
+konkurrencë, email failure s'anulon booking, cancel/reschedule jobs, digest idempotent).
+Dërguesi është i injektueshëm → sink testi, pa dërgime reale. Rreshtat `prisma:error` gjatë
+testit të digest-it janë P2002 të pritura (idempotencë), jo dështime.
+
+`tests/e2e/phase5.e2e.ts` (Faza 5) ekzekuton ciklin e plotë mbi serverin real: klient rezervon
+(formular publik) → stafi e sheh/riplanifikon → klienti anulon; verifikon njoftimet pas commit-it,
+cron-in (401 pa secret / 200 me secret) dhe bën screenshots @390/1440. Kërkon `CRON_SECRET` te env-i
+i serverit (p.sh. `CRON_SECRET=test-cron`).
+
 `tests/e2e/phase3.e2e.ts` (Faza 3) mbulon rrjedhën publike: QR `/q/[code]` → profil, alias `/m/[slug]` →
 profil, profil/menu/info, lidhje Wolt (jashtme), rezervim i gated-uar (BOOKING + destinacion), kërkim
 pjatash, alergjenë, disponueshmëri, orare menuje, dhe kontrolle aksesi për API-të e reja

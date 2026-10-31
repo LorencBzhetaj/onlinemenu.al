@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getPublicProfile, reserveDestination } from "@/modules/restaurants/public-profile";
+import { getPublicProfile } from "@/modules/restaurants/public-profile";
 import { publicThemeVars, publicFontsHref } from "@/lib/public-theme";
 import { RestaurantProfile } from "@/components/public/restaurant-profile";
 import { PublicTabs } from "@/components/public/public-tabs";
@@ -51,7 +51,8 @@ export default async function RestaurantProfilePage({ params }: { params: { slug
           phone: p.phone,
           links: p.links,
           menuActive: p.gate.menuActive,
-          reserveHref: reserveDestination({ gate: p.gate, whatsapp: p.whatsapp, phone: p.phone, name: p.name }),
+          // BOOKING aktiv → formulari i brendshëm; përndryshe butoni nuk shfaqet.
+          reserveHref: p.gate.bookingActive ? `/restaurants/${p.slug}/reserve` : null,
         }}
       />
       <PublicTabs slug={p.slug} active="profile" labels={{ profile: "Restoranti", menu: "Menuja", info: "Informacion" }} />

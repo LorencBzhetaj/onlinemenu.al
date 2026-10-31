@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 import { resolveQrCode, ensureQrCode } from "@/modules/restaurants/qr";
 import { validateLinkUrl } from "@/modules/restaurants/external-links";
-import { isWindowActive } from "@/modules/menu/schedule";
+import { isWindowActive, tiraneNow } from "@/modules/menu/schedule";
 import {
   getPublicProfile,
   getPublicMenuData,
@@ -149,7 +149,8 @@ async function main() {
   await prisma.menuItem.create({ data: { categoryId: catAlways.id, nameAl: "E fshehur", nameEn: "Hidden", price: 400, isVisible: false } });
 
   // Kategori me orar: dritare që S'është aktive tani (ditë tjetër) → nuk shfaqet.
-  const otherDayNum = ((new Date().getDay()) + 1) % 7;
+  // Dita e javës sipas Europe/Tirane (jo ora e serverit) → pa flake në kufirin e mesnatës.
+  const otherDayNum = (tiraneNow().day + 1) % 7;
   const sched = await prisma.menuSchedule.create({ data: { restaurantId: A.restaurantId, label: "Vetëm nesër", days: [otherDayNum], startMinutes: 0, endMinutes: 1440 } });
   const catScheduled = await prisma.category.create({ data: { restaurantId: A.restaurantId, nameAl: "Me orar", nameEn: "Scheduled", sortOrder: 1, scheduleId: sched.id } });
   await prisma.menuItem.create({ data: { categoryId: catScheduled.id, nameAl: "Pjata orari", nameEn: "Sched dish", price: 600, isVisible: true } });
