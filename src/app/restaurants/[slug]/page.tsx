@@ -6,6 +6,8 @@ import { RestaurantProfile } from "@/components/public/restaurant-profile";
 import { PublicTabs } from "@/components/public/public-tabs";
 import { Unavailable } from "@/components/public/unavailable";
 import { PublicFonts } from "@/components/public/public-fonts";
+import { restaurantJsonLd } from "@/modules/restaurants/structured-data";
+import { absoluteUrl } from "@/lib/site";
 import "@/components/public/profile.css";
 import "@/components/public/menu.css";
 
@@ -15,9 +17,22 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const p = await getPublicProfile(params.slug);
   if (!p) return { title: "Restoranti" };
+  const url = absoluteUrl(`/restaurants/${p.slug}`);
+  const description = p.subtitleAl ?? p.taglineAl ?? `${p.name}${p.address ? ` — ${p.address}` : ""}`;
+  // Profilet e fshehura (jo të publikuara / të pezulluara) nuk indeksohen.
+  const hidden = !p.gate.isPublished || p.gate.suspended;
   return {
     title: p.name,
-    description: p.subtitleAl ?? p.taglineAl ?? `${p.name}${p.address ? ` — ${p.address}` : ""}`,
+    description,
+    alternates: { canonical: url },
+    robots: hidden ? { index: false, follow: false } : undefined,
+    openGraph: {
+      type: "website",
+      title: p.name,
+      description,
+      url,
+      ...(p.logoUrl ? { images: [p.logoUrl.startsWith("http") ? p.logoUrl : absoluteUrl(p.logoUrl)] } : {}),
+    },
   };
 }
 
@@ -35,6 +50,11 @@ export default async function RestaurantProfilePage({ params }: { params: { slug
 
   return (
     <div className="rprofile" style={themeVars}>
+      {/* Structured data: të dhëna reale (pa ratings të sajuara). */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantJsonLd(p)) }}
+      />
       <PublicFonts href={publicFontsHref(p)} />
       <RestaurantProfile
         profile={{

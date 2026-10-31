@@ -1,9 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Platforma e Menusë Digjitale",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Platforma e Menusë Digjitale",
+    template: "%s · MenuDigjitale",
+  },
   description:
     "Menu digjitale premium për restorante — QR, personalizim vizual, dygjuhëshe (AL/EN).",
   // PWA: lejon ruajtjen e menusë në ekranin bazë (skanim QR në tryezë).

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Slot = { time: string; start: string; freeTables: number };
 type Step = "when" | "time" | "contact" | "done";
@@ -13,15 +13,33 @@ function todayStr(timezone: string): string {
   }
 }
 
-export function ReserveFlow({ slug, maxPartySize, timezone }: { slug: string; maxPartySize: number; timezone: string }) {
+export function ReserveFlow({
+  slug,
+  maxPartySize,
+  timezone,
+  initialDate,
+  initialPartySize,
+  initialTime,
+}: {
+  slug: string;
+  maxPartySize: number;
+  timezone: string;
+  initialDate?: string;
+  initialPartySize?: number;
+  initialTime?: string;
+}) {
   const idemKey = useMemo(
     () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
     []
   );
   const minDate = todayStr(timezone);
+  // Prefill nga kërkimi (nëse data e bartur s'është në të shkuarën); rikontrolli bëhet në server.
+  const prefillDate = initialDate && initialDate >= minDate ? initialDate : null;
   const [step, setStep] = useState<Step>("when");
-  const [date, setDate] = useState(minDate);
-  const [partySize, setPartySize] = useState(2);
+  const [date, setDate] = useState(prefillDate ?? minDate);
+  const [partySize, setPartySize] = useState(
+    initialPartySize && initialPartySize >= 1 && initialPartySize <= maxPartySize ? initialPartySize : 2
+  );
   const [area, setArea] = useState<"no_preference" | "indoor" | "outdoor">("no_preference");
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,6 +54,10 @@ export function ReserveFlow({ slug, maxPartySize, timezone }: { slug: string; ma
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [manageUrl, setManageUrl] = useState<string | null>(null);
+
+  // Prefill nga kërkimi: ngarko oraret një herë dhe parazgjidh orën e kërkuar (nëse është e lirë).
+  const didInit = useRef(false);
+  const wantTime = useRef<string | null>(prefillDate && initialTime ? initialTime : null);
 
   async function loadSlots(goStep = true) {
     setError(null);
@@ -80,6 +102,22 @@ export function ReserveFlow({ slug, maxPartySize, timezone }: { slug: string; ma
       setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (prefillDate && !didInit.current) {
+      didInit.current = true;
+      void loadSlots();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (wantTime.current && slots.length > 0) {
+      const match = slots.find((s) => s.time === wantTime.current);
+      if (match) setSelected(match);
+      wantTime.current = null;
+    }
+  }, [slots]);
 
   return (
     <div className="rprofile-body rsv">

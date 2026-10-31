@@ -24,6 +24,8 @@ export type PublicProfile = {
   phone: string | null;
   whatsapp: string | null;
   address: string | null;
+  city: string | null;
+  cuisine: string | null;
   mapsUrl: string | null;
   aboutAl: string | null;
   aboutEn: string | null;
@@ -68,6 +70,8 @@ export async function getPublicProfile(slug: string): Promise<PublicProfile | nu
     phone: r.phone,
     whatsapp: r.whatsapp,
     address: r.address,
+    city: r.city,
+    cuisine: r.cuisine,
     mapsUrl: r.mapsUrl,
     aboutAl: r.aboutAl,
     aboutEn: r.aboutEn,

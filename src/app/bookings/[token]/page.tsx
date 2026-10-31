@@ -10,7 +10,8 @@ import "@/components/public/profile.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Rezervimi juaj" };
+// Token/PII → nuk indeksohet kurrë (masterplan §4).
+export const metadata: Metadata = { title: "Rezervimi juaj", robots: { index: false, follow: false } };
 
 async function getBooking(token: string) {
   return prisma.reservation.findUnique({

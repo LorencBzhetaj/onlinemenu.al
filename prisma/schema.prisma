@@ -116,6 +116,10 @@ model Restaurant {
   phone        String?
   whatsapp     String?
   address      String?
+  // Zbulimi/kërkimi (Faza 6): qytet + kuzhinë për filtra. Opsionale; pa vlera të sajuara.
+  // Editohen te moduli Settings (UI e plotë → Faza 7); listimi i trajton null-at si "pa filtër".
+  city         String?
+  cuisine      String?
   // Koordinata opsionale (profil/Informacion). Lidhja e hartës ruhet si RestaurantExternalLink(MAPS).
   mapsUrl      String?
   // Përshkrim i shkurtër i restorantit për faqen e profilit/informacionit (opsional, per-gjuhë).
@@ -164,6 +168,9 @@ model Restaurant {
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+  // Listimi publik filtron shpesh mbi publikim + qytet/kuzhinë (Faza 6).
+  @@index([isPublished, city])
+  @@index([isPublished, cuisine])
 }
 
 // ─────────────────────────────────────────────────────────────

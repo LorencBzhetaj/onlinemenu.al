@@ -22,6 +22,32 @@ Dokumenti kryesor i statusit. Referenca:
 | Faza 3 — profil QR, lidhje, menu e plotë | ✅ **implementuar**; teste 41/41 + E2E 23/23; 0 overflow @390/1440; **lokal, pa push/migrim live** |
 | Faza 4 — motori i rezervimeve (booking) | ✅ **motori + shërbimet** (multi-tenant); teste 43/43 (+ ruajtja e historikut); **lokal, pa push/migrim live** |
 | Faza 5 — UX booking + njoftime | ✅ **implementuar** (formular publik, menaxhim nga klienti, panel, njoftime); teste 23/23 + E2E 15/15; 0 overflow; **lokal, pa push/migrim live** |
+| Faza 6 — marketplace & kërkimi | ✅ **implementuar** (kryefaqe zbulimi, `/restaurants` me filtra në URL, disponueshmëri reale, SEO/sitemap/JSON-LD); teste 30/30 + E2E 23/23; 0 overflow; **lokal, pa push/migrim live** |
+
+---
+
+## 0.5 Faza 6 — Marketplace dhe kërkimi (e implementuar)
+
+Zbulimi i restoranteve me **të dhëna reale**, mbi gate-in ekzistues dhe motorin e Fazës 4. **Pa logjikë paralele disponueshmërie; pa slot të sajuar.**
+
+**Skema (lokal):** `Restaurant.city`, `Restaurant.cuisine` (opsionale, pa vlera të sajuara; editohen te Settings — UI e plotë në Fazën 7). Indekse `@@index([isPublished, city])` / `([isPublished, cuisine])`. Migrim `prisma/migrations/20261101000000_phase6_discovery_city_cuisine` — **vetëm aditiv**, aplikuar **vetëm lokal**; schema↔migrations pa diferencë.
+
+**Shërbim kërkimi** — `src/modules/restaurants/search.ts`:
+- `parseSearchParams` validon **në server**: `q`, `city`, `cuisine`, `date` (datë kalendarike reale), `time` (HH:MM), `guests` (1..`MAX_GUESTS`), `page` (≥1). Vlerat e pavlefshme bihen në heshtje.
+- `searchRestaurants` liston **vetëm** `isPublished && !suspendedAt` (njëjtë si dukshmëria e profilit); filtra qytet/kuzhinë (case-insensitive equals) + emër (contains); pagination `PAGE_SIZE=12` me **clamp** të faqes. Kthen vetëm fusha publike (pa `id`/`ownerId`/email).
+- **Disponueshmëria** vetëm nga `getAvailableTimes` (motori i Fazës 4), vetëm për faqen aktuale të rezultateve dhe vetëm për restorantet me **BOOKING aktiv**; e kufizuar në `SLOTS_PER_CARD=5` (slot-et më pranë orës së kërkuar). Pa query të pakufizuara për restorant.
+- `getSearchFacets` → qytete/kuzhina reale dalluese (vetëm nga publike jo-të pezulluara) për dropdown-et.
+
+**API** — `GET /api/public/restaurants` (publik; vetëm profile të publikuara).
+
+**Faqet:**
+- `/` (kryefaqja) — kërkim konsumatori (→ `/restaurants`) + **restorante reale** të publikuara; CTA dytësore "Je restorant?" ruan rrjedhën e pronarit.
+- `/restaurants` — shirit filtrash që **pasqyron filtrat në URL** (Back i ruan), rrjetë rezultatesh, pagination; **gjendjet loading** (`loading.tsx` skeleton), **pa rezultate** (`EmptyState`) dhe **gabim** (`error.tsx`). Karta → profil; slot → `/restaurants/[slug]/reserve` me **date/guests/time të bartura**.
+- `/restaurants/[slug]/reserve` — lexon `searchParams` dhe parambush `ReserveFlow` (auto-load i orëve + parazgjedhje e orës); **rikontrolli autoritativ mbetet në krijim** (motori i Fazës 4).
+
+**SEO:** `metadataBase` (NEXT_PUBLIC_BASE_URL); profil me **canonical** + OpenGraph + **JSON-LD `schema.org/Restaurant`** me të dhëna reale (**pa `aggregateRating`/çmim të sajuar**); profilet e fshehura `noindex`. `sitemap.xml` → **vetëm** faqe publike + profile të publikuara (profil/menu/info), pa panel/reserve/bookings. `robots.txt` → disallow `/api`, `/dashboard`, `/admin`, `/onboarding`, `/bookings`, token-flows. `/bookings/[token]` **noindex** (token/PII).
+
+**Kontroll verifikimi:** `tests/phase6.test.ts` **30/30** (validim, gate publikim/pezullim, filtra qytet/kuzhinë/emër, facets, pagination+clamp, rend stabil, disponueshmëri reale + timezone, kufi `SLOTS_PER_CARD`, pa slot kur s'ka BOOKING, pa të dhëna private). `tests/e2e/phase6.e2e.ts` **23/23** (kryefaqe me të dhëna reale, listim + filtra në URL, slot → reserve me parametra të bartur, pa rezultate, sitemap/robots/JSON-LD/noindex; screenshots @390/1440 → **0 overflow**). `tsc` 0 · `next build` OK · suita e plotë njësi **262/262**.
 
 ---
 
