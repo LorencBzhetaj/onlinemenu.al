@@ -8,7 +8,7 @@ import {
   computeExpiresAt,
   computeRenewalExpiresAt,
 } from "@/lib/subscription";
-import { recordAudit } from "@/modules/admin/audit";
+import { recordAuditTx } from "@/modules/admin/audit";
 
 export async function PUT(
   req: Request,
@@ -59,29 +59,32 @@ export async function PUT(
     expiresAt = computeExpiresAt(status, plan, existing?.expiresAt ?? null);
   }
 
-  const subscription = await prisma.subscription.upsert({
-    where: { restaurantId: params.id },
-    update: { status, plan, expiresAt, lastPaymentNote },
-    create: {
+  // ATOMIK (Faza 8): abonimi + audit-i në NJË transaksion (kurrë ndryshim abonimi pa gjurmë).
+  const subscription = await prisma.$transaction(async (tx) => {
+    const sub = await tx.subscription.upsert({
+      where: { restaurantId: params.id },
+      update: { status, plan, expiresAt, lastPaymentNote },
+      create: {
+        restaurantId: params.id,
+        status,
+        plan,
+        expiresAt,
+        lastPaymentNote,
+        startedAt: new Date(),
+      },
+    });
+    // Audit (pa sekrete): kush, çfarë, cili restorant, kur.
+    await recordAuditTx(tx, {
+      actorUserId: session.user.id,
+      actorEmail: session.user.email ?? null,
+      actorRole: "SUPER_ADMIN",
       restaurantId: params.id,
-      status,
-      plan,
-      expiresAt,
-      lastPaymentNote,
-      startedAt: new Date(),
-    },
-  });
-
-  // Audit (pa sekrete): kush, çfarë, cili restorant, kur.
-  await recordAudit({
-    actorUserId: session.user.id,
-    actorEmail: session.user.email ?? null,
-    actorRole: "SUPER_ADMIN",
-    restaurantId: params.id,
-    action: isRenew ? "subscription.renew" : "subscription.update",
-    targetType: "Subscription",
-    targetId: subscription.id,
-    summary: `${isRenew ? "Rinovim" : "Përditësim"}: plan=${plan}, status=${status}, skadon=${expiresAt.toISOString().slice(0, 10)}`,
+      action: isRenew ? "subscription.renew" : "subscription.update",
+      targetType: "Subscription",
+      targetId: sub.id,
+      summary: `${isRenew ? "Rinovim" : "Përditësim"}: plan=${plan}, status=${status}, skadon=${expiresAt.toISOString().slice(0, 10)}`,
+    });
+    return sub;
   });
 
   return NextResponse.json({ ok: true, subscription });

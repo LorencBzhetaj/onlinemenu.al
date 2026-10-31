@@ -1,11 +1,15 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, indexingAllowed } from "@/lib/site";
 
 /**
- * robots (Faza 6): zonat private dhe tokenet nuk indeksohen. Profilet publike dhe
- * kërkimi lejohen. /bookings mban token → noindex edhe në nivel faqeje.
+ * robots (Faza 6 + 8): zonat private dhe tokenet nuk indeksohen. Profilet publike dhe
+ * kërkimi lejohen në PROD. Në staging/Preview (`NOINDEX=1` ose VERCEL_ENV≠production)
+ * → disallow i plotë, pa sitemap, që mjedisi jo-prod të mos indeksohet.
  */
 export default function robots(): MetadataRoute.Robots {
+  if (!indexingAllowed()) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
   return {
     rules: {
       userAgent: "*",

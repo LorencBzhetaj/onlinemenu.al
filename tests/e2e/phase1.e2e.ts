@@ -7,9 +7,7 @@
 import { prisma } from "@/lib/prisma";
 import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 import bcrypt from "bcryptjs";
-// Playwright global (CommonJS default import).
-import pw from "/opt/node-tools/node_modules/playwright/index.js";
-const { chromium } = pw as typeof import("playwright");
+import { chromium, launchBrowser } from "./_browser";
 
 const BASE = process.env.E2E_BASE || "http://localhost:3000";
 const PW = "password123";
@@ -103,7 +101,7 @@ async function main() {
   await prisma.restaurantMembership.create({ data: { userId: multi.userId, restaurantId: A.restaurantId, role: "MANAGER" } });
   await prisma.restaurantMembership.create({ data: { userId: multi.userId, restaurantId: B.restaurantId, role: "MANAGER" } });
 
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+  const browser = await launchBrowser();
 
   // ── T1: OWNER A — header i mirë/i keq/i munguar ──
   console.log("\nT1 OWNER A header validim:");
@@ -139,7 +137,9 @@ async function main() {
     ok("revoked menu:write → 403", (await apiPost(rv.page, "/api/categories", A.restaurantId, { nameAl: "R", nameEn: "R" })) === 403);
   }
 
-  // ── T4: Modul MENU joaktiv → shkrim 403, publik 'jo aktive' (pa cache i vjetëruar) ──
+  // ── T4: Modul MENU joaktiv → shkrim 403; faqja PUBLIKE e menusë 'jo aktiv' (pa cache) ──
+  // Shënim (Faza 3+): `/m/[slug]` ridrejton te profili; gating-u i MENU-s ndodh te faqja e
+  // menusë `/restaurants/[slug]/menu` (profili me Rezervo/Wolt rri i pavarur nga MENU).
   console.log("\nT4 module inactive + public cache:");
   {
     const subA = (await prisma.subscription.findUnique({ where: { restaurantId: A.restaurantId }, select: { id: true } }))!;
@@ -147,18 +147,19 @@ async function main() {
     const { page } = await login(browser, A.email);
     await setMenu("disabled");
     ok("MENU disabled → shkrim 403 MODULE_INACTIVE", (await apiPost(page, "/api/categories", A.restaurantId, { nameAl: "Z", nameEn: "Z" })) === 403);
-    // Publik: force-dynamic → reflektohet menjëherë.
+    // Publik (force-dynamic → reflektohet menjëherë): faqja e menusë.
     const pub = await browser.newContext();
     const pp = await pub.newPage();
-    await pp.goto(`${BASE}/m/${A.slug}`);
-    ok("publik me MENU disabled → 'jo aktive'", (await pp.textContent("body"))?.includes("jo aktive") === true);
+    const menuUrl = `${BASE}/restaurants/${A.slug}/menu`;
+    await pp.goto(menuUrl);
+    ok("menu publike me MENU disabled → 'jo aktiv'", (await pp.textContent("body"))?.includes("jo aktiv") === true);
     await setMenu("active");
-    await pp.goto(`${BASE}/m/${A.slug}`);
-    ok("publik me MENU active → shfaq menunë (pa cache i vjetër)", (await pp.textContent("body"))?.includes("Pjatë") === true);
-    // Suspension
+    await pp.goto(menuUrl);
+    ok("menu publike me MENU active → shfaq menunë (pa cache i vjetër)", (await pp.textContent("body"))?.includes("Pjatë") === true);
+    // Suspension → edhe faqja e menusë bëhet 'jo aktiv'.
     await prisma.restaurant.update({ where: { id: A.restaurantId }, data: { suspendedAt: new Date() } });
-    await pp.goto(`${BASE}/m/${A.slug}`);
-    ok("publik me suspendedAt → 'jo aktive'", (await pp.textContent("body"))?.includes("jo aktive") === true);
+    await pp.goto(menuUrl);
+    ok("menu publike me suspendedAt → 'jo aktiv'", (await pp.textContent("body"))?.includes("jo aktiv") === true);
     await prisma.restaurant.update({ where: { id: A.restaurantId }, data: { suspendedAt: null } });
     await pub.close();
   }

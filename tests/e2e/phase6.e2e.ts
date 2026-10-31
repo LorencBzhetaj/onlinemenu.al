@@ -11,8 +11,7 @@ import { updateBookingSettings, setOpeningHours, createArea, createTable } from 
 import { purgeRestaurantBookingData } from "@/modules/booking/config";
 import { toBusinessDateKey } from "@/modules/booking/timezone";
 import { mkdirSync } from "fs";
-import pw from "/opt/node-tools/node_modules/playwright/index.js";
-const { chromium } = pw as typeof import("playwright");
+import { chromium, launchBrowser } from "./_browser";
 
 const BASE = process.env.E2E_BASE || "http://localhost:3000";
 const SUF = "@p6e2e.local";
@@ -102,7 +101,7 @@ async function main() {
   // I pafshehur (jo i publikuar) — nuk duhet të dalë.
   await makeRestaurant({ tag: `${token}-h`, name: `${token} Hidden`, city: "Tiranë", published: false });
 
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+  const browser = await launchBrowser();
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 

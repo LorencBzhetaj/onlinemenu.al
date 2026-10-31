@@ -1,6 +1,6 @@
 import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { recordAudit } from "@/modules/admin/audit";
+import { recordAuditTx } from "@/modules/admin/audit";
 
 /**
  * Ekipi (Faza 7) — ftesa me skadim dhe përdorim të vetëm, pranim, role MANAGER/STAFF
@@ -49,34 +49,37 @@ export async function createInvitation(params: {
     if (m && m.status === "active") return { ok: false, error: "already_member" };
   }
 
-  // Një ftesë aktive (pending jo e skaduar) për të njëjtin email+restorant → riciklo (revoko të vjetrën).
-  await prisma.invitation.updateMany({
-    where: { restaurantId: params.restaurantId, email, status: "pending" },
-    data: { status: "revoked" },
-  });
-
   const token = randomBytes(32).toString("hex");
-  const inv = await prisma.invitation.create({
-    data: {
-      restaurantId: params.restaurantId,
-      email,
-      role: params.role,
-      tokenHash: hashToken(token),
-      expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
-      invitedByUserId: params.invitedByUserId,
-    },
-    select: { id: true },
-  });
 
-  await recordAudit({
-    actorUserId: params.invitedByUserId,
-    actorEmail: params.invitedByEmail ?? null,
-    actorRole: "OWNER",
-    restaurantId: params.restaurantId,
-    action: "team.invite",
-    targetType: "Invitation",
-    targetId: inv.id,
-    summary: `Ftesë ${params.role} për ${email}`,
+  // ATOMIK: riciklimi i ftesës së vjetër + krijimi i të resë + audit-i në NJË transaksion.
+  // Nëse audit-i dështon, asgjë nuk mbetet (kurrë ftesë pa gjurmë).
+  const inv = await prisma.$transaction(async (tx) => {
+    await tx.invitation.updateMany({
+      where: { restaurantId: params.restaurantId, email, status: "pending" },
+      data: { status: "revoked" },
+    });
+    const created = await tx.invitation.create({
+      data: {
+        restaurantId: params.restaurantId,
+        email,
+        role: params.role,
+        tokenHash: hashToken(token),
+        expiresAt: new Date(Date.now() + INVITATION_TTL_MS),
+        invitedByUserId: params.invitedByUserId,
+      },
+      select: { id: true },
+    });
+    await recordAuditTx(tx, {
+      actorUserId: params.invitedByUserId,
+      actorEmail: params.invitedByEmail ?? null,
+      actorRole: "OWNER",
+      restaurantId: params.restaurantId,
+      action: "team.invite",
+      targetType: "Invitation",
+      targetId: created.id,
+      summary: `Ftesë ${params.role} për ${email}`,
+    });
+    return created;
   });
 
   return { ok: true, token, invitationId: inv.id };
@@ -161,19 +164,16 @@ export async function acceptInvitation(params: { token: string; userId: string; 
       });
     }
 
-    await recordAudit(
-      {
-        actorUserId: params.userId,
-        actorEmail: userEmail,
-        actorRole: inv.role,
-        restaurantId: inv.restaurantId,
-        action: "team.accept",
-        targetType: "Membership",
-        targetId: params.userId,
-        summary: `Pranoi ftesën si ${inv.role}`,
-      },
-      tx
-    );
+    await recordAuditTx(tx, {
+      actorUserId: params.userId,
+      actorEmail: userEmail,
+      actorRole: inv.role,
+      restaurantId: inv.restaurantId,
+      action: "team.accept",
+      targetType: "Membership",
+      targetId: params.userId,
+      summary: `Pranoi ftesën si ${inv.role}`,
+    });
 
     return { ok: true, restaurantId: inv.restaurantId, role: inv.role };
   });
@@ -242,32 +242,30 @@ export async function revokeMembership(params: {
     const owners = await tx.restaurantMembership.count({ where: { restaurantId: params.restaurantId, role: "OWNER", status: "active" } });
     if (owners < 1) throw new Error("owner_invariant_violation");
 
-    await recordAudit(
-      {
-        actorUserId: params.actorUserId,
-        actorEmail: params.actorEmail ?? null,
-        actorRole: "OWNER",
-        restaurantId: params.restaurantId,
-        action: "team.revoke",
-        targetType: "Membership",
-        targetId: params.targetUserId,
-        summary: `Revokoi ${target.role} (${target.user.email})`,
-      },
-      tx
-    );
+    await recordAuditTx(tx, {
+      actorUserId: params.actorUserId,
+      actorEmail: params.actorEmail ?? null,
+      actorRole: "OWNER",
+      restaurantId: params.restaurantId,
+      action: "team.revoke",
+      targetType: "Membership",
+      targetId: params.targetUserId,
+      summary: `Revokoi ${target.role} (${target.user.email})`,
+    });
 
     return { ok: true as const };
   });
 }
 
-/** Revokon një ftesë pending (pa prekur anëtarësimet). VETËM OWNER. */
+/** Revokon një ftesë pending (pa prekur anëtarësimet). VETËM OWNER. Revokim + audit ATOMIK. */
 export async function revokeInvitation(params: { restaurantId: string; invitationId: string; actorUserId: string; actorEmail?: string | null }): Promise<boolean> {
-  const res = await prisma.invitation.updateMany({
-    where: { id: params.invitationId, restaurantId: params.restaurantId, status: "pending" },
-    data: { status: "revoked" },
-  });
-  if (res.count === 1) {
-    await recordAudit({
+  return prisma.$transaction(async (tx) => {
+    const res = await tx.invitation.updateMany({
+      where: { id: params.invitationId, restaurantId: params.restaurantId, status: "pending" },
+      data: { status: "revoked" },
+    });
+    if (res.count !== 1) return false;
+    await recordAuditTx(tx, {
       actorUserId: params.actorUserId,
       actorEmail: params.actorEmail ?? null,
       actorRole: "OWNER",
@@ -277,6 +275,6 @@ export async function revokeInvitation(params: { restaurantId: string; invitatio
       targetId: params.invitationId,
       summary: "Revokoi një ftesë pending",
     });
-  }
-  return res.count === 1;
+    return true;
+  });
 }

@@ -14,7 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "pretest": "node scripts/require-local-db.mjs",
-    "test": "tsx tests/verification.test.ts && tsx tests/phase1.test.ts && tsx tests/phase3.test.ts && tsx tests/phase4.test.ts && tsx tests/phase5.test.ts && tsx tests/phase6.test.ts && tsx tests/phase7.test.ts",
+    "test": "tsx tests/verification.test.ts && tsx tests/phase1.test.ts && tsx tests/phase3.test.ts && tsx tests/phase4.test.ts && tsx tests/phase5.test.ts && tsx tests/phase6.test.ts && tsx tests/phase7.test.ts && tsx tests/phase8.test.ts",
     "test:e2e": "node scripts/require-local-db.mjs && tsx tests/e2e/phase1.e2e.ts && tsx tests/e2e/phase3.e2e.ts && tsx tests/e2e/phase5.e2e.ts && tsx tests/e2e/phase6.e2e.ts && tsx tests/e2e/phase7.e2e.ts"
   },
   "prisma": {
@@ -44,6 +44,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.15",
+    "playwright": "1.63.0",
     "postcss": "^8.4.47",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.14",

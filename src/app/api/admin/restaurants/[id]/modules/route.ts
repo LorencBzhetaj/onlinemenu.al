@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { setModuleStatus } from "@/modules/subscriptions/modules";
-import { recordAudit } from "@/modules/admin/audit";
+import { setModuleStatus, type SetModuleResult } from "@/modules/subscriptions/modules";
+import { recordAuditTx } from "@/modules/admin/audit";
 
 /**
  * Aktivizim/çaktivizim i NDARË i modulit MENU/BOOKING për NJË restorant. VETËM SUPER_ADMIN.
@@ -22,22 +22,28 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   const moduleName = String(body.module ?? "").trim();
   const status = String(body.status ?? "").trim();
 
-  const res = await setModuleStatus({ restaurantId: params.id, module: moduleName, status });
+  // ATOMIK (Faza 8): ndryshimi i modulit + audit-i në NJË transaksion. Nëse audit-i
+  // dështon, ndryshimi i modulit rrëzohet (kurrë mutacion admin pa gjurmë).
+  const res: SetModuleResult = await prisma.$transaction(async (tx) => {
+    const r = await setModuleStatus({ restaurantId: params.id, module: moduleName, status }, tx);
+    if (!r.ok) return r; // asnjë shkrim → asnjë audit
+    await recordAuditTx(tx, {
+      actorUserId: session.user.id,
+      actorEmail: session.user.email ?? null,
+      actorRole: "SUPER_ADMIN",
+      restaurantId: params.id,
+      action: status === "active" ? "module.activate" : "module.disable",
+      targetType: "ModuleEntitlement",
+      targetId: `${params.id}:${moduleName}`,
+      summary: `Moduli ${moduleName} → ${status}`,
+    });
+    return r;
+  });
+
   if (!res.ok) {
     const code = res.error === "no_subscription" ? 409 : 400;
     return NextResponse.json({ error: res.error }, { status: code });
   }
-
-  await recordAudit({
-    actorUserId: session.user.id,
-    actorEmail: session.user.email ?? null,
-    actorRole: "SUPER_ADMIN",
-    restaurantId: params.id,
-    action: status === "active" ? "module.activate" : "module.disable",
-    targetType: "ModuleEntitlement",
-    targetId: `${params.id}:${moduleName}`,
-    summary: `Moduli ${moduleName} → ${status}`,
-  });
 
   return NextResponse.json({ ok: true, module: res.module, status: res.status });
 }

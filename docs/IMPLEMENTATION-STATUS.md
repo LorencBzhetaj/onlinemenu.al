@@ -24,6 +24,31 @@ Dokumenti kryesor i statusit. Referenca:
 | Faza 5 — UX booking + njoftime | ✅ **implementuar** (formular publik, menaxhim nga klienti, panel, njoftime); teste 23/23 + E2E 15/15; 0 overflow; **lokal, pa push/migrim live** |
 | Faza 6 — marketplace & kërkimi | ✅ **implementuar** (kryefaqe zbulimi, `/restaurants` me filtra në URL, disponueshmëri reale, SEO/sitemap/JSON-LD); teste 30/30 + E2E 23/23; 0 overflow; **lokal, pa push/migrim live** |
 | Faza 7 — staf, abonime, admin & analitika | ✅ **implementuar** (ftesa/role/revokim, aktivizim modulesh + rinovim, AuditLog, analitika reale, qytet/kuzhinë te cilësimet); teste 43/43 + E2E 14/14; 0 overflow; **lokal, pa push/migrim live** |
+| Faza 8 — kontroll release (staging/backup/release) | ✅ **kodi READY** / ⛔ staging BLOCKED (akses); audit atomik + test rollback, cron njoftimesh + email sink, noindex staging, teste të riprodhueshme, migrime (bosh+e vjetër), backup/restore; teste 319 unit + 94 E2E, 0 fail; shih `RELEASE-READINESS.md`; **lokal, pa push/deploy** |
+
+---
+
+## 0.7 Faza 8 — Kontroll përfundimtar release (e implementuar; deploy i bllokuar në akses)
+
+Një raund verifikimi. Detaje të plota + vendimi READY/BLOCKED te **`RELEASE-READINESS.md`** (rrënjë).
+
+**1. Rregullime konkrete:**
+- **Audit atomik** me mutacionin kritik: `recordAuditTx` (pa swallow) + `$transaction` për ftesa/pranim/
+  revokim/module/abonim. Test rollback: `tests/phase8.test.ts` (14/14).
+- **Worker njoftimesh:** shtuar cron `/api/cron/notifications` te `vercel.json`; dërgues i gated-uar
+  (`defaultNotificationSender`) — LIVE opt-in me `EMAIL_SEND_LIVE=1`, ndryshe **email sink** (simulim).
+- **Indeksim staging:** `indexingAllowed()` → `robots` disallow all + meta noindex kur `NOINDEX=1`/`VERCEL_ENV≠production`.
+
+**2. Teste të riprodhueshme:** hequr path-et absolute të Playwright/Chromium → `tests/e2e/_browser.ts`
+(paketa `playwright@1.63.0` e deklaruar; `PLAYWRIGHT_EXECUTABLE_PATH` override opsional); `npm ci --dry-run` RC=0.
+Migrime të provuara në **DB bosh** dhe **skemë e vjetër→HEAD** (paritet "No difference"; të dhënat mbijetojnë).
+
+**3. Rikuperim:** backup/restore real (`scripts/db-backup.sh`/`db-restore.sh`) — 37 tabela, 0 mospërputhje.
+
+**4. Staging:** DB e izoluar + sekrete të ndara + email sink + cron/noindex të dokumentuara te `.env.example`.
+**E paverifikuar (kërkon akses):** cron në hosting-un real, email real (DNS Resend), provizionim Neon/Vercel, pilot.
+
+**5. Verifikimi:** `tsc` 0; unit **319/319**; E2E **94/94** (0 overflow @390/1440). Gjeçaj i paprekur.
 
 ---
 

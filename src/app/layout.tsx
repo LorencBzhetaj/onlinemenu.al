@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, indexingAllowed } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   },
   description:
     "Menu digjitale premium për restorante — QR, personalizim vizual, dygjuhëshe (AL/EN).",
+  // Staging/Preview (NOINDEX=1 ose VERCEL_ENV≠production): meta noindex global si mbrojtje
+  // shtesë ndaj robots.txt (për crawler që e injorojnë robots.txt).
+  ...(indexingAllowed() ? {} : { robots: { index: false, follow: false } }),
   // PWA: lejon ruajtjen e menusë në ekranin bazë (skanim QR në tryezë).
   appleWebApp: {
     capable: true,

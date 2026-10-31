@@ -10,8 +10,7 @@ import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 import { ensureQrCode } from "@/modules/restaurants/qr";
 import bcrypt from "bcryptjs";
 import { mkdirSync } from "fs";
-import pw from "/opt/node-tools/node_modules/playwright/index.js";
-const { chromium } = pw as typeof import("playwright");
+import { chromium, launchBrowser } from "./_browser";
 
 const BASE = process.env.E2E_BASE || "http://localhost:3000";
 const PW = "password123";
@@ -121,7 +120,7 @@ async function main() {
   const owner2 = await prisma.user.create({ data: { email: `owner2p3${SUF}`.toLowerCase(), role: "RESTAURANT_OWNER", emailVerified: true, passwordHash: await bcrypt.hash(PW, 10) }, select: { id: true } });
   const r2 = await provision(owner2.id, "Resto E Fshehur");
 
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+  const browser = await launchBrowser();
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 

@@ -22,22 +22,39 @@ export type AuditInput = {
 
 const MAX_SUMMARY = 300;
 
+function auditData(input: AuditInput) {
+  return {
+    actorUserId: input.actorUserId ?? null,
+    actorEmail: input.actorEmail ?? null,
+    actorRole: input.actorRole ?? null,
+    restaurantId: input.restaurantId ?? null,
+    action: input.action,
+    targetType: input.targetType ?? null,
+    targetId: input.targetId ?? null,
+    summary: input.summary ? input.summary.slice(0, MAX_SUMMARY) : null,
+  };
+}
+
+/**
+ * ATOMIK (Faza 8) — për mutacionet KRITIKE (role/abonime/module/ftesa). Thirret BRENDA
+ * të njëjtit `$transaction` me veprimin dhe NUK e kap gabimin: nëse shkrimi i audit-it
+ * dështon, i gjithë transaksioni (veprimi + audit) rrëzohet → kurrë veprim pa gjurmë,
+ * kurrë gjurmë pa veprim. `client` DUHET të jetë klienti i transaksionit.
+ */
+export async function recordAuditTx(client: Prisma.TransactionClient, input: AuditInput): Promise<void> {
+  await client.auditLog.create({ data: auditData(input) });
+}
+
+/**
+ * BEST-EFFORT — për regjistrim jo-kritik/fire-and-forget: një dështim i audit-it NUK e
+ * rrëzon veprimin kryesor (log-ohet dhe vazhdohet). Për mutacione kritike përdor
+ * `recordAuditTx` brenda transaksionit të veprimit.
+ */
 export async function recordAudit(input: AuditInput, client: Prisma.TransactionClient | typeof prisma = prisma): Promise<void> {
   try {
-    await client.auditLog.create({
-      data: {
-        actorUserId: input.actorUserId ?? null,
-        actorEmail: input.actorEmail ?? null,
-        actorRole: input.actorRole ?? null,
-        restaurantId: input.restaurantId ?? null,
-        action: input.action,
-        targetType: input.targetType ?? null,
-        targetId: input.targetId ?? null,
-        summary: input.summary ? input.summary.slice(0, MAX_SUMMARY) : null,
-      },
-    });
+    await client.auditLog.create({ data: auditData(input) });
   } catch (e) {
-    // Audit-i s'duhet të rrëzojë veprimin kryesor.
+    // Audit-i best-effort s'duhet të rrëzojë veprimin kryesor.
     console.error("audit.record.failed", input.action, e);
   }
 }

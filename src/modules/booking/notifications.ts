@@ -64,6 +64,37 @@ function backoffMs(attempt: number): number {
 /** Dërgues default: simulon kur RESEND s'është konfiguruar realisht (pa dërgime reale). */
 export const simulateSender: NotifySender = async () => ({ delivered: false, simulated: true });
 
+/**
+ * Dërgues real me Resend (i njëjti provider si email.ts). Klienti ndërtohet në mënyrë të
+ * dembelt (lazy) që mungesa e çelësit të mos rrëzojë import-in. Përdoret VETËM kur dërgimi
+ * live është aktivizuar shprehimisht (shih `defaultNotificationSender`).
+ */
+export const resendSender: NotifySender = async (msg) => {
+  try {
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const from = process.env.EMAIL_FROM || "MenuDigjitale <onboarding@resend.dev>";
+    const { data, error } = await resend.emails.send({ from, to: msg.to, subject: msg.subject, text: msg.text });
+    if (error) return { delivered: false, error: typeof error === "string" ? error : JSON.stringify(error) };
+    return { delivered: true, simulated: false, ...(data?.id ? {} : {}) };
+  } catch (e) {
+    return { delivered: false, error: e instanceof Error ? e.message : "resend_threw" };
+  }
+};
+
+/**
+ * Përzgjedh dërguesin sipas mjedisit. SIGURI (Faza 8): dërgimi LIVE është OPT-IN eksplicit —
+ * vetëm prod vendos `EMAIL_SEND_LIVE=1` me një `RESEND_API_KEY` real. Kudo tjetër (staging,
+ * Preview, CI, lokal) → `simulateSender` si "email sink": job-et përpunohen dhe shënohen
+ * Simulated, PA dërguar email real. Kështu staging-u s'i dërgon kurrë email mysafirëve realë.
+ */
+export function defaultNotificationSender(): NotifySender {
+  const live = process.env.EMAIL_SEND_LIVE === "1";
+  const key = process.env.RESEND_API_KEY;
+  if (live && key && key !== "re_dummy") return resendSender;
+  return simulateSender;
+}
+
 export interface WorkerResult {
   claimed: number;
   sent: number;

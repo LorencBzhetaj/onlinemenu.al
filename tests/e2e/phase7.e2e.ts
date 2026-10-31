@@ -8,8 +8,7 @@ import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 import { recordEvent } from "@/modules/analytics/events";
 import bcrypt from "bcryptjs";
 import { mkdirSync } from "fs";
-import pw from "/opt/node-tools/node_modules/playwright/index.js";
-const { chromium } = pw as typeof import("playwright");
+import { chromium, launchBrowser } from "./_browser";
 
 const BASE = process.env.E2E_BASE || "http://localhost:3000";
 const PW = "password123";
@@ -94,7 +93,7 @@ async function main() {
   for (let i = 0; i < 4; i++) await recordEvent({ restaurantId, type: "item_view", itemId: dish.id });
   await recordEvent({ restaurantId, type: "booking_created" });
 
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+  const browser = await launchBrowser();
 
   // ── T1: OWNER → /dashboard/team → fto staf ──
   console.log("\nT1 ekipi (owner fton staf):");

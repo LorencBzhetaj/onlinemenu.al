@@ -90,10 +90,42 @@ Përfshin screenshots @390/1440 me kontroll overflow për profil/menu/info.
 
 `tests/e2e/visual.ts` bën kontrollin vizual (screenshots + overflow @390/1440). Ekzekuto si E2E (server + tsx).
 
-> **Varësi lokale Playwright (rregullo para CI/release):** `tests/e2e/*` importojnë Playwright nga
-> `/opt/node-tools/node_modules/playwright` dhe Chromium nga `/opt/pw-browsers/...` — specifike e këtij
-> ambienti. Para CI: shto `@playwright/test` si devDependency dhe zëvendëso path-et absolute.
-> `tests/e2e` është përjashtuar nga `tsc` dhe `npm test`.
+### Playwright — e riprodhueshme (Faza 8)
+
+`tests/e2e/*` importojnë Playwright nga specifier-i i paketës `playwright` (i deklaruar në
+`devDependencies`, jo nga path absolut) dhe nisin Chromium përmes helper-it të përbashkët
+`tests/e2e/_browser.ts`. Binarin e shfletuesit:
+
+- **Default (makinë e pastër/CI):** shfletuesi i menaxhuar nga Playwright. Instalohet një herë me
+  `npx playwright install chromium`.
+- **Override (container me Chromium të para-instaluar):** vendos `PLAYWRIGHT_EXECUTABLE_PATH` te
+  binari ekzistues; helper-i e përdor atë pa e shkarkuar përsëri. Në këtë ambient:
+
+  ```bash
+  export PLAYWRIGHT_EXECUTABLE_PATH=/opt/pw-browsers/chromium
+  ```
+
+`tests/e2e` është përjashtuar nga `tsc` dhe `npm test` (ekzekutohet veç me `npm run test:e2e`).
+
+### `phase8.test.ts` — atomiciteti i AuditLog (Faza 8)
+
+Provon që AuditLog për mutacionet KRITIKE ruhet ATOMIKISHT me veprimin: (a) dështimi i audit-it
+brenda transaksionit rrëzon veprimin (gabimi `action must not be null` është I QËLLIMSHËM — pjesë e
+testit), (b) dështimi i veprimit rrëzon audit-in, (c/d) rrugët pozitive (ftesë/pranim/revokim) shkruajnë
+veprimin + audit-in së bashku. Pjesë e `npm test`.
+
+### Testim migrimesh (Faza 8) — DB bosh + skemë e vjetër
+
+```bash
+# 1) DB BOSH: të gjitha migrimet aplikohen pastër + paritet me schema.prisma
+createdb -h 127.0.0.1 -p 5433 -U postgres om_empty_test
+DATABASE_URL=postgresql://postgres@127.0.0.1:5433/om_empty_test DIRECT_URL=$DATABASE_URL npm run db:deploy:test
+npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code   # 0 = pa diferencë
+
+# 2) SKEMË E VJETËR → HEAD: apliko migrimet deri te Faza 5 (me psql + `prisma migrate resolve --applied`),
+#    mbill të dhëna, pastaj `npm run db:deploy:test` për të aplikuar P6+P7; verifiko mbijetesën e të dhënave
+#    dhe paritetin. Migrimet e P6/P7 janë ADITIVE (kolona/tabela/indekse të reja) → pa humbje të dhënash.
+```
 
 ## Çfarë mbulohet
 

@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createRestaurantForOwner } from "@/modules/restaurants/provision";
 import bcrypt from "bcryptjs";
 import { mkdirSync } from "fs";
-import pw from "/opt/node-tools/node_modules/playwright/index.js";
-const { chromium } = pw as any;
+import { launchBrowser } from "./_browser";
 
 const BASE = "http://localhost:3000";
 const SHOT = "/tmp/claude-0/-home-user-onlinemenu-al/0d9e83e4-f355-5b98-bff3-f83d225b57b6/scratchpad/shots2";
@@ -22,7 +21,7 @@ async function main() {
   await prisma.menuItem.create({ data: { categoryId: cat.id, nameAl: "Tavë kosi", nameEn: "Tave kosi", price: 700, isVisible: true } });
   await prisma.user.create({ data: { email: `admin${SUF}`, role: "SUPER_ADMIN", emailVerified: true, passwordHash: await bcrypt.hash(PW, 10) } });
 
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+  const browser = await launchBrowser();
   const widths = [{ w: 390, h: 844, tag: "390" }, { w: 1440, h: 900, tag: "1440" }];
   const problems: string[] = [];
 

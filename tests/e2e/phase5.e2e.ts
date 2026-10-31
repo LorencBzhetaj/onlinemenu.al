@@ -9,8 +9,7 @@ import { updateBookingSettings, setOpeningHours, createArea, createTable, purgeR
 import { zonedTimeToUtc, toBusinessDateKey } from "@/modules/booking/timezone";
 import bcrypt from "bcryptjs";
 import { mkdirSync } from "fs";
-import pw from "/opt/node-tools/node_modules/playwright/index.js";
-const { chromium } = pw as typeof import("playwright");
+import { chromium, launchBrowser } from "./_browser";
 
 const BASE = process.env.E2E_BASE || "http://localhost:3000";
 const PW = "password123";
@@ -85,7 +84,7 @@ async function main() {
   await createTable(restaurantId, { name: "T1", seats: 4, areaId: area.id });
   await createTable(restaurantId, { name: "T2", seats: 4, areaId: area.id });
 
-  const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1243/chrome-linux64/chrome" });
+  const browser = await launchBrowser();
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
 
