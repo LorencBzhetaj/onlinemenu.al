@@ -36,7 +36,9 @@ Dega: `redesign-approved-palette` (nga `main-wes312` @ 5ab09f5). Pa push, pa dep
 - `SplashScreen` (`src/components/public/splash-screen.tsx`) → përdoret nga `restaurants/[slug]/loading.tsx`.
   Sfond rozë i butë, "OnlineMenu" Aubergine, tri pika (rozë · aubergine · rozë), ilustrimi poshtë. Pa vonesë artificiale.
 - Pamje lokale: `http://localhost:3000/preview/splash` (vetëm në zhvillim; 404 në prodhim; tregon nëse asset-i mungon).
-- **SKEDARI QË MUNGON:** `public/brand/chef/chef-box.webp` — vetëm Shefi i Bukës në kutinë rozë me macarons + patate,
+- **Ilustrimi final është vendosur** (`public/brand/chef/chef-box.webp`, 1254×1254, WebP me transparencë, 215 KB; ngarkim
+  i menjëhershëm te ekrani i hapjes). Mund të optimizohet më tej (p.sh. 800×800 ≈ <150 KB) kur të ketë mjet.
+- Kërkesat origjinale për skedarin: `public/brand/chef/chef-box.webp` — vetëm Shefi i Bukës në kutinë rozë me macarons + patate,
   **sfond transparent**, pa kornizë telefoni, pa logo/pika (i vizatojmë në kod), **pa tekstin "Për t'u marrë me vete"** në kuti
   (s'duhet të duket premtim delivery). Rekomandim: 800×800 px, WebP ≤ 150 KB (opsionale edhe `.avif`).
   Burimet që ekzistojnë (`Playful OnlineMenu bread chef splash screens.png`, `OnlineMenu bread chef splash trio.png`, mockup-et e zip-it)

@@ -17,7 +17,7 @@ export function SplashScreen() {
         <span />
       </div>
       <div className="om-splash-art">
-        <ChefMascot variant="box" size={240} decorative />
+        <ChefMascot variant="box" size={240} decorative priority />
       </div>
       <span className="sr-only">Duke hapur restorantin…</span>
     </div>

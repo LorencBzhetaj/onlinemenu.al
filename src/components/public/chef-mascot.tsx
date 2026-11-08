@@ -10,12 +10,11 @@
 
 export type ChefVariant = "box" | "pizza" | "burger" | "fresh" | "sweets";
 
-/** Skedari i pritur për ekranin e hapjes 05 (Shefi i Bukës në kutinë rozë). Ende MUNGON. */
+/** Ilustrimi final i ekranit të hapjes 05 (Shefi i Bukës në kutinë rozë), WebP me transparencë. */
 export const CHEF_BOX_ASSET_PATH = "/brand/chef/chef-box.webp";
 
 const CHEF_ASSETS: Partial<Record<ChefVariant, { src: string; width: number; height: number }>> = {
-  // Kur skedari të shtohet te public/brand/chef/chef-box.webp, hiqni komentin:
-  // box: { src: CHEF_BOX_ASSET_PATH, width: 800, height: 800 },
+  box: { src: CHEF_BOX_ASSET_PATH, width: 1254, height: 1254 },
 };
 
 /** A ka ilustrim final të regjistruar për këtë variant (përndryshe shfaqet silueta vendmbajtëse). */
@@ -36,11 +35,14 @@ export function ChefMascot({
   size = 120,
   decorative = false,
   className,
+  priority = false,
 }: {
   variant?: ChefVariant;
   size?: number;
   decorative?: boolean;
   className?: string;
+  /** true për ekranin e hapjes: ngarkim i menjëhershëm, jo dembel. */
+  priority?: boolean;
 }) {
   const asset = CHEF_ASSETS[variant];
   const a11y = decorative ? { "aria-hidden": true as const } : { role: "img" as const, "aria-label": LABELS[variant] };
@@ -54,7 +56,8 @@ export function ChefMascot({
         height={Math.round((size * asset.height) / asset.width)}
         alt={decorative ? "" : LABELS[variant]}
         className={className}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         decoding="async"
       />
     );
