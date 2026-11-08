@@ -9,6 +9,7 @@ import { PublicFonts } from "@/components/public/public-fonts";
 import { restaurantJsonLd } from "@/modules/restaurants/structured-data";
 import { absoluteUrl } from "@/lib/site";
 import { OmSiteHeader } from "@/components/public/om-site-header";
+import { OmSiteFooter } from "@/components/public/om-site-footer";
 import { resolveRestaurantCoords, directionsUrl, routingServiceUrl } from "@/modules/restaurants/location";
 import "@/components/public/profile.css";
 import "@/components/public/menu.css";
@@ -91,6 +92,7 @@ export default async function RestaurantProfilePage({ params }: { params: { slug
           reserveHref: p.gate.bookingActive ? `/restaurants/${p.slug}/reserve` : null,
         }}
       />
+      <OmSiteFooter />
       <PublicTabs slug={p.slug} active="profile" labels={{ profile: "Restoranti", menu: "Menuja", info: "Informacion" }} />
     </div>
   );

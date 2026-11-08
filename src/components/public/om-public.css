@@ -94,15 +94,238 @@
   color: var(--om-aubergine, #4c1845);
   background: var(--om-butter-soft, #fff1b8);
 }
-.om-site-nav a.om-site-cta {
-  background: var(--om-aubergine, #4c1845);
-  color: #fff;
+/* "Hyr" — veprim dytësor (kontur, jo i mbushur). */
+.om-site-nav a.om-site-secondary,
+.om-nav-mobile-panel a.om-site-secondary {
+  border: 2px solid var(--om-aubergine, #4c1845);
+  color: var(--om-aubergine, #4c1845);
   margin-left: 6px;
 }
-@media (max-width: 639px) {
-  .om-hide-sm {
-    display: none !important;
+.om-nav-mobile {
+  display: none;
+  position: relative;
+}
+@media (max-width: 767px) {
+  .om-nav-desktop {
+    display: none;
   }
+  .om-nav-mobile {
+    display: block;
+  }
+}
+.om-nav-mobile > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 2px solid var(--om-line, #eedfd3);
+  font: 800 0.95rem "Nunito", system-ui, sans-serif;
+  color: var(--om-aubergine, #4c1845);
+  cursor: pointer;
+}
+.om-nav-mobile > summary::-webkit-details-marker {
+  display: none;
+}
+.om-nav-mobile > summary svg {
+  width: 24px;
+  height: 24px;
+}
+.om-nav-mobile[open] > summary {
+  background: var(--om-butter-soft, #fff1b8);
+  border-color: var(--om-aubergine, #4c1845);
+}
+.om-nav-mobile-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 80;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid var(--om-line, #eedfd3);
+  box-shadow: 0 14px 34px rgba(76, 24, 69, 0.16);
+  font: 700 1rem "Nunito", system-ui, sans-serif;
+}
+.om-nav-mobile-panel a {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  color: var(--om-aubergine, #4c1845);
+  text-decoration: none;
+}
+.om-nav-mobile-panel a.is-active,
+.om-nav-mobile-panel a:hover {
+  background: var(--om-butter-soft, #fff1b8);
+}
+.om-nav-mobile-panel a.om-site-secondary {
+  margin: 4px 0 0;
+  justify-content: center;
+}
+
+/* ===== FUNDFAQJA E PËRBASHKËT ===== */
+.om-site-footer {
+  border-top: 1px solid var(--om-line, #eedfd3);
+  background: var(--om-white, #fff8ee);
+  color: var(--om-aubergine, #4c1845);
+  font-family: "Nunito", system-ui, sans-serif;
+}
+.om-site-footer-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 16px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 40px;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.om-footer-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 56px;
+}
+.om-footer-cols > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.om-footer-h {
+  margin: 0 0 6px;
+  font: 700 1.05rem "Fredoka", system-ui, sans-serif;
+}
+.om-footer-cols a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  color: var(--om-ink-soft, #6e4d68);
+  font-weight: 700;
+  text-decoration: none;
+}
+.om-footer-cols a:hover {
+  color: var(--om-aubergine, #4c1845);
+  text-decoration: underline;
+}
+.om-footer-copy {
+  margin: 0;
+  color: var(--om-ink-soft, #6e4d68);
+  font-size: 0.9rem;
+}
+
+/* ===== FAQET INFORMUESE / LIGJORE ===== */
+.om-prose {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 16px 56px;
+  color: var(--om-aubergine, #4c1845);
+  font: 400 1.04rem/1.65 "Nunito", system-ui, sans-serif;
+}
+.om-prose h1 {
+  font: 700 clamp(2rem, 5vw, 2.8rem) / 1.1 "Fredoka", system-ui, sans-serif;
+  margin: 0 0 10px;
+}
+.om-prose h2 {
+  font: 600 1.45rem/1.25 "Fredoka", system-ui, sans-serif;
+  margin: 34px 0 10px;
+}
+.om-prose h3 {
+  font: 700 1.1rem/1.3 "Nunito", system-ui, sans-serif;
+  margin: 22px 0 6px;
+}
+.om-prose p,
+.om-prose ul,
+.om-prose ol {
+  margin: 0 0 12px;
+}
+.om-prose ul,
+.om-prose ol {
+  padding-left: 1.3em;
+}
+.om-prose li {
+  margin: 4px 0;
+}
+.om-prose a {
+  color: var(--om-aubergine, #4c1845);
+  font-weight: 700;
+}
+.om-prose .om-lead {
+  color: var(--om-ink-soft, #6e4d68);
+  font-size: 1.12rem;
+}
+.om-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 16px;
+  font-size: 0.95rem;
+}
+.om-prose th,
+.om-prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--om-line, #eedfd3);
+}
+.om-table-wrap {
+  overflow-x: auto;
+}
+.om-draft {
+  border: 2px dashed var(--om-aubergine, #4c1845);
+  background: var(--om-butter-soft, #fff1b8);
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin: 0 0 22px;
+  font-weight: 700;
+}
+.om-todo {
+  background: var(--om-pink-soft, #ffe1f0);
+  border-radius: 6px;
+  padding: 0 6px;
+  font-weight: 800;
+}
+.om-steps {
+  list-style: none;
+  padding: 0 !important;
+  counter-reset: step;
+  display: grid;
+  gap: 12px;
+}
+.om-steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 16px 16px 16px 64px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--om-line, #eedfd3);
+}
+.om-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 16px;
+  top: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--om-butter, #ffe16a);
+  font: 700 1rem "Fredoka", system-ui, sans-serif;
+}
+.om-steps li strong {
+  display: block;
+}
+.om-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 /* ===== COVER + IDENTITETI ===== */

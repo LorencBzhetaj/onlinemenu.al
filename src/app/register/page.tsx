@@ -81,6 +81,17 @@ export default function RegisterPage() {
             {loading ? "Duke krijuar..." : "Krijo llogari"}
           </button>
         </form>
+        <p className="mt-4 text-center text-xs text-muted leading-relaxed">
+          Duke krijuar llogari, konfirmoni që keni lexuar{" "}
+          <Link href="/kushtet" className="text-primary underline">
+            Kushtet e përdorimit
+          </Link>{" "}
+          dhe{" "}
+          <Link href="/privatesia" className="text-primary underline">
+            Politikën e privatësisë
+          </Link>
+          .
+        </p>
         <p className="mt-6 text-center text-sm text-muted">
           Ke llogari?{" "}
           <Link href="/login" className="text-primary hover:underline">

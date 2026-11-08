@@ -12,28 +12,51 @@ export function OmLogo({ size = "md" }: { size?: "md" | "lg" }) {
   );
 }
 
+type NavKey = "restaurants" | "how" | "business";
+
+const NAV: { key: NavKey; href: string; label: string }[] = [
+  { key: "restaurants", href: "/", label: "Restorantet" },
+  { key: "how", href: "/si-funksionon", label: "Si funksionon" },
+  { key: "business", href: "/per-bizneset", label: "Për bizneset" },
+];
+
 /**
- * Header-i publik i OnlineMenu.al (Zbulo, profil, rezervim). Në desktop navigimi është sipër;
- * në telefon mbetet kompakt (logo + Zbulo), navigimi i profilit është poshtë (PublicTabs).
+ * Header-i publik i OnlineMenu.al. Desktop: Restorantet · Si funksionon · Për bizneset + "Hyr" (dytësor).
+ * Telefon: logo + menu kompakte (<details>, pa JS shtesë). Navigimi i profilit mbetet poshtë (PublicTabs).
  */
-export function OmSiteHeader({ active }: { active?: "discover" | "restaurants" }) {
+export function OmSiteHeader({ active }: { active?: NavKey }) {
+  const links = NAV.map((n) => (
+    <Link key={n.key} href={n.href} className={active === n.key ? "is-active" : ""} aria-current={active === n.key ? "page" : undefined}>
+      {n.label}
+    </Link>
+  ));
   return (
     <header className="om-site-header">
       <div className="om-site-header-inner">
-        <Link href="/" className="om-site-brand" aria-label="OnlineMenu.al — kryefaqja">
+        <Link href="/" className="om-site-brand" aria-label="OnlineMenu.al — restorantet">
           <OmLogo />
         </Link>
-        <nav className="om-site-nav" aria-label="Kryesore">
-          <Link href="/" className={active === "discover" ? "is-active" : ""} aria-current={active === "discover" ? "page" : undefined}>
-            Zbulo
-          </Link>
-          <Link href="/restaurants" className={`om-hide-sm ${active === "restaurants" ? "is-active" : ""}`} aria-current={active === "restaurants" ? "page" : undefined}>
-            Restorantet
-          </Link>
-          <Link href="/register" className="om-site-cta om-hide-sm">
-            Për restorantet
+
+        <nav className="om-site-nav om-nav-desktop" aria-label="Kryesore">
+          {links}
+          <Link href="/login" className="om-site-secondary">
+            Hyr
           </Link>
         </nav>
+
+        <details className="om-nav-mobile">
+          <summary aria-label="Menuja e navigimit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </summary>
+          <nav className="om-nav-mobile-panel" aria-label="Kryesore">
+            {links}
+            <Link href="/login" className="om-site-secondary">
+              Hyr
+            </Link>
+          </nav>
+        </details>
       </div>
     </header>
   );

@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/states";
 import { absoluteUrl } from "@/lib/site";
 import { CuisineCards } from "@/components/discovery/cuisine-cards";
 import { OmSiteHeader } from "@/components/public/om-site-header";
+import { OmSiteFooter } from "@/components/public/om-site-footer";
 import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
@@ -17,14 +18,6 @@ export const metadata: Metadata = {
   // Faqja e kërkimit indeksohet në formën e saj të pastër; variantet me filtra ulen te canonical.
   alternates: { canonical: absoluteUrl("/restaurants") },
 };
-
-function todayInTirane(): string {
-  try {
-    return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Tirane", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  } catch {
-    return new Date().toISOString().slice(0, 10);
-  }
-}
 
 function pageHref(filters: SearchFilters, page: number): string {
   const p = new URLSearchParams();
@@ -53,7 +46,7 @@ export default async function RestaurantsPage({
       <main className="mx-auto max-w-[1120px] px-4 pb-16 pt-6">
         <h1 className="font-om-display text-3xl font-bold sm:text-4xl">Zbulo restorante</h1>
         <p className="mt-2 max-w-2xl text-om-ink-soft">
-          Kërko sipas qytetit, kuzhinës ose emrit. Zgjidh datën dhe personat për të parë orët e lira.
+          Kërko sipas emrit, qytetit ose kuzhinës. Rezervimi bëhet te faqja e restorantit.
         </p>
 
         {result.facets.cuisines.length > 0 && (
@@ -63,7 +56,7 @@ export default async function RestaurantsPage({
         )}
 
         <div className="mt-4">
-          <SearchFiltersBar filters={filters} facets={result.facets} todayStr={todayInTirane()} />
+          <SearchFiltersBar filters={filters} facets={result.facets} />
         </div>
 
         <div className="mt-6 flex items-center justify-between">
@@ -92,7 +85,7 @@ export default async function RestaurantsPage({
                   key={r.slug}
                   r={r}
                   filters={result.filters}
-                  availabilityRequested={result.availabilityRequested}
+                  availabilityRequested={false}
                 />
               ))}
             </div>
@@ -134,6 +127,7 @@ export default async function RestaurantsPage({
           </nav>
         )}
       </main>
+      <OmSiteFooter />
     </div>
   );
 }

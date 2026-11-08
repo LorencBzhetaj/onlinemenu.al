@@ -37,6 +37,7 @@ export type RestaurantCard = {
   slug: string;
   name: string;
   logoUrl: string | null;
+  coverUrl: string | null;
   city: string | null;
   cuisine: string | null;
   address: string | null;
@@ -166,6 +167,7 @@ export async function searchRestaurants(filters: SearchFilters, now: Date = new 
       slug: true,
       name: true,
       logoUrl: true,
+      coverUrl: true,
       city: true,
       cuisine: true,
       address: true,
@@ -197,6 +199,7 @@ export async function searchRestaurants(filters: SearchFilters, now: Date = new 
         slug: r.slug,
         name: r.name,
         logoUrl: r.logoUrl,
+        coverUrl: r.coverUrl,
         city: r.city,
         cuisine: r.cuisine,
         address: r.address,

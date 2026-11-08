@@ -34,12 +34,18 @@ export function RestaurantResultCard({
 }) {
   const meta = [r.cuisine, r.city].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col overflow-hidden rounded-3xl border border-om-line bg-om-surface font-om-body text-om-aubergine transition hover:border-om-pink">
+    <article className="flex w-full flex-col overflow-hidden rounded-3xl border border-om-line bg-om-surface font-om-body text-om-aubergine transition hover:border-om-pink">
       <Link href={`/restaurants/${r.slug}`} className="group block">
-        <div
-          className="h-20 bg-om-pink [background-image:radial-gradient(rgba(76,24,69,0.12)_1.6px,transparent_1.8px)] [background-size:18px_18px]"
-          aria-hidden="true"
-        />
+        {r.coverUrl ? (
+          // Foto kopertine reale (kur pronari e ka ngarkuar); përndryshe brezi rozë.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={r.coverUrl} alt="" loading="lazy" decoding="async" className="h-24 w-full object-cover" />
+        ) : (
+          <div
+            className="h-20 bg-om-pink [background-image:radial-gradient(rgba(76,24,69,0.12)_1.6px,transparent_1.8px)] [background-size:18px_18px]"
+            aria-hidden="true"
+          />
+        )}
         <div className="-mt-9 flex items-end gap-3 px-5">
           <span
             className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-om-surface bg-om-aubergine font-om-display text-xl font-bold text-om-butter"
