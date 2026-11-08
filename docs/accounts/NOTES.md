@@ -39,3 +39,12 @@ Statusi: **vetëm lokalisht** (dega `accounts-notifications-local`). Pa push, pa
 `npm test` (verification + fazat 1–10) ✅ në DB lokale Docker; `next build` ✅.
 Screenshots: `docs/redesign/screenshots/mobile-50-hyrja-konflikt.png`, `mobile-51-llogaria-pa-biznes.png`,
 `desktop-50-njoftime-rezervimesh.png`.
+
+## Preview i izoluar (dega `accounts-notifications-local`) — gjendja më 2026-11-08
+Konfiguruar në Vercel vetëm për këtë degë (Preview), vlerat s'janë printuar:
+- Domen i qëndrueshëm: `https://onlinemenu-al-preview.vercel.app` (i lidhur me degën; mbrohet nga Vercel Authentication).
+- `NEXTAUTH_URL`, `NEXT_PUBLIC_BASE_URL` → domeni i mësipërm. `NOINDEX=1`.
+- `NEXTAUTH_SECRET`, `CRON_SECRET` → të reja, të ndara nga Production (sesionet e Preview s'vlejnë në Production).
+- **Mungon:** `DATABASE_URL` dhe `DIRECT_URL` për këtë degë. Pa to Preview s'ka DB (s'bie te Production, por s'punon).
+- Të përbashkëta me Production: `GOOGLE_CLIENT_*`, `RESEND_API_KEY`, `EMAIL_FROM`, Cloudinary.
+  Email-et e llogarisë (verifikim/rivendosje) dërgohen realisht kur ka `RESEND_API_KEY`; njoftimet e rezervimeve vetëm me `EMAIL_SEND_LIVE=1` (i fikur).

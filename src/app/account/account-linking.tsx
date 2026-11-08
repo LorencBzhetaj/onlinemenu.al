@@ -90,3 +90,16 @@ export function AccountLinking({ hasPassword, verified, available }: { hasPasswo
     </div>
   );
 }
+
+/** Dalja nga llogaria (kjo faqe s'ka panelin me "Dil"). */
+export function AccountSignOut() {
+  return (
+    <button
+      type="button"
+      onClick={() => signOut({ callbackUrl: "/" })}
+      className="inline-flex min-h-11 items-center rounded-2xl border-2 border-om-aubergine px-5 font-extrabold text-om-aubergine"
+    >
+      Dil nga llogaria
+    </button>
+  );
+}

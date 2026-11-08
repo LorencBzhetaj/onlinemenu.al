@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { signInMethods } from "@/modules/accounts/oauth";
 import { OmSiteHeader } from "@/components/public/om-site-header";
-import { AccountLinking } from "./account-linking";
+import { AccountLinking, AccountSignOut } from "./account-linking";
 import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +45,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Reco
 
   return (
     <div className="min-h-screen bg-om-white font-om-body text-om-aubergine">
-      <OmSiteHeader />
+      <OmSiteHeader signedIn />
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-6">
         <h1 className="font-om-display text-3xl font-bold">Llogaria ime</h1>
         <p className="mt-1 text-om-ink-soft">
@@ -105,6 +105,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Reco
             </div>
           )}
         </section>
+
+        <div className="mt-6 flex justify-end">
+          <AccountSignOut />
+        </div>
       </main>
     </div>
   );
