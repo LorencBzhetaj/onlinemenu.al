@@ -9,11 +9,11 @@ const PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const cloudinaryConfigured = Boolean(CLOUD && PRESET);
 
 // Kompresim/resize në klient para upload-it (foto telefoni janë 5-10MB).
-async function compress(file: File): Promise<File> {
+async function compress(file: File, maxWidthOrHeight: number): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   try {
     return await imageCompression(file, {
-      maxWidthOrHeight: 1200,
+      maxWidthOrHeight,
       maxSizeMB: 1,
       useWebWorker: true,
     });
@@ -26,9 +26,12 @@ export function ImageUpload({
   value,
   onChange,
   photoCapture = "environment",
+  maxWidthOrHeight = 1200,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
+  /** Përmasa maksimale pas kompresimit (default 1200; kopertina përdor më shumë). */
+  maxWidthOrHeight?: number;
   /** Kamera për "Bëj Foto": "environment" (e pasme, foto pjatash) ose "user" (e përparme). */
   photoCapture?: "environment" | "user";
 }) {
@@ -45,7 +48,7 @@ export function ImageUpload({
 
     try {
       setBusy("compress");
-      const compressed = await compress(file);
+      const compressed = await compress(file, maxWidthOrHeight);
 
       setBusy("upload");
       const form = new FormData();

@@ -27,6 +27,7 @@ export type BrandingInitial = {
   fontHeading: string | null;
   fontBody: string | null;
   logoUrl: string | null;
+  coverUrl: string | null;
   menuPhotoStyle: string;
 };
 
@@ -53,6 +54,7 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
   const [fontHeading, setFontHeading] = useState(initial.fontHeading ?? DEFAULT_HEADING);
   const [fontBody, setFontBody] = useState(initial.fontBody ?? DEFAULT_BODY);
   const [logoUrl, setLogoUrl] = useState<string | null>(initial.logoUrl);
+  const [coverUrl, setCoverUrl] = useState<string | null>(initial.coverUrl);
   const [menuPhotoStyle, setMenuPhotoStyle] = useState<MenuPhotoStyle>(
     (initial.menuPhotoStyle as MenuPhotoStyle) ?? "none"
   );
@@ -79,7 +81,7 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
     const res = await api("/api/restaurant/branding", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ primaryColor, accentColor, fontHeading, fontBody, logoUrl, menuPhotoStyle }),
+      body: JSON.stringify({ primaryColor, accentColor, fontHeading, fontBody, logoUrl, coverUrl, menuPhotoStyle }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -183,6 +185,15 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
                 <LogoPreview logoUrl={logoUrl} name={initial.name} size={78} accent={accentColor} label="Hero (78px)" />
               </div>
             </div>
+          </Section>
+
+          {/* KOPERTINA (opsionale) — i njëjti upload si logoja */}
+          <Section title="Foto e kopertinës (opsionale)">
+            <p className="text-sm text-muted -mt-2">
+              Shfaqet në krye të profilit publik. Pa foto, profili përdor brezin me ngjyrat e OnlineMenu.al.
+              Rekomandim: foto horizontale e ambientit, të paktën 1600px e gjerë.
+            </p>
+            <ImageUpload value={coverUrl} onChange={setCoverUrl} maxWidthOrHeight={1920} />
           </Section>
 
           {/* FOTO NË MENU */}

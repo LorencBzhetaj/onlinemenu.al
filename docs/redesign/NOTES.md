@@ -32,6 +32,23 @@ Dega: `redesign-approved-palette` (nga `main-wes312` @ 5ab09f5). Pa push, pa dep
   të pronarit. S'ka gjeokodim automatik. Pa koordinata: adresa + lidhja ekzistuese/udhëzimet, pa hartë.
   **Migrimi duhet aplikuar** (`npm run db:deploy`) në çdo DB para deploy-it të kësaj dege.
 
+## Ekrani i hapjes — Splash B 05
+- `SplashScreen` (`src/components/public/splash-screen.tsx`) → përdoret nga `restaurants/[slug]/loading.tsx`.
+  Sfond rozë i butë, "OnlineMenu" Aubergine, tri pika (rozë · aubergine · rozë), ilustrimi poshtë. Pa vonesë artificiale.
+- Pamje lokale: `http://localhost:3000/preview/splash` (vetëm në zhvillim; 404 në prodhim; tregon nëse asset-i mungon).
+- **SKEDARI QË MUNGON:** `public/brand/chef/chef-box.webp` — vetëm Shefi i Bukës në kutinë rozë me macarons + patate,
+  **sfond transparent**, pa kornizë telefoni, pa logo/pika (i vizatojmë në kod), **pa tekstin "Për t'u marrë me vete"** në kuti
+  (s'duhet të duket premtim delivery). Rekomandim: 800×800 px, WebP ≤ 150 KB (opsionale edhe `.avif`).
+  Burimet që ekzistojnë (`Playful OnlineMenu bread chef splash screens.png`, `OnlineMenu bread chef splash trio.png`, mockup-et e zip-it)
+  janë mockup-e me telefon → s'u përdorën. Kur skedari të vendoset, hiqni komentin te `CHEF_ASSETS.box` në `chef-mascot.tsx`.
+
+## Kopertina opsionale
+- Fushë `Restaurant.coverUrl` (migrim aditiv `20261108010000_restaurant_cover_image`, **vetëm lokalisht**; para deploy-it: `npm run db:deploy`).
+- Paneli → Personalizim → "Foto e kopertinës (opsionale)": i njëjti `ImageUpload` si logoja (kompresim në shfletues, Cloudinary ose URL),
+  kufiri 1920px për kopertinën. Serveri pranon vetëm HTTPS; fushë bosh = hiqet; klient që s'e dërgon fushën s'e fshin.
+- Profili: me foto → foto në krye; pa foto → brezi rozë. Emri/tekstet janë gjithmonë poshtë kopertinës (lexueshmëri mbi foto).
+  Maskota s'vendoset kurrë mbi kopertinë.
+
 ## Shefi i Bukës — asset-et
 Mockup-et janë referencë; s'u prenë. `src/components/public/chef-mascot.tsx` shfaq një siluetë vektoriale vendmbajtëse.
 Kur ilustrimet e veçuara (WebP/AVIF, sfond transparent) të jenë gati, vendosini te `public/brand/chef/` dhe regjistrojini te

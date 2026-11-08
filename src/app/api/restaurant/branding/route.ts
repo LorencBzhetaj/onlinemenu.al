@@ -36,10 +36,31 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Stili i fotos nuk lejohet." }, { status: 400 });
   }
 
+  // Kopertina (opsionale): ndryshohet vetëm kur fusha dërgohet; null/bosh = hiqet.
+  let coverPatch: { coverUrl: string | null } | Record<string, never> = {};
+  if (body.coverUrl !== undefined) {
+    const raw = body.coverUrl ? String(body.coverUrl).trim() : "";
+    if (!raw) {
+      coverPatch = { coverUrl: null };
+    } else {
+      let ok = false;
+      try {
+        ok = new URL(raw).protocol === "https:" && raw.length <= 1000;
+      } catch {
+        ok = false;
+      }
+      if (!ok) {
+        return NextResponse.json({ error: "Foto e kopertinës duhet të jetë një lidhje HTTPS." }, { status: 400 });
+      }
+      coverPatch = { coverUrl: raw };
+    }
+  }
+
   const restaurant = await prisma.restaurant.update({
     where: { id: restaurantId },
-    data: { primaryColor, accentColor, fontHeading, fontBody, logoUrl, menuPhotoStyle },
+    data: { primaryColor, accentColor, fontHeading, fontBody, logoUrl, menuPhotoStyle, ...coverPatch },
     select: {
+      coverUrl: true,
       primaryColor: true,
       accentColor: true,
       fontHeading: true,

@@ -172,6 +172,8 @@ model Restaurant {
   slug         String  @unique // p.sh. "gjecaj-restaurant" -> /m/gjecaj-restaurant
   name         String
   logoUrl      String?
+  // Foto kopertine opsionale e profilit publik (HTTPS; ngarkohet si logoja). Pa të: brez me ngjyrë.
+  coverUrl     String?
   primaryColor String? // personalizim minimal i temës
   accentColor  String?
   fontHeading  String? @default("Playfair Display")

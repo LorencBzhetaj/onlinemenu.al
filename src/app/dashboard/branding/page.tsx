@@ -22,6 +22,7 @@ export default async function BrandingPage({
       fontHeading: true,
       fontBody: true,
       logoUrl: true,
+      coverUrl: true,
       menuPhotoStyle: true,
     },
   });

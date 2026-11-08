@@ -17,6 +17,7 @@ export type PublicProfile = {
   name: string;
   slug: string;
   logoUrl: string | null;
+  coverUrl: string | null;
   primaryColor: string | null;
   accentColor: string | null;
   fontHeading: string | null;
@@ -65,6 +66,7 @@ export async function getPublicProfile(slug: string): Promise<PublicProfile | nu
     name: r.name,
     slug: r.slug,
     logoUrl: r.logoUrl,
+    coverUrl: r.coverUrl,
     primaryColor: r.primaryColor,
     accentColor: r.accentColor,
     fontHeading: r.fontHeading,

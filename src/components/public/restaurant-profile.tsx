@@ -11,6 +11,7 @@ export type ProfileView = {
   slug: string;
   name: string;
   logoUrl: string | null;
+  coverUrl: string | null;
   estYear: number | null;
   taglineAl: string | null;
   taglineEn: string | null;
@@ -96,7 +97,13 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
 
       {/* ===== COVER + IDENTITETI ===== */}
       <header className="om-cover">
-        <div className="om-cover-band" aria-hidden="true" />
+        {profile.coverUrl ? (
+          // Foto kopertine opsionale (dekorative; emri i restorantit vjen më poshtë si tekst).
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="om-cover-band om-cover-photo" src={profile.coverUrl} alt="" decoding="async" fetchPriority="high" />
+        ) : (
+          <div className="om-cover-band" aria-hidden="true" />
+        )}
         <div className="rprofile-lang om-lang" role="group" aria-label={t("Zgjidh gjuhën", "Choose language")}>
           <button type="button" className={lang === "al" ? "active" : ""} aria-pressed={lang === "al"} onClick={() => setLang("al")}>
             AL

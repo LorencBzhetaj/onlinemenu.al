@@ -10,9 +10,18 @@
 
 export type ChefVariant = "box" | "pizza" | "burger" | "fresh" | "sweets";
 
+/** Skedari i pritur për ekranin e hapjes 05 (Shefi i Bukës në kutinë rozë). Ende MUNGON. */
+export const CHEF_BOX_ASSET_PATH = "/brand/chef/chef-box.webp";
+
 const CHEF_ASSETS: Partial<Record<ChefVariant, { src: string; width: number; height: number }>> = {
-  // box: { src: "/brand/chef/chef-box.webp", width: 640, height: 640 },  // 05 — loading i miratuar
+  // Kur skedari të shtohet te public/brand/chef/chef-box.webp, hiqni komentin:
+  // box: { src: CHEF_BOX_ASSET_PATH, width: 800, height: 800 },
 };
+
+/** A ka ilustrim final të regjistruar për këtë variant (përndryshe shfaqet silueta vendmbajtëse). */
+export function hasChefAsset(variant: ChefVariant): boolean {
+  return Boolean(CHEF_ASSETS[variant]);
+}
 
 const LABELS: Record<ChefVariant, string> = {
   box: "Shefi i Bukës",

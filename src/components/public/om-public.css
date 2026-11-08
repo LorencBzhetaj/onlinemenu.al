@@ -117,6 +117,20 @@
   background-image: radial-gradient(rgba(76, 24, 69, 0.12) 1.6px, transparent 1.8px);
   background-size: 18px 18px;
 }
+.om-cover-photo {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  background-image: none;
+  background-color: var(--om-pink-soft);
+}
+@media (min-width: 960px) {
+  .om-cover-photo {
+    max-width: 1120px;
+    margin: 0 auto;
+    border-radius: 0 0 28px 28px;
+  }
+}
 .om-lang {
   top: 12px;
   right: 12px;
@@ -136,7 +150,7 @@
   margin: -52px auto 0;
   padding: 0 16px;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 16px;
   position: relative;
 }
@@ -161,7 +175,8 @@
 }
 .om-identity-text {
   min-width: 0;
-  padding-bottom: 4px;
+  /* Teksti fillon gjithmonë poshtë kopertinës (vetëm logoja e kapërcen skajin) — i lexueshëm edhe mbi foto. */
+  padding-top: 60px;
 }
 .om-name {
   font-family: var(--font-display);
@@ -277,6 +292,9 @@
   .om-crest {
     width: 128px;
     height: 128px;
+  }
+  .om-identity-text {
+    padding-top: 74px;
   }
   .om-actions {
     display: flex;
@@ -600,6 +618,39 @@
   background: var(--om-pink-soft, #ffe1f0);
   color: var(--om-aubergine, #4c1845);
   text-align: center;
+}
+.om-splash .om-logo--lg {
+  font-size: clamp(2.4rem, 9vw, 3.4rem);
+}
+.om-splash .om-logo-tld,
+.om-splash .om-logo-spark {
+  display: none; /* 05: "OnlineMenu" pa ".al" dhe pa shenjën sipër */
+}
+.om-splash-art {
+  margin-top: 28px;
+  width: min(72vw, 320px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.om-splash-art > * {
+  width: 100%;
+  height: auto;
+}
+.om-dev-note {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 2px dashed var(--om-aubergine, #4c1845);
+  color: var(--om-aubergine, #4c1845);
+  font: 600 0.85rem/1.4 "Nunito", system-ui, sans-serif;
 }
 .om-dots {
   display: flex;

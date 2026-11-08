@@ -64,6 +64,7 @@ export default async function RestaurantProfilePage({ params }: { params: { slug
       <OmSiteHeader />
       <RestaurantProfile
         profile={{
+          coverUrl: p.coverUrl,
           city: p.city,
           cuisine: p.cuisine,
           address: p.address,
