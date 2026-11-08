@@ -1,19 +1,11 @@
 import Link from "next/link";
-import { ChefMascot, type ChefVariant } from "@/components/public/chef-mascot";
-
-/** Varianti i Shefit sipas emrit real të kuzhinës (pa kategori të sajuara). */
-function variantFor(cuisine: string): ChefVariant {
-  const c = cuisine.toLowerCase();
-  if (/pic|pizz/.test(c)) return "pizza";
-  if (/burger|fast/.test(c)) return "burger";
-  if (/sallat|fresk|vegj|vegan|salad|healthy/.test(c)) return "fresh";
-  if (/ëmbël|embel|pastiç|pastic|dessert|kafe|ëmbëlsir/.test(c)) return "sweets";
-  return "box";
-}
+import { ChefMascot } from "@/components/public/chef-mascot";
+import { cuisineIconSrc } from "@/lib/cuisine-icons";
 
 /**
  * Karta të vogla kuzhinash në Zbulo — vetëm nga kuzhinat reale të restoranteve të publikuara.
- * Maskota përdoret këtu (karta të vogla), kurrë mbi foto, çmime apo përshkrime pjatash.
+ * Ikona: Shefi i Bukës sipas kuzhinës (emri i normalizuar → ikonë; e panjohura → rezervë).
+ * "Të gjitha" mbetet Shefi në kutinë rozë. Kurrë mbi foto, çmime apo përshkrime pjatash.
  */
 export function CuisineCards({ cuisines, active }: { cuisines: string[]; active?: string | null }) {
   if (cuisines.length === 0) return null;
@@ -42,7 +34,8 @@ export function CuisineCards({ cuisines, active }: { cuisines: string[]; active?
                 isActive ? "border-om-aubergine bg-om-butter text-om-aubergine" : "border-om-line bg-om-surface text-om-aubergine hover:border-om-pink"
               }`}
             >
-              <ChefMascot variant={variantFor(c)} size={44} decorative />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cuisineIconSrc(c)} alt="" width={48} height={48} loading="lazy" decoding="async" className="h-12 w-12 object-contain" />
               <span className="line-clamp-1">{c}</span>
             </Link>
           </li>

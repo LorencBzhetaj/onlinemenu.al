@@ -173,6 +173,9 @@ export function PublicMenu({
         ) : mode === "main" || !hasTasting ? (
           <>
             <div className="qm-section-heading">
+              {/* Ilustrimi i menusë (dekor): vetëm te titulli, kurrë mbi foto, çmime apo përshkrime. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="om-menu-art" src="/brand/menu-chef-240.png" alt="" width={120} height={80} loading="lazy" decoding="async" />
               <div className="qm-section-eyebrow">{t("MENUJA", "THE MENU")}</div>
               <h2 className="qm-section-title">{t("Zbuloni Shijet Tona", "Discover Our Flavours")}</h2>
             </div>

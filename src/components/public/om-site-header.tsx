@@ -34,6 +34,9 @@ export function OmSiteHeader({ active }: { active?: NavKey }) {
     <header className="om-site-header">
       <div className="om-site-header-inner">
         <Link href="/" className="om-site-brand" aria-label="OnlineMenu.al — restorantet">
+          {/* Logoja zyrtare (Shefi i Bukës në kutinë rozë) si shenjë e vogël pranë emrit. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/logo-chef-96.png" alt="" width={48} height={38} className="om-logo-mark" />
           <OmLogo />
         </Link>
 

@@ -23,6 +23,7 @@ export function RestaurantNameCombobox({
   inputClassName,
   hideLabel = false,
   label = "Kërko restorant",
+  anchorToForm = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -34,6 +35,8 @@ export function RestaurantNameCombobox({
   inputClassName?: string;
   hideLabel?: boolean;
   label?: string;
+  /** true: lista e sugjerimeve shtrihet sa gjithë formulari (prindi i pozicionuar), jo vetëm sa fusha. */
+  anchorToForm?: boolean;
 }) {
   const router = useRouter();
   const autoId = useId();
@@ -103,7 +106,7 @@ export function RestaurantNameCombobox({
   const showList = open && value.trim().length >= MIN && status !== "idle";
 
   return (
-    <div className="relative min-w-0 flex-1">
+    <div className={`${anchorToForm ? "" : "relative "}min-w-0 flex-1`}>
       <label htmlFor={id} className={hideLabel ? "sr-only" : "mb-1 block text-sm font-extrabold text-om-ink-soft"}>
         {label}
       </label>

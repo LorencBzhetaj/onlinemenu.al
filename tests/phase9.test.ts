@@ -9,6 +9,7 @@ import { searchRestaurants, parseSearchParams, suggestRestaurants, SUGGEST_MAX }
 import { hasEntitlement, entitlementWhere } from "@/modules/subscriptions/entitlements";
 import { normalizeForSearch, nameMatchRank } from "@/lib/text-normalize";
 import { safeReturnPath, menuHref } from "@/lib/safe-return";
+import { cuisineIconSrc, CUISINE_ICON_FALLBACK } from "@/lib/cuisine-icons";
 
 (function guardDb() {
   const url = process.env.DATABASE_URL ?? "";
@@ -107,6 +108,16 @@ async function main() {
   ok(`maksimumi ${SUGGEST_MAX}`, s1.length <= SUGGEST_MAX);
   void shtepia;
   void hidden;
+
+  console.log("\n6. Ikonat e kuzhinave (emër i normalizuar → ikonë):");
+  const expect: [string, string][] = [
+    ["Tradicionale", "tradicionale"], ["Peshku", "peshku"], ["Pica", "pizza"], ["Pizzeria", "pizza"],
+    ["Burger House", "burgers"], ["Sufllaqe", "sufllaqe"], ["SUFLLAQE & Gyros", "sufllaqe"], ["Fast Food", "fast-food"],
+    ["Ëmbëlsira", "embelsira"], ["embelsira", "embelsira"], ["Kafe", "kafe"], ["Zgarë", "zgare"],
+    ["Mëngjes", "mengjes"], ["Pasta", "pasta"], ["Vegjetariane", "vegan"],
+  ];
+  for (const [c, k] of expect) ok(`${c} → ${k}`, cuisineIconSrc(c) === `/brand/kategorite/${k}.webp`, cuisineIconSrc(c));
+  ok("e panjohur → ikona rezervë", cuisineIconSrc("Japoneze") === CUISINE_ICON_FALLBACK);
 
   await cleanup();
   console.log(`\n──────── FAZA 9: ${pass} passed, ${fail} failed ────────`);

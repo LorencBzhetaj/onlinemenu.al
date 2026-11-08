@@ -30,7 +30,7 @@ export function HomeSearch({ facets }: { facets: SearchFacets }) {
       action="/restaurants"
       method="get"
       role="search"
-      className="flex w-full items-center gap-1.5 rounded-2xl border border-om-line bg-om-surface p-1.5 shadow-[0_8px_22px_rgba(76,24,69,0.07)]"
+      className="relative flex w-full items-center gap-1.5 rounded-2xl border border-om-line bg-om-surface p-1.5 shadow-[0_8px_22px_rgba(76,24,69,0.07)]"
     >
       {facets.cities.length > 0 && (
         <label className="flex h-11 w-[38%] max-w-[170px] shrink-0 items-center gap-1.5 rounded-xl bg-om-white pl-2.5 pr-1">
@@ -63,6 +63,7 @@ export function HomeSearch({ facets }: { facets: SearchFacets }) {
           city={city}
           fromPath="/"
           hideLabel
+          anchorToForm
           inputClassName="h-11 w-full min-w-0 bg-transparent pr-16 text-[15px] text-om-aubergine outline-none placeholder:text-om-ink-soft"
         />
       </div>

@@ -44,7 +44,24 @@
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 44px;
+}
+.om-logo-mark {
+  width: 48px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.om-site-brand .om-logo-spark {
+  display: none; /* me logon zyrtare, shenja me vija s'nevojitet */
+}
+.qr-menu.om-menu .om-menu-art {
+  display: block;
+  width: 120px;
+  height: 80px;
+  margin: 0 auto 6px;
+  object-fit: contain;
 }
 .om-logo {
   position: relative;
@@ -934,4 +951,17 @@
     animation: none;
     opacity: 1;
   }
+}
+
+/* Fokus i dukshëm në paletën e miratuar për çdo faqe publike me header-in e OnlineMenu.al. */
+body:has(.om-site-header) :focus-visible {
+  outline: 3px solid var(--om-aubergine, #4c1845);
+  outline-offset: 2px;
+}
+
+/* Emri i restorantit në header-in e menusë: pa hapësirë të madhe mes shkronjave (s'thyhet pranë "Kthehu"). */
+.qr-menu.om-menu .qm-brand-name {
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }

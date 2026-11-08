@@ -100,6 +100,7 @@ export default async function PublicMenuPage({
         allergens={allergens}
         photoStyle={(p.menuPhotoStyle as "large" | "thumbnail" | "none") ?? "none"}
         slug={p.slug}
+        back={backTarget(p.slug, searchParams.from)}
       />
       <PublicTabs slug={p.slug} active="menu" labels={{ profile: "Restoranti", menu: "Menuja", info: "Informacion" }} />
     </div>
