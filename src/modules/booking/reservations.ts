@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 import { enqueueJob } from "./notifications";
+import { enqueueBusinessNotifications } from "./business-notify";
 import { recordEvent } from "@/modules/analytics/events";
 import {
   getSettings,
@@ -59,16 +60,15 @@ async function enqueueConfirmation(
       });
     }
   }
-  if (args.meta.ownerEmail) {
-    await enqueueJob(tx, {
-      restaurantId: args.restaurantId,
-      reservationId: args.reservationId,
-      type: "BookingConfirmation",
-      recipient: args.meta.ownerEmail,
-      payload: base,
-      dedupeKey: `conf:o:${args.reservationId}`,
-    });
-  }
+  // Biznesi: marrësit e verifikuar sipas kanalit (email/WhatsApp), pa token anulimi.
+  await enqueueBusinessNotifications(tx, {
+    restaurantId: args.restaurantId,
+    reservationId: args.reservationId,
+    event: "new",
+    restaurantName: args.meta.restaurantName,
+    whenLabel: args.whenLabel,
+    partySize: args.partySize,
+  });
 }
 
 /**
@@ -361,9 +361,14 @@ export async function cancelReservationByToken(token: string): Promise<ActionRes
     if (res.customer.email) {
       await enqueueJob(tx, { restaurantId: res.restaurantId, reservationId: res.id, type: "Cancellation", recipient: res.customer.email, payload: base, dedupeKey: `cancel:g:${res.id}` });
     }
-    if (res.restaurant.owner?.email) {
-      await enqueueJob(tx, { restaurantId: res.restaurantId, reservationId: res.id, type: "Cancellation", recipient: res.restaurant.owner.email, payload: base, dedupeKey: `cancel:o:${res.id}` });
-    }
+    await enqueueBusinessNotifications(tx, {
+      restaurantId: res.restaurantId,
+      reservationId: res.id,
+      event: "cancel",
+      restaurantName: res.restaurant.name,
+      whenLabel,
+      partySize: res.partySize,
+    });
   });
   return { ok: true };
 }
@@ -401,6 +406,15 @@ export async function rescheduleReservation(
     if (customer?.email) {
       await enqueueJob(tx, { restaurantId, reservationId: id, type: "Reschedule", recipient: customer.email, payload: base, dedupeKey: `resched:g:${id}:${start.getTime()}` });
     }
+    await enqueueBusinessNotifications(tx, {
+      restaurantId,
+      reservationId: id,
+      event: "reschedule",
+      restaurantName: meta.restaurantName,
+      whenLabel,
+      partySize: res.partySize,
+      version: String(start.getTime()),
+    });
   });
   return { ok: true };
 }

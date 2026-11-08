@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard/customers", label: "Klientët" },
   { href: "/dashboard/tables", label: "Salla" },
   { href: "/dashboard/hours", label: "Orari" },
+  { href: "/dashboard/notifications", label: "Njoftime" },
   { href: "/dashboard/branding", label: "Personalizim" },
   { href: "/dashboard/qr", label: "QR Kod" },
   { href: "/dashboard/analytics", label: "Analitika" },

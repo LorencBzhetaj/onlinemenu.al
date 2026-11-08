@@ -255,31 +255,35 @@ async function main() {
     ok("i verifikuar → user", !!good && good.id === u.id);
   }
 
-  // ── T12: Google signIn — gating + linking i sigurt ──
-  console.log("\nT12 Google signIn (gating + safe linking):");
+  // ── T12: Google signIn — gating + pa marrje llogarie (Faza 10: identitet = provider + providerAccountId) ──
+  console.log("\nT12 Google signIn (gating + pa lidhje automatike sipas email-it):");
   {
     const signInCb = authOptions.callbacks!.signIn!;
-    const g = (email: string, email_verified: any) =>
-      signInCb({ user: { email } as any, account: { provider: "google" } as any, profile: { email_verified } as any } as any);
+    const g = (email: string, email_verified: any, pid = `pid-${email}`) =>
+      signInCb({ user: { email } as any, account: { provider: "google", providerAccountId: pid } as any, profile: { email_verified } as any } as any);
+    const rejected = (r: unknown, reason: string) => typeof r === "string" && r.includes(`error=${reason}`);
 
     const e1 = `g1${SUF}`;
     ok("verified=true → lejon", (await g(e1, true)) === true);
-    ok("krijon user verified", (await prisma.user.findUnique({ where: { email: e1 } }))?.emailVerified === true);
+    const u1 = await prisma.user.findUnique({ where: { email: e1 } });
+    ok("krijon user verified me rol USER (pa biznes)", u1?.emailVerified === true && u1.role === "USER");
     const e2 = `g2${SUF}`;
-    ok("verified=false → refuzon", (await g(e2, false)) === false);
+    ok("verified=false → refuzon", rejected(await g(e2, false), "email_unverified"));
     ok("s'krijon user", (await prisma.user.findUnique({ where: { email: e2 } })) === null);
-    ok("verified=undefined → refuzon", (await g(`g3${SUF}`, undefined)) === false);
+    ok("verified=undefined → refuzon", rejected(await g(`g3${SUF}`, undefined), "email_unverified"));
 
-    // Linking i sigurt: llogari e paverifikuar me password + verifikim në fluturim.
+    // Llogari e paverifikuar me password: Google NUK e merr (pa provë pronësie nga llogaria vetë).
     const e4 = `g4${SUF}`;
     const u4 = await makeUnverifiedOwner(e4, { password: "attacker-pw" });
     await issueVerification(u4.id);
-    ok("linking lejon", (await g(e4, true)) === true);
+    const before = await prisma.user.findUnique({ where: { id: u4.id } });
+    ok("refuzon me account_exists", rejected(await g(e4, true), "account_exists"));
     const after = await prisma.user.findUnique({ where: { id: u4.id } });
-    ok("u verifikua", after?.emailVerified === true);
-    ok("passwordHash u HOQ (jo i besueshëm)", after?.passwordHash === null, `pw=${after?.passwordHash}`);
-    ok("pendingRestaurantName u pastrua", after?.pendingRestaurantName === null);
-    ok("verifikimi në fluturim u fshi", (await prisma.emailVerification.count({ where: { userId: u4.id } })) === 0);
+    ok("mbetet e paverifikuar", after?.emailVerified === false);
+    ok("passwordHash i paprekur", after?.passwordHash === before?.passwordHash);
+    ok("pendingRestaurantName i paprekur", after?.pendingRestaurantName === before?.pendingRestaurantName);
+    ok("verifikimi në fluturim mbetet (rruga e vetë llogarisë)", (await prisma.emailVerification.count({ where: { userId: u4.id } })) === 1);
+    ok("s'u lidh asnjë identitet", (await prisma.oAuthAccount.count({ where: { userId: u4.id } })) === 0);
   }
 
   // ── T13: createRestaurantForOwner idempotent ──

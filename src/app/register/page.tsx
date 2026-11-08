@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GoogleButton, OrDivider } from "@/components/google-button";
+import { OrDivider } from "@/components/google-button";
+import { OAuthButtons, useHasOAuth } from "@/components/oauth-buttons";
 
 export default function RegisterPage() {
+  const hasOAuth = useHasOAuth();
   const router = useRouter();
   const [restaurantName, setRestaurantName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,8 +45,9 @@ export default function RegisterPage() {
           30 ditë, pa kartë krediti.
         </p>
 
-        <GoogleButton label="Regjistrohu me Google" />
-        <OrDivider />
+        {/* Me Google/Apple: llogaria krijohet, pastaj vazhdon te "Regjistro biznesin" (/onboarding). */}
+        <OAuthButtons callbackUrl="/onboarding" verb="Regjistrohu" />
+        {hasOAuth && <OrDivider />}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <input

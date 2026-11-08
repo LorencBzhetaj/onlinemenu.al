@@ -6,13 +6,11 @@ export default withAuth(
     const { token } = req.nextauth;
     const path = req.nextUrl.pathname;
     const isSuperAdmin = token?.role === "SUPER_ADMIN";
-    const isOwner = token?.role === "RESTAURANT_OWNER";
     const hasRestaurant = !!token?.restaurantId;
 
     // Gate verifikimi (mbrojtje në thellësi; bllokimi kryesor është në server te authorize).
-    // Vetëm === false bllokon — token-at e vjetër (undefined) trajtohen si të verifikuar
-    // që të mos nxirren jashtë sesionet ekzistuese. Super admin s'i nënshtrohet.
-    if (isOwner && token?.emailVerified === false) {
+    // Vetëm === false bllokon — token-at e vjetër (undefined) trajtohen si të verifikuar.
+    if (!isSuperAdmin && token?.emailVerified === false) {
       return NextResponse.redirect(new URL("/register/check-email", req.url));
     }
 
@@ -23,16 +21,17 @@ export default withAuth(
 
     // /admin/* -> vetëm SUPER_ADMIN
     if (path.startsWith("/admin") && !isSuperAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return NextResponse.redirect(new URL(hasRestaurant ? "/dashboard" : "/account", req.url));
     }
 
-    // Pronar PA restorant (p.sh. sapo u kyç me Google) -> duhet të kalojë /onboarding.
-    if (isOwner && !hasRestaurant && !path.startsWith("/onboarding")) {
-      return NextResponse.redirect(new URL("/onboarding", req.url));
+    // Pa asnjë restorant (llogari përdoruesi, p.sh. e krijuar me Google): s'ka panel.
+    // Biznesi krijohet VETËM kur përdoruesi zgjedh "Regjistro biznesin" (/onboarding) nga /account.
+    if (!isSuperAdmin && !hasRestaurant && path.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/account", req.url));
     }
 
-    // Pronar QË TASHMË ka restorant s'ka pse të jetë te /onboarding.
-    if (isOwner && hasRestaurant && path.startsWith("/onboarding")) {
+    // Kush ka tashmë restorant s'ka pse të jetë te /onboarding.
+    if (hasRestaurant && path.startsWith("/onboarding")) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -47,7 +46,7 @@ export default withAuth(
   }
 );
 
-// Mbron këto rrugë; /m/[slug] mbetet publike.
+// Mbron këto rrugë; faqet publike (katalog, profil, menu, rezervim) mbeten pa llogari.
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding", "/account/:path*"],
 };

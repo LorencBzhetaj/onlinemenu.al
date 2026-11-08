@@ -16,7 +16,13 @@ export type NotificationType =
   | "Reminder2h"
   | "Completed"
   | "NoShow"
-  | "DailyDigest";
+  | "DailyDigest"
+  // Njoftimet për biznesin (shih business-notify.ts)
+  | "BusinessNewBooking"
+  | "BusinessReschedule"
+  | "BusinessCancellation";
+
+export type NotificationChannel = "Email" | "WhatsApp";
 
 export type NotifyMessage = { to: string; subject: string; text: string };
 export type NotifyResult = { delivered: boolean; simulated?: boolean; error?: string };
@@ -32,6 +38,10 @@ export interface EnqueueInput {
   payload: Prisma.InputJsonValue;
   dedupeKey: string;
   scheduledAt?: Date;
+  /** Kanali i dërgimit (default "Email"). */
+  channel?: NotificationChannel;
+  /** NotificationRecipient (për statusin në panel), kur ka. */
+  recipientId?: string | null;
 }
 
 /**
@@ -49,6 +59,8 @@ export async function enqueueJob(tx: Tx, input: EnqueueInput): Promise<void> {
         payload: input.payload,
         dedupeKey: input.dedupeKey,
         scheduledAt: input.scheduledAt ?? new Date(),
+        channel: input.channel ?? "Email",
+        recipientId: input.recipientId ?? null,
       },
     ],
     skipDuplicates: true,
@@ -95,6 +107,14 @@ export function defaultNotificationSender(): NotifySender {
   return simulateSender;
 }
 
+/**
+ * WhatsApp: pa integrim zyrtar të konfiguruar (WhatsApp Business Platform, shabllone të miratuara,
+ * pëlqim i marrësit) dërgimi real mbetet I FIKUR → çdo mesazh shënohet "Simulated".
+ */
+export function defaultWhatsAppSender(): NotifySender {
+  return simulateSender;
+}
+
 export interface WorkerResult {
   claimed: number;
   sent: number;
@@ -112,11 +132,14 @@ export async function runNotificationWorker(opts: {
   restaurantId?: string;
   now?: Date;
   send?: NotifySender;
+  /** Dërguesi për kanalin WhatsApp (default: i simuluar). */
+  sendWhatsApp?: NotifySender;
   limit?: number;
   leaseMs?: number;
 } = {}): Promise<WorkerResult> {
   const now = opts.now ?? new Date();
   const send = opts.send ?? simulateSender;
+  const sendWhatsApp = opts.sendWhatsApp ?? defaultWhatsAppSender();
   const limit = opts.limit ?? 50;
   const leaseMs = opts.leaseMs ?? 60_000;
   const res: WorkerResult = { claimed: 0, sent: 0, simulated: 0, failed: 0, dead: 0 };
@@ -152,7 +175,8 @@ export async function runNotificationWorker(opts: {
 
     let outcome: NotifyResult;
     try {
-      outcome = await send({ to: job.recipient, subject: subjectFor(job.type, job.payload), text: bodyFor(job.type, job.payload) });
+      const sender = job.channel === "WhatsApp" ? sendWhatsApp : send;
+      outcome = await sender({ to: job.recipient, subject: subjectFor(job.type, job.payload), text: bodyFor(job.type, job.payload) });
     } catch (e) {
       outcome = { delivered: false, error: e instanceof Error ? e.message : "send_threw" };
     }
@@ -234,6 +258,9 @@ export function subjectFor(type: string, payload: Prisma.JsonValue): string {
     case "Reminder24h": return `Kujtesë: rezervimi nesër — ${name}`;
     case "Reminder2h": return `Kujtesë: rezervimi së shpejti — ${name}`;
     case "DailyDigest": return `Rezervimet e sotme — ${name}`;
+    case "BusinessNewBooking": return `Rezervim i ri ${d.ref ?? ""} — ${name}`;
+    case "BusinessReschedule": return `Rezervim i ndryshuar ${d.ref ?? ""} — ${name}`;
+    case "BusinessCancellation": return `Rezervim i anuluar ${d.ref ?? ""} — ${name}`;
     default: return `${name}`;
   }
 }
@@ -243,6 +270,15 @@ export function bodyFor(type: string, payload: Prisma.JsonValue): string {
   const name = String(d.restaurantName ?? "Restoranti");
   if (type === "DailyDigest") {
     return `${name}: ${d.reservations ?? 0} rezervime, ${d.guests ?? 0} mysafirë për ${d.date ?? ""}.`;
+  }
+  if (type.startsWith("Business")) {
+    const head =
+      type === "BusinessNewBooking" ? "Rezervim i ri" : type === "BusinessReschedule" ? "Rezervimi ndryshoi orar" : "Klienti anuloi rezervimin";
+    // Pa token anulimi, pa telefon/email të klientit; paneli kërkon login.
+    return `${head} — ${name}
+Referenca: ${d.ref ?? ""}
+${d.when ?? ""} · ${d.partySize ?? ""} persona
+Paneli: ${d.panelUrl ?? ""}`;
   }
   const when = String(d.when ?? "");
   const party = d.partySize ?? "";

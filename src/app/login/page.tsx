@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GoogleButton, OrDivider } from "@/components/google-button";
+import { OrDivider } from "@/components/google-button";
+import { OAuthButtons, useHasOAuth } from "@/components/oauth-buttons";
 
 export default function LoginPage() {
   const router = useRouter();
+  const hasOAuth = useHasOAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -15,10 +17,22 @@ export default function LoginPage() {
   const [resetOk, setResetOk] = useState(false);
   const [needsVerify, setNeedsVerify] = useState(false);
 
-  // Mesazh suksesi pas rivendosjes së password-it (/login?reset=1).
+  // Mesazh suksesi pas rivendosjes së password-it (/login?reset=1) dhe arsyet e refuzimit OAuth.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("reset") === "1") {
-      setResetOk(true);
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("reset") === "1") setResetOk(true);
+    const providerName = sp.get("provider") === "apple" ? "Apple" : "Google";
+    const reason = sp.get("error");
+    if (reason === "account_exists") {
+      setError(
+        `Ky email ka tashmë një llogari në OnlineMenu.al. Hyni me metodën që keni përdorur më parë (email dhe fjalëkalim ose ofruesin tjetër), pastaj lidheni ${providerName} nga “Llogaria ime”.`
+      );
+    } else if (reason === "email_unverified") {
+      setError(`${providerName} nuk e konfirmoi email-in tuaj. Provoni një mënyrë tjetër hyrjeje.`);
+    } else if (reason === "missing_email") {
+      setError(`${providerName} nuk na dha një email. Hyni me një mënyrë tjetër ose lejoni ndarjen e email-it.`);
+    } else if (reason) {
+      setError("Hyrja nuk u përfundua. Provoni përsëri.");
     }
   }, []);
 
@@ -58,8 +72,8 @@ export default function LoginPage() {
           </div>
         )}
 
-        <GoogleButton label="Vazhdo me Google" />
-        <OrDivider />
+        <OAuthButtons callbackUrl="/dashboard" />
+        {hasOAuth && <OrDivider />}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <input

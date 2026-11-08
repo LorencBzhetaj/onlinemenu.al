@@ -27,7 +27,9 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Restoranti u krijua — shko te dashboard-i (refresh që token të marrë restaurantId).
+    // Restoranti u krijua — rifresko token-in e sesionit (rol + restaurantId) para panelit:
+    // middleware-i lexon cookie-n e JWT-së, jo DB-në.
+    await fetch("/api/auth/session", { cache: "no-store" }).catch(() => {});
     router.push("/dashboard");
     router.refresh();
   }

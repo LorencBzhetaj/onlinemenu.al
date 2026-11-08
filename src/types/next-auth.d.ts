@@ -30,5 +30,7 @@ declare module "next-auth/jwt" {
     restaurantSlug?: string | null;
     activeRestaurantId?: string | null;
     activeRole?: string | null;
+    /** Koha e hyrjes së fundit (ms) — rikonfirmim për lidhjen e një metode të re pa fjalëkalim. */
+    authTime?: number;
   }
 }

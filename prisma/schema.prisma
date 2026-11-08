@@ -20,21 +20,23 @@ datasource db {
 // Përdoruesit dhe rolet
 // ─────────────────────────────────────────────────────────────
 model User {
-  id            String  @id @default(cuid())
-  email         String  @unique
-  passwordHash  String? // null për përdoruesit që kyçen vetëm me Google OAuth
-  role          String  @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
-  emailVerified Boolean @default(false) // Google users = true; email signup verifikohet
+  id                    String  @id @default(cuid())
+  email                 String  @unique
+  passwordHash          String? // null për përdoruesit që kyçen vetëm me Google OAuth
+  role                  String  @default("RESTAURANT_OWNER") // "SUPER_ADMIN" | "RESTAURANT_OWNER"
+  emailVerified         Boolean @default(false) // Google users = true; email signup verifikohet
   // Emri i restorantit i ruajtur në regjistrim; restoranti krijohet pas verifikimit.
   pendingRestaurantName String?
   // Restoranti aktiv — VETËM default navigimi; JO autoritet lejesh (shih memberships).
-  activeRestaurantId String?
+  activeRestaurantId    String?
 
-  restaurants  Restaurant[]
-  memberships  RestaurantMembership[]
-  resetTokens  PasswordResetToken[]
+  restaurants   Restaurant[]
+  memberships   RestaurantMembership[]
+  resetTokens   PasswordResetToken[]
   verifications EmailVerification[]
-  createdAt    DateTime     @default(now())
+  // Identitetet OAuth (Google/Apple) të lidhura qëllimisht me këtë llogari.
+  oauthAccounts OAuthAccount[]
+  createdAt     DateTime               @default(now())
 }
 
 // Anëtarësimi i një përdoruesi në një restorant, me rol. Autoriteti i lejeve
@@ -45,7 +47,7 @@ model RestaurantMembership {
   userId       String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId String
-  role         String     // "OWNER" | "MANAGER" | "STAFF"
+  role         String // "OWNER" | "MANAGER" | "STAFF"
   status       String     @default("active") // "active" | "revoked"
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -106,19 +108,19 @@ model PasswordResetToken {
 // i OWNER-it ruhet; pronari kanonik krijohet vetëm në provisionim). Tokeni ruhet VETËM
 // si SHA-256; pranimi është njëpërdorimësh (status → accepted) dhe skadon.
 model Invitation {
-  id           String     @id @default(cuid())
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  email        String // marrësi i synuar (krahasim case-insensitive në pranim)
-  role         String // "MANAGER" | "STAFF"
-  tokenHash    String     @unique // SHA-256 hex e token-it të ftesës (kurrë teksti i plotë)
-  status       String     @default("pending") // "pending" | "accepted" | "revoked"
-  expiresAt    DateTime
-  invitedByUserId   String
-  acceptedByUserId  String?
-  acceptedAt   DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId     String
+  email            String // marrësi i synuar (krahasim case-insensitive në pranim)
+  role             String // "MANAGER" | "STAFF"
+  tokenHash        String     @unique // SHA-256 hex e token-it të ftesës (kurrë teksti i plotë)
+  status           String     @default("pending") // "pending" | "accepted" | "revoked"
+  expiresAt        DateTime
+  invitedByUserId  String
+  acceptedByUserId String?
+  acceptedAt       DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@index([restaurantId])
   @@index([email])
@@ -168,35 +170,35 @@ model AnalyticsEvent {
 // Restoranti (tenant)
 // ─────────────────────────────────────────────────────────────
 model Restaurant {
-  id           String  @id @default(cuid())
-  slug         String  @unique // p.sh. "gjecaj-restaurant" -> /m/gjecaj-restaurant
-  name         String
-  logoUrl      String?
+  id             String  @id @default(cuid())
+  slug           String  @unique // p.sh. "gjecaj-restaurant" -> /m/gjecaj-restaurant
+  name           String
+  logoUrl        String?
   // Foto kopertine opsionale e profilit publik (HTTPS; ngarkohet si logoja). Pa të: brez me ngjyrë.
-  coverUrl     String?
-  primaryColor String? // personalizim minimal i temës
-  accentColor  String?
-  fontHeading  String? @default("Playfair Display")
-  fontBody     String? @default("Cormorant Garamond")
+  coverUrl       String?
+  primaryColor   String? // personalizim minimal i temës
+  accentColor    String?
+  fontHeading    String? @default("Playfair Display")
+  fontBody       String? @default("Cormorant Garamond")
   // Stili i fotos në menunë publike: "large" | "thumbnail" | "none"
-  menuPhotoStyle String @default("none")
-  phone        String?
-  whatsapp     String?
-  address      String?
+  menuPhotoStyle String  @default("none")
+  phone          String?
+  whatsapp       String?
+  address        String?
   // Zbulimi/kërkimi (Faza 6): qytet + kuzhinë për filtra. Opsionale; pa vlera të sajuara.
   // Editohen te moduli Settings (UI e plotë → Faza 7); listimi i trajton null-at si "pa filtër".
-  city         String?
-  cuisine      String?
+  city           String?
+  cuisine        String?
   // Koordinata opsionale (profil/Informacion). Lidhja e hartës ruhet si RestaurantExternalLink(MAPS).
-  mapsUrl      String?
+  mapsUrl        String?
   // Koordinatat e pinit në hartën e profilit (opsionale). Pa to: vetëm adresa + lidhja e hartës.
   // Vendosen nga pronari; s'gjenerohen kurrë automatikisht (pa gjeokodim të sajuar).
-  latitude     Float?
-  longitude    Float?
+  latitude       Float?
+  longitude      Float?
   // Përshkrim i shkurtër i restorantit për faqen e profilit/informacionit (opsional, per-gjuhë).
-  aboutAl      String?
-  aboutEn      String?
-  isPublished  Boolean @default(false) // owner mund ta fikë/ndezë menunë
+  aboutAl        String?
+  aboutEn        String?
+  isPublished    Boolean @default(false) // owner mund ta fikë/ndezë menunë
 
   // Përmbajtje e Hero-s publike (opsionale; do të editohen te moduli Settings).
   estYear    Int? // p.sh. 1922 -> "EST. 1922"
@@ -211,31 +213,32 @@ model Restaurant {
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
 
-  subscription  Subscription?
-  memberships   RestaurantMembership[]
-  categories    Category[]
-  tastingMenus  TastingMenu[]
-  analytics     MenuView[]
+  subscription    Subscription?
+  memberships     RestaurantMembership[]
+  categories      Category[]
+  tastingMenus    TastingMenu[]
+  analytics       MenuView[]
   analyticsEvents AnalyticsEvent[]
-  invitations   Invitation[]
-  externalLinks RestaurantExternalLink[]
-  allergens     Allergen[]
-  menuSchedules MenuSchedule[]
-  qrCode        QrCode?
+  invitations     Invitation[]
+  externalLinks   RestaurantExternalLink[]
+  allergens       Allergen[]
+  menuSchedules   MenuSchedule[]
+  qrCode          QrCode?
 
   // Booking (Faza 4) — gjithçka e izoluar me restaurantId.
-  bookingSettings BookingSettings?
-  areas           Area[]
-  tables          RestaurantTable[]
-  combinations    TableCombination[]
-  reservations    Reservation[]
-  customers       Customer[]
-  openingHours    OpeningHour[]
-  closures        Closure[]
-  areaClosures    AreaClosure[]
-  slotLimits      SlotLimit[]
-  notificationJobs NotificationJob[]
-  dailyReports    DailyReport[]
+  bookingSettings        BookingSettings?
+  areas                  Area[]
+  tables                 RestaurantTable[]
+  combinations           TableCombination[]
+  reservations           Reservation[]
+  customers              Customer[]
+  openingHours           OpeningHour[]
+  closures               Closure[]
+  areaClosures           AreaClosure[]
+  slotLimits             SlotLimit[]
+  notificationJobs       NotificationJob[]
+  notificationRecipients NotificationRecipient[]
+  dailyReports           DailyReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -326,7 +329,7 @@ model Subscription {
   expiresAt       DateTime
   lastPaymentNote String? // shënim manual (p.sh. "Paguar via WhatsApp 10/08")
 
-  entitlements    ModuleEntitlement[]
+  entitlements ModuleEntitlement[]
 }
 
 // Të drejta per-modul (MENU/BOOKING) të ndara mbi abonimin. hasEntitlement vlerëson
@@ -335,9 +338,9 @@ model ModuleEntitlement {
   id             String       @id @default(cuid())
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   subscriptionId String
-  module         String       // "MENU" | "BOOKING"
+  module         String // "MENU" | "BOOKING"
   status         String       @default("active") // "active" | "expired" | "disabled"
-  expiresAt      DateTime?    // null = pa skadim në nivel moduli (qeveris subscription-i)
+  expiresAt      DateTime? // null = pa skadim në nivel moduli (qeveris subscription-i)
 
   @@unique([subscriptionId, module])
 }
@@ -346,13 +349,13 @@ model ModuleEntitlement {
 // Struktura e menusë: Category -> Subcategory? -> MenuItem
 // ─────────────────────────────────────────────────────────────
 model Category {
-  id           String     @id @default(cuid())
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  id           String        @id @default(cuid())
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId String
   nameAl       String
   nameEn       String
   icon         String?
-  sortOrder    Int        @default(0)
+  sortOrder    Int           @default(0)
   // Orar opsional i menusë: kategoria shfaqet publikisht vetëm brenda dritares së orarit.
   schedule     MenuSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
   scheduleId   String?
@@ -454,6 +457,9 @@ model BookingSettings {
   maxReservationsPerSlot Int        @default(0) // 0 = pa kufi (kufizon vetëm numri i tavolinave)
   maxCoversPerSlot       Int        @default(0) // 0 = pa kufi
   timezone               String     @default("Europe/Tirane")
+  // Njoftimet e rezervimeve për biznesin, sipas kanalit (marrësit te NotificationRecipient).
+  notifyEmailEnabled     Boolean    @default(true)
+  notifyWhatsappEnabled  Boolean    @default(false)
   updatedAt              DateTime   @updatedAt
 }
 
@@ -617,8 +623,8 @@ model Reservation {
   // Restrict: ruajtja e historikut — një tavolinë/klient me rezervime NUK fshihet
   // aksidentalisht. Fshirja e tenant-it bëhet rrjedhë e posaçme (fshin rezervimet
   // e para, në rend), jo me cascade nga tavolina/klienti.
-  table            RestaurantTable   @relation(fields: [tableId], references: [id], onDelete: Restrict)
-  customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  table            RestaurantTable    @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  customer         Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
   tables           ReservationTable[]
   notificationJobs NotificationJob[]
 
@@ -684,7 +690,8 @@ model NotificationJob {
   reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   reservationId String?
   type          String // BookingConfirmation | Cancellation | Reschedule | Reminder24h | Reminder2h | Completed | NoShow | DailyDigest
-  channel       String       @default("Email")
+  channel       String       @default("Email") // "Email" | "WhatsApp"
+  recipientId   String? // NotificationRecipient (pa FK: marrësi mund të fshihet, historiku mbetet)
   recipient     String
   payload       Json
   // Dedupe: një job për (rezervim, event, version). Ri-krijimi i të njëjtit event
@@ -735,5 +742,42 @@ model DailyReport {
   updatedAt    DateTime   @updatedAt
 
   @@unique([restaurantId, reportDate, type])
+  @@index([restaurantId])
+}
+
+/// Identitet OAuth i lidhur me një User. Identifikohet VETËM nga (provider, providerAccountId) —
+/// kurrë nga email-i. Email-i i ofruesit ruhet informativ (te Apple mund të jetë adresë relay).
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  provider          String // "google" | "apple"
+  providerAccountId String
+  email             String?
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Marrës i njoftimeve të rezervimeve për biznesin. Dërgohet vetëm kur është i verifikuar,
+/// i aktivizuar dhe (për WhatsApp) me pëlqimin e marrësit.
+model NotificationRecipient {
+  id            String     @id @default(cuid())
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  channel       String // "Email" | "WhatsApp"
+  address       String // email i normalizuar ose numër E.164 pa "+"
+  label         String?
+  enabled       Boolean    @default(true)
+  verifiedAt    DateTime?
+  consentAt     DateTime? // pëlqimi i marrësit për WhatsApp
+  codeHash      String?
+  codeExpiresAt DateTime?
+  codeAttempts  Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([restaurantId, channel, address])
   @@index([restaurantId])
 }

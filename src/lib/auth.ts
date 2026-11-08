@@ -1,6 +1,10 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import AppleProvider from "next-auth/providers/apple";
+import { cookies } from "next/headers";
+import { resolveOAuthSignIn, OAUTH_PROVIDERS, type OAuthProvider } from "@/modules/accounts/oauth";
+import { LINK_INTENT_COOKIE, readLinkIntent } from "@/modules/accounts/link-intent";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { consumeVerification } from "@/lib/email-verification";
@@ -69,7 +73,7 @@ const providers: NextAuthOptions["providers"] = [
   }),
 ];
 
-// Shto Google vetëm nëse është konfiguruar (app-i punon me Credentials edhe pa të).
+// Ofruesit OAuth shtohen vetëm kur janë konfiguruar (app-i punon me email edhe pa ta).
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     GoogleProvider({
@@ -78,70 +82,84 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     })
   );
 }
+// Sign in with Apple: kërkon Services ID (APPLE_CLIENT_ID) dhe client secret JWT (APPLE_CLIENT_SECRET,
+// i nënshkruar me çelësin .p8; skadon ≤ 6 muaj). Pa to, ofruesi s'shtohet dhe butoni s'shfaqet.
+if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+  providers.push(
+    AppleProvider({
+      clientId: process.env.APPLE_CLIENT_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET,
+    })
+  );
+}
+
+function isOAuth(p: string | undefined): p is OAuthProvider {
+  return !!p && (OAUTH_PROVIDERS as readonly string[]).includes(p);
+}
+
+/** email_verified i ofruesit: Google jep boolean; Apple mund ta japë si "true" (string). */
+function providerEmailVerified(profile: unknown): boolean {
+  const v = (profile as { email_verified?: unknown } | undefined)?.email_verified;
+  return v === true || v === "true";
+}
+
+/** Link intent i vlefshëm për këtë ofrues (cookie HttpOnly), i konsumuar pas leximit. */
+function takeLinkIntent(provider: string): string | null {
+  try {
+    const jar = cookies();
+    const uid = readLinkIntent(jar.get(LINK_INTENT_COOKIE)?.value, provider);
+    if (jar.get(LINK_INTENT_COOKIE)) jar.delete(LINK_INTENT_COOKIE);
+    return uid;
+  } catch {
+    return null; // jashtë kontekstit të kërkesës
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  pages: { signIn: "/login", error: "/login" },
   providers,
   callbacks: {
-    // Linking manual sipas email-it (JWT strategy, pa adapter).
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        const email = user.email?.toLowerCase();
-        if (!email) return false;
-
-        // Prano VETËM nëse Google e jep email_verified === true (vendim sigurie).
-        // undefined/false → mohohet; s'i japim verifikim pa konfirmim të qartë.
-        const emailVerified = (profile as { email_verified?: boolean } | undefined)?.email_verified;
-        if (emailVerified !== true) return false;
-
-        const existing = await prisma.user.findUnique({
-          where: { email },
-          select: { id: true, emailVerified: true },
-        });
-        if (!existing) {
-          // Llogari e re me Google → verified; Restaurant-i krijohet te /onboarding.
-          await prisma.user.create({
-            data: { email, role: "RESTAURANT_OWNER", emailVerified: true },
-          });
-        } else if (!existing.emailVerified) {
-          // Linking i SIGURT i një llogarie ekzistuese të PAVERIFIKUAR: një password i
-          // vendosur PARA verifikimit mund të jetë nga një palë tjetër (dikush regjistroi
-          // këtë email pa pasur kontroll mbi inbox-in). Google provon zotërimin e inbox-it,
-          // ndaj e verifikojmë — por HEQIM password-in e pabesueshëm dhe kredencialet e
-          // verifikimit në fluturim. Përdoruesi vendos password të ri me "Kam harruar…".
-          await prisma.user.update({
-            where: { id: existing.id },
-            data: { emailVerified: true, passwordHash: null, pendingRestaurantName: null },
-          });
-          await prisma.emailVerification.deleteMany({ where: { userId: existing.id } });
-        }
-        return true;
-      }
-      return true; // Credentials / verify-login trajtohen te authorize
+    // OAuth: vendimi bëhet te resolveOAuthSignIn (identitet = provider + providerAccountId).
+    async signIn({ account, profile, user }) {
+      if (!isOAuth(account?.provider)) return true; // Credentials / verify-login → authorize
+      const linkIntentUserId = takeLinkIntent(account!.provider);
+      const decision = await resolveOAuthSignIn(
+        {
+          provider: account!.provider,
+          providerAccountId: String(account!.providerAccountId),
+          email: user?.email ?? (profile as { email?: string } | undefined)?.email ?? null,
+          emailVerified: providerEmailVerified(profile),
+        },
+        linkIntentUserId
+      );
+      if (decision.ok) return true;
+      if (linkIntentUserId) return `/account?link=${decision.reason}`;
+      return `/login?error=${decision.reason}&provider=${account!.provider}`;
     },
 
-    async jwt({ token, user }) {
-      // Në sign-in: zgjidh User-in tonë të DB-së sipas email-it — funksionon për
-      // të dyja providerat (Google jep id-në e vet, jo id-në tonë).
-      if (user?.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email.toLowerCase() },
-          select: { id: true, role: true, emailVerified: true },
-        });
-        if (dbUser) {
-          token.sub = dbUser.id;
-          token.role = dbUser.role;
-          token.emailVerified = dbUser.emailVerified;
+    async jwt({ token, user, account }) {
+      // Në hyrje: përdoruesi ynë zgjidhet nga identiteti (OAuth) ose nga id-ja (Credentials) — jo nga email-i.
+      if (user && account) {
+        if (isOAuth(account.provider)) {
+          const link = await prisma.oAuthAccount.findUnique({
+            where: { provider_providerAccountId: { provider: account.provider, providerAccountId: String(account.providerAccountId) } },
+            select: { userId: true },
+          });
+          if (link) token.sub = link.userId;
+        } else if (user.id) {
+          token.sub = user.id;
         }
+        token.authTime = Date.now(); // për rikonfirmimin para lidhjes së një metode të re
       }
 
-      // Per-request HINT (jo autoritet lejesh): restoranti aktiv + roli, nga membership-et.
-      // Autorizimi real bëhet nga requireRestaurantAccess në server për çdo lexim/shkrim privat.
-      if (token.role === "RESTAURANT_OWNER" && token.sub) {
-        const user = await prisma.user.findUnique({
+      if (token.sub) {
+        // Rifreskim për çdo kërkesë: roli + verifikimi + restoranti aktiv (hint; autoriteti është në server).
+        const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
           select: {
+            role: true,
+            emailVerified: true,
             activeRestaurantId: true,
             memberships: {
               where: { status: "active" },
@@ -150,20 +168,16 @@ export const authOptions: NextAuthOptions = {
             },
           },
         });
-        const memberships = user?.memberships ?? [];
-        // Aktivi = activeRestaurantId nëse ka membership aktiv për të; ndryshe i pari.
-        const active =
-          memberships.find((m) => m.restaurantId === user?.activeRestaurantId) ?? memberships[0] ?? null;
-        token.activeRestaurantId = active?.restaurantId ?? null;
-        token.activeRole = active?.role ?? null;
-        // Compat: kodi ekzistues lexon restaurantId/Slug nga sesioni.
-        token.restaurantId = active?.restaurantId ?? null;
-        token.restaurantSlug = active?.restaurant.slug ?? null;
-      } else {
-        token.activeRestaurantId = null;
-        token.activeRole = null;
-        token.restaurantId = null;
-        token.restaurantSlug = null;
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.emailVerified = dbUser.emailVerified;
+          const memberships = dbUser.role === "SUPER_ADMIN" ? [] : dbUser.memberships;
+          const active = memberships.find((m) => m.restaurantId === dbUser.activeRestaurantId) ?? memberships[0] ?? null;
+          token.activeRestaurantId = active?.restaurantId ?? null;
+          token.activeRole = active?.role ?? null;
+          token.restaurantId = active?.restaurantId ?? null;
+          token.restaurantSlug = active?.restaurant.slug ?? null;
+        }
       }
       return token;
     },
@@ -171,7 +185,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.role = (token.role as string) ?? "RESTAURANT_OWNER";
+        session.user.role = (token.role as string) ?? "USER";
         session.user.emailVerified = (token.emailVerified as boolean | undefined) ?? false;
         session.user.restaurantId = (token.restaurantId as string | null) ?? null;
         session.user.restaurantSlug = (token.restaurantSlug as string | null) ?? null;

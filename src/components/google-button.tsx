@@ -26,11 +26,11 @@ function GoogleLogo() {
   );
 }
 
-export function GoogleButton({ label = "Vazhdo me Google" }: { label?: string }) {
+export function GoogleButton({ label = "Vazhdo me Google", callbackUrl = "/dashboard" }: { label?: string; callbackUrl?: string }) {
   return (
     <button
       type="button"
-      onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+      onClick={() => signIn("google", { callbackUrl })}
       className="w-full min-h-11 flex items-center justify-center gap-3 rounded-lg bg-white text-[#3c4043] font-medium hover:bg-white/90 transition py-3"
     >
       <GoogleLogo />

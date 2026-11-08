@@ -60,7 +60,8 @@ async function main() {
   const rid = book.ok ? book.data!.reservationId : "";
   const confJobs = await prisma.notificationJob.findMany({ where: { reservationId: rid } });
   ok("job konfirmimi (mysafir) ekziston Pending", confJobs.some((j) => j.dedupeKey === `conf:g:${rid}` && j.status === "Pending"));
-  ok("job konfirmimi (pronar) ekziston", confJobs.some((j) => j.dedupeKey === `conf:o:${rid}`));
+  // Faza 10: biznesi njoftohet me BusinessNewBooking (pa marrës të konfiguruar → email-i i pronarit).
+  ok("job njoftimi për biznesin (pronar, fallback) ekziston", confJobs.some((j) => j.type === "BusinessNewBooking" && j.dedupeKey === `biz:new:${rid}:Email:owner`));
   ok("job kujtese 24h ekziston me scheduledAt në të ardhmen", confJobs.some((j) => j.type === "Reminder24h" && j.scheduledAt.getTime() > Date.now()));
 
   // ── 2) Worker dërgon (sink) pas commit-it ──
