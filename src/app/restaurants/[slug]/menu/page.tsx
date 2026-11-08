@@ -14,6 +14,7 @@ import {
   type PubTasting,
 } from "@/components/public/public-menu";
 import "@/components/public/menu.css";
+import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +77,7 @@ export default async function PublicMenuPage({ params }: { params: { slug: strin
   }));
 
   return (
-    <div className="qr-menu" style={publicThemeVars(p)}>
+    <div className="qr-menu om-menu" style={publicThemeVars(p)}>
       <PublicFonts href={publicFontsHref(p)} />
       <AnalyticsBeacon slug={p.slug} type="menu_view" />
       <PublicMenu

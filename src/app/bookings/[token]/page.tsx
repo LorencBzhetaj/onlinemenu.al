@@ -6,7 +6,9 @@ import { toBusinessDateKey, businessTimeOfDay } from "@/modules/booking/timezone
 import { publicThemeVars, publicFontsHref } from "@/lib/public-theme";
 import { PublicFonts } from "@/components/public/public-fonts";
 import { CancelBooking } from "@/components/public/cancel-booking";
+import { OmSiteHeader } from "@/components/public/om-site-header";
 import "@/components/public/profile.css";
+import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +36,10 @@ export default async function BookingPage({ params }: { params: { token: string 
   const cancelled = b.status === "Cancelled";
 
   return (
-    <div className="rprofile" style={publicThemeVars(b.restaurant)}>
+    <div className="rprofile om-page" style={publicThemeVars(b.restaurant)}>
       <PublicFonts href={publicFontsHref(b.restaurant)} />
-      <header className="rprofile-hero" style={{ padding: "40px 22px 30px" }}>
+      <OmSiteHeader />
+      <header className="rprofile-hero">
         <h1 style={{ fontSize: "1.8rem" }}>{b.restaurant.name}</h1>
         <div className="rprofile-subtitle">Rezervimi juaj</div>
       </header>

@@ -20,8 +20,8 @@ function initials(name: string): string {
 }
 
 /**
- * Kartë rezultati në listim (design system i platformës, jo brand-i i restorantit).
- * Karta → profil; slot → rezervim i atij restoranti me të njëjtat parametra.
+ * Kartë rezultati në Zbulo (paleta OnlineMenu.al). Vetëm të dhëna reale: pa vlerësime/foto të sajuara.
+ * Karta → profil; Rezervo → formulari i rezervimit (vetëm kur BOOKING aktiv); slot → rezervim me parametrat.
  */
 export function RestaurantResultCard({
   r,
@@ -34,37 +34,60 @@ export function RestaurantResultCard({
 }) {
   const meta = [r.cuisine, r.city].filter(Boolean).join(" · ");
   return (
-    <div className="flex flex-col overflow-hidden rounded-card-sm sm:rounded-card border border-line bg-surface shadow-card transition hover:border-primary/40">
-      <Link href={`/restaurants/${r.slug}`} className="flex items-start gap-4 p-5">
-        <span
-          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-field bg-primary-soft font-display text-lg text-primary"
-          aria-hidden={r.logoUrl ? undefined : true}
-        >
-          {r.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={r.logoUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            initials(r.name)
-          )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-display text-lg text-ink">{r.name}</span>
-          {meta && <span className="mt-0.5 block truncate text-sm text-muted">{meta}</span>}
-          {r.address && <span className="mt-0.5 block truncate text-xs text-muted">{r.address}</span>}
-        </span>
+    <article className="flex flex-col overflow-hidden rounded-3xl border border-om-line bg-om-surface font-om-body text-om-aubergine transition hover:border-om-pink">
+      <Link href={`/restaurants/${r.slug}`} className="group block">
+        <div
+          className="h-20 bg-om-pink [background-image:radial-gradient(rgba(76,24,69,0.12)_1.6px,transparent_1.8px)] [background-size:18px_18px]"
+          aria-hidden="true"
+        />
+        <div className="-mt-9 flex items-end gap-3 px-5">
+          <span
+            className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-om-surface bg-om-aubergine font-om-display text-xl font-bold text-om-butter"
+            aria-hidden="true"
+          >
+            {r.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={r.logoUrl} alt="" className="h-full w-full bg-white object-cover" />
+            ) : (
+              initials(r.name)
+            )}
+          </span>
+        </div>
+        <div className="px-5 pb-4 pt-2">
+          <h3 className="truncate font-om-display text-xl font-semibold group-hover:underline">{r.name}</h3>
+          {meta && <p className="mt-0.5 truncate text-sm font-bold text-om-ink-soft">{meta}</p>}
+          {r.address && <p className="mt-0.5 truncate text-sm text-om-ink-soft">{r.address}</p>}
+        </div>
       </Link>
 
+      <div className="mt-auto flex flex-wrap gap-2 px-5 pb-5">
+        <Link
+          href={`/restaurants/${r.slug}/menu`}
+          className="inline-flex min-h-11 items-center rounded-xl bg-om-aubergine px-4 text-sm font-extrabold text-white"
+        >
+          Menuja
+        </Link>
+        {r.bookingActive && (
+          <Link
+            href={`/restaurants/${r.slug}/reserve`}
+            className="inline-flex min-h-11 items-center rounded-xl bg-om-butter px-4 text-sm font-extrabold text-om-aubergine"
+          >
+            Rezervo
+          </Link>
+        )}
+      </div>
+
       {availabilityRequested && r.bookingActive && (
-        <div className="border-t border-line px-5 py-4">
+        <div className="border-t border-om-line px-5 py-4">
           {r.slots.length > 0 ? (
             <>
-              <div className="mb-2 text-xs uppercase tracking-wide text-muted">Orët e lira</div>
+              <div className="mb-2 text-xs font-extrabold uppercase tracking-wide text-om-ink-soft">Orët e lira</div>
               <div className="flex flex-wrap gap-2">
                 {r.slots.map((s) => (
                   <Link
                     key={s.start}
                     href={reserveHref(r.slug, s.time, filters)}
-                    className="inline-flex min-h-9 items-center rounded-full border border-primary/30 bg-primary-soft px-3 text-sm font-medium text-primary transition hover:bg-primary hover:text-white"
+                    className="inline-flex min-h-11 items-center rounded-full border-2 border-om-line bg-om-white px-4 text-sm font-bold text-om-aubergine transition hover:border-om-aubergine hover:bg-om-butter"
                   >
                     {s.time}
                   </Link>
@@ -73,14 +96,14 @@ export function RestaurantResultCard({
             </>
           ) : (
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted">Pa orë të lira për këtë datë.</span>
-              <Link href={`/restaurants/${r.slug}/reserve`} className="text-sm font-medium text-primary hover:underline">
+              <span className="text-sm text-om-ink-soft">Pa orë të lira për këtë datë.</span>
+              <Link href={`/restaurants/${r.slug}/reserve`} className="text-sm font-extrabold underline">
                 Provo datë tjetër
               </Link>
             </div>
           )}
         </div>
       )}
-    </div>
+    </article>
   );
 }

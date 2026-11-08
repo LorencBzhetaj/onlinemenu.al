@@ -187,6 +187,10 @@ model Restaurant {
   cuisine      String?
   // Koordinata opsionale (profil/Informacion). Lidhja e hartës ruhet si RestaurantExternalLink(MAPS).
   mapsUrl      String?
+  // Koordinatat e pinit në hartën e profilit (opsionale). Pa to: vetëm adresa + lidhja e hartës.
+  // Vendosen nga pronari; s'gjenerohen kurrë automatikisht (pa gjeokodim të sajuar).
+  latitude     Float?
+  longitude    Float?
   // Përshkrim i shkurtër i restorantit për faqen e profilit/informacionit (opsional, per-gjuhë).
   aboutAl      String?
   aboutEn      String?

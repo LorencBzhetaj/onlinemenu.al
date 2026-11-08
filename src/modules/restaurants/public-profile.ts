@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { hasEntitlement } from "@/modules/subscriptions/entitlements";
 import { isWindowActive } from "@/modules/menu/schedule";
-import type { LinkType } from "./external-links";
+import { isLinkType, validateLinkUrl, type LinkType } from "./external-links";
 
 export type PublicLink = { type: LinkType; url: string };
 
@@ -27,6 +27,8 @@ export type PublicProfile = {
   city: string | null;
   cuisine: string | null;
   mapsUrl: string | null;
+  latitude: number | null;
+  longitude: number | null;
   aboutAl: string | null;
   aboutEn: string | null;
   estYear: number | null;
@@ -73,6 +75,8 @@ export async function getPublicProfile(slug: string): Promise<PublicProfile | nu
     city: r.city,
     cuisine: r.cuisine,
     mapsUrl: r.mapsUrl,
+    latitude: r.latitude,
+    longitude: r.longitude,
     aboutAl: r.aboutAl,
     aboutEn: r.aboutEn,
     estYear: r.estYear,
@@ -81,7 +85,11 @@ export async function getPublicProfile(slug: string): Promise<PublicProfile | nu
     subtitleAl: r.subtitleAl,
     subtitleEn: r.subtitleEn,
     menuPhotoStyle: r.menuPhotoStyle,
-    links: r.externalLinks.map((l) => ({ type: l.type as LinkType, url: l.url })),
+    // Vetëm lidhje të vlefshme (lloj i njohur + HTTPS + host i lejuar): p.sh. butoni Wolt
+    // shfaqet vetëm kur lidhja Wolt kalon validimin edhe në kohën e shfaqjes.
+    links: r.externalLinks.flatMap((l) =>
+      isLinkType(l.type) && validateLinkUrl(l.type, l.url).ok ? [{ type: l.type, url: l.url }] : []
+    ),
     gate: {
       isPublished: r.isPublished,
       suspended: r.suspendedAt != null,

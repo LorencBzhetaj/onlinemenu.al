@@ -32,6 +32,8 @@ export default async function SettingsPage({
       address: true,
       city: true,
       cuisine: true,
+      latitude: true,
+      longitude: true,
       aboutAl: true,
       aboutEn: true,
       isPublished: true,

@@ -83,7 +83,7 @@ export function RestaurantInfo({ info }: { info: InfoView }) {
         )}
         {info.whatsapp && (
           <Row
-            icon={<span aria-hidden="true">💬</span>}
+            icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" /></svg>}
             label="WhatsApp"
             sub={`+${info.whatsapp}`}
             href={`https://wa.me/${info.whatsapp}`}
@@ -97,7 +97,9 @@ export function RestaurantInfo({ info }: { info: InfoView }) {
           <div className="rprofile-section-title">{t("Lidhje", "Links")}</div>
           <div className="rprofile-links">
             {woltLink && (
-              <Row icon={<span aria-hidden="true">🛵</span>} label="Wolt" sub={t("Porosit online", "Order online")} href={woltLink.url} external />
+              <a className="om-btn om-btn--wolt" href={woltLink.url} target="_blank" rel="noopener noreferrer" aria-label={t("Wolt (hapet në faqe të jashtme)", "Wolt (opens an external site)")}>
+                Wolt <span aria-hidden="true">↗</span>
+              </a>
             )}
             {instaLink && (
               <Row

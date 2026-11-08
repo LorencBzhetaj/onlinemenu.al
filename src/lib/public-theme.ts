@@ -1,7 +1,10 @@
-// Tema e faqeve publike (profil/menu/informacion) nga brandi i restorantit.
-// Brandi ka përparësi brenda faqes së tij; platforma mbetet diskrete.
-import { mixHex, lighten } from "@/lib/color";
-import { googleFontsHref, DEFAULT_HEADING, DEFAULT_BODY } from "@/lib/branding";
+// Tema e faqeve publike (profil/menu/informacion/rezervim).
+//
+// Ridizajnimi i miratuar përdor NJË paletë të vetme për të gjitha restorantet (OnlineMenu.al).
+// Identiteti i restorantit mbetet te logoja, emri dhe përmbajtja; ngjyrat/fontet e ruajtura te
+// Restaurant.primaryColor/accentColor/fontHeading/fontBody NUK aplikohen më në faqet publike
+// (të dhënat mbeten në DB dhe në panel, pa ndryshim).
+import { OM, OM_FONT_BODY, OM_FONT_DISPLAY, OM_FONTS_HREF } from "@/lib/om-theme";
 
 export type ThemeSource = {
   primaryColor: string | null;
@@ -10,41 +13,42 @@ export type ThemeSource = {
   fontBody: string | null;
 };
 
-const DEF_PRIMARY = "#0f1720";
-const DEF_ACCENT = "#c9a24b";
-
-/** CSS variables për brandin — superset për menu.css DHE për faqet profil/info. */
-export function publicThemeVars(r: ThemeSource): React.CSSProperties {
-  const primary = r.primaryColor ?? DEF_PRIMARY;
-  const accent = r.accentColor ?? DEF_ACCENT;
-  const fontHeading = r.fontHeading ?? DEFAULT_HEADING;
-  const fontBody = r.fontBody ?? DEFAULT_BODY;
-
+/**
+ * CSS variables për menu.css + profile.css, të vendosura nga paleta e miratuar.
+ * Parametri pranohet për përputhshmëri me thirrjet ekzistuese; brandi i restorantit s'aplikohet.
+ */
+export function publicThemeVars(_r?: ThemeSource): React.CSSProperties {
+  void _r;
   return {
-    // Variablat e menu.css (faqja e menusë).
-    "--charcoal": primary,
-    "--ink": primary,
-    "--gold": accent,
-    "--gold-soft": lighten(accent, 0.5),
-    "--iris-deep": primary,
-    "--olive-dark": mixHex(accent, primary, 0.35),
-    "--hero-bg": `linear-gradient(160deg, ${primary} 0%, ${mixHex(primary, accent, 0.5)} 55%, ${accent} 100%)`,
-    "--font-display": `"${fontHeading}", serif`,
-    "--font-body": `"${fontBody}", serif`,
-    // Variabla gjenerike brandi (profil/info).
-    "--brand": primary,
-    "--brand-soft": lighten(primary, 0.88),
-    "--accent": accent,
-    "--accent-ink": mixHex(accent, "#000000", 0.35),
+    // Sipërfaqet + teksti.
+    "--cream": OM.white,
+    "--paper": OM.surface,
+    "--ink": OM.aubergine,
+    "--ink-soft": OM.inkSoft,
+    "--line": "rgba(76, 24, 69, 0.14)",
+    "--shadow": "0 10px 28px rgba(76, 24, 69, 0.08)",
+    // Variablat e menu.css: header/çmime mbi Aubergine me tekst Butter.
+    "--charcoal": OM.aubergine,
+    "--gold": OM.butter,
+    "--gold-soft": OM.butter,
+    "--iris-deep": OM.aubergine,
+    "--olive-dark": OM.inkSoft,
+    "--hero-bg": OM.pink,
+    // Variabla gjenerike (profil/info/rezervim).
+    "--brand": OM.aubergine,
+    "--brand-soft": OM.pinkSoft,
+    "--accent": OM.pink,
+    "--accent-ink": OM.aubergine,
+    // Fontet.
+    "--font-display": `"${OM_FONT_DISPLAY}", system-ui, sans-serif`,
+    "--font-body": `"${OM_FONT_BODY}", system-ui, sans-serif`,
+    "--font-ui": `"${OM_FONT_BODY}", system-ui, sans-serif`,
+    "--font-script": `"${OM_FONT_DISPLAY}", system-ui, sans-serif`,
   } as React.CSSProperties;
 }
 
-/** URL-ja e Google Fonts për fontet e restorantit + fontet ndihmëse (script/UI). */
-export function publicFontsHref(r: ThemeSource): string {
-  return googleFontsHref([
-    r.fontHeading ?? DEFAULT_HEADING,
-    r.fontBody ?? DEFAULT_BODY,
-    "Dancing Script",
-    "Jost",
-  ]);
+/** URL-ja e Google Fonts për faqet publike (e njëjtë për të gjitha restorantet). */
+export function publicFontsHref(_r?: ThemeSource): string {
+  void _r;
+  return OM_FONTS_HREF;
 }

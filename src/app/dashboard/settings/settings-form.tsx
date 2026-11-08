@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Field, inputClass } from "@/components/menu/modal";
 import { googleFontsHref, DEFAULT_HEADING, DEFAULT_BODY } from "@/lib/branding";
 import { useApiFetch } from "@/components/restaurant-context";
+import { parseCoord } from "@/modules/restaurants/location";
 
 export type SettingsInitial = {
   name: string;
@@ -23,6 +24,8 @@ export type SettingsInitial = {
   address: string | null;
   city: string | null;
   cuisine: string | null;
+  latitude: number | null;
+  longitude: number | null;
   aboutAl: string | null;
   aboutEn: string | null;
   isPublished: boolean;
@@ -60,6 +63,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
   const [address, setAddress] = useState(initial.address ?? "");
   const [city, setCity] = useState(initial.city ?? "");
   const [cuisine, setCuisine] = useState(initial.cuisine ?? "");
+  const [latitude, setLatitude] = useState(initial.latitude !== null ? String(initial.latitude) : "");
+  const [longitude, setLongitude] = useState(initial.longitude !== null ? String(initial.longitude) : "");
   const [aboutAl, setAboutAl] = useState(initial.aboutAl ?? "");
   const [aboutEn, setAboutEn] = useState(initial.aboutEn ?? "");
   const [isPublished, setIsPublished] = useState(initial.isPublished);
@@ -82,7 +87,10 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
   const phoneValid = phone.trim() === "" || /^[0-9+\s-]+$/.test(phone.trim());
   const whatsappValid = whatsapp.trim() === "" || /^\d{8,15}$/.test(whatsapp.trim());
   const nameValid = name.trim().length > 0;
-  const allValid = yearValid && phoneValid && whatsappValid && nameValid;
+  const latOk = latitude.trim() === "" || parseCoord(latitude, "lat") !== null;
+  const lngOk = longitude.trim() === "" || parseCoord(longitude, "lng") !== null;
+  const coordsValid = latOk && lngOk && (latitude.trim() === "") === (longitude.trim() === "");
+  const allValid = yearValid && phoneValid && whatsappValid && nameValid && coordsValid;
 
   async function save() {
     setError(null);
@@ -106,6 +114,8 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
         address,
         city,
         cuisine,
+        latitude,
+        longitude,
         aboutAl,
         aboutEn,
         isPublished,
@@ -235,6 +245,18 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
             <Field label="Kuzhina" hint="për kërkimin publik (opsional)">
               <input className={inputClass} value={cuisine} onChange={(e) => setCuisine(e.target.value)} placeholder="Tradicionale, Peshk, Pica…" maxLength={80} />
             </Field>
+            <div>
+              <span className="block text-sm text-muted mb-1">Pini në hartë (opsional)</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input className={inputClass} inputMode="decimal" aria-label="Gjerësia (latitude)" placeholder="Gjerësia, p.sh. 41.3275" value={latitude} onChange={(e) => setLatitude(e.target.value)} />
+                <input className={inputClass} inputMode="decimal" aria-label="Gjatësia (longitude)" placeholder="Gjatësia, p.sh. 19.8189" value={longitude} onChange={(e) => setLongitude(e.target.value)} />
+              </div>
+              <span className={`block text-xs mt-1 ${coordsValid ? "text-muted" : "text-red-600"}`}>
+                {coordsValid
+                  ? "Kopjojini nga Google Maps (kliko me të djathtën mbi restorant). Pa to, profili shfaq vetëm adresën dhe lidhjen e hartës."
+                  : "Vendosni të dyja koordinatat si numra (gjerësia -90…90, gjatësia -180…180), ose lërini të dyja bosh."}
+              </span>
+            </div>
           </Section>
 
           {/* ── PËRSHKRIMI I PROFILIT ── */}

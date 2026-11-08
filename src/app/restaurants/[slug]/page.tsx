@@ -8,8 +8,11 @@ import { Unavailable } from "@/components/public/unavailable";
 import { PublicFonts } from "@/components/public/public-fonts";
 import { restaurantJsonLd } from "@/modules/restaurants/structured-data";
 import { absoluteUrl } from "@/lib/site";
+import { OmSiteHeader } from "@/components/public/om-site-header";
+import { resolveRestaurantCoords, directionsUrl, routingServiceUrl } from "@/modules/restaurants/location";
 import "@/components/public/profile.css";
 import "@/components/public/menu.css";
+import "@/components/public/om-public.css";
 
 // Dinamike: gate-i (publikim/pezullim/entitlement) reflektohet menjëherë, pa cache i vjetruar.
 export const dynamic = "force-dynamic";
@@ -47,17 +50,29 @@ export default async function RestaurantProfilePage({ params }: { params: { slug
   }
 
   const themeVars = publicThemeVars(p);
+  const mapsLink = p.links.find((l) => l.type === "MAPS")?.url ?? p.mapsUrl ?? null;
+  const coords = resolveRestaurantCoords({ latitude: p.latitude, longitude: p.longitude, mapsLink });
 
   return (
-    <div className="rprofile" style={themeVars}>
+    <div className="rprofile om-page" style={themeVars}>
       {/* Structured data: të dhëna reale (pa ratings të sajuara). */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(restaurantJsonLd(p)) }}
       />
       <PublicFonts href={publicFontsHref(p)} />
+      <OmSiteHeader />
       <RestaurantProfile
         profile={{
+          city: p.city,
+          cuisine: p.cuisine,
+          address: p.address,
+          location: {
+            coords,
+            mapsLink,
+            directionsHref: directionsUrl({ coords, address: p.address }),
+            routingUrl: routingServiceUrl(),
+          },
           slug: p.slug,
           name: p.name,
           logoUrl: p.logoUrl,

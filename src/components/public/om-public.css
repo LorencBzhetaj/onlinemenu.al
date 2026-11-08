@@ -1,0 +1,639 @@
+/* ============================================================
+   OnlineMenu.al — shtresa e ridizajnimit për faqet publike.
+   Ngarkohet PAS profile.css / menu.css. Paleta: shih src/lib/om-theme.ts.
+   Butter/Pink janë sfonde ose theks; teksti mbi to është Aubergine.
+   ============================================================ */
+
+.om-page {
+  --om-butter: #ffe16a;
+  --om-butter-soft: #fff1b8;
+  --om-aubergine: #4c1845;
+  --om-pink: #ff79bd;
+  --om-pink-soft: #ffe1f0;
+  --om-white: #fff8ee;
+  --om-ink-soft: #6e4d68;
+  --om-line: #eedfd3;
+  --om-wolt: #009de0;
+  --om-wolt-ink: #00243a;
+  background: var(--om-white);
+  color: var(--om-aubergine);
+  font-family: var(--font-body);
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+.om-page :focus-visible {
+  outline: 3px solid var(--om-aubergine);
+  outline-offset: 2px;
+}
+
+/* ===== HEADER I FAQES ===== */
+.om-site-header {
+  background: var(--om-white, #fff8ee);
+  border-bottom: 1px solid var(--om-line, #eedfd3);
+}
+.om-site-header-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.om-site-brand {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.om-logo {
+  position: relative;
+  font-family: "Fredoka", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+  color: var(--om-aubergine, #4c1845);
+  line-height: 1;
+}
+.om-logo--lg {
+  font-size: 2.4rem;
+}
+.om-logo-tld {
+  color: var(--om-ink-soft, #6e4d68);
+}
+.om-logo-spark {
+  position: absolute;
+  top: -0.55em;
+  right: -0.7em;
+  width: 0.75em;
+  height: 0.75em;
+  fill: none;
+  stroke: var(--om-butter, #ffe16a);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.om-site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.om-site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: var(--om-ink-soft, #6e4d68);
+  text-decoration: none;
+}
+.om-site-nav a:hover,
+.om-site-nav a.is-active {
+  color: var(--om-aubergine, #4c1845);
+  background: var(--om-butter-soft, #fff1b8);
+}
+.om-site-nav a.om-site-cta {
+  background: var(--om-aubergine, #4c1845);
+  color: #fff;
+  margin-left: 6px;
+}
+@media (max-width: 639px) {
+  .om-hide-sm {
+    display: none !important;
+  }
+}
+
+/* ===== COVER + IDENTITETI ===== */
+.om-cover {
+  position: relative;
+  background: var(--om-white);
+}
+.om-cover-band {
+  height: 132px;
+  background-color: var(--om-pink);
+  /* motiv i lehtë me pika (jo gradient) */
+  background-image: radial-gradient(rgba(76, 24, 69, 0.12) 1.6px, transparent 1.8px);
+  background-size: 18px 18px;
+}
+.om-lang {
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.85);
+}
+.om-lang button {
+  color: var(--om-aubergine);
+  min-height: 36px;
+  font-weight: 700;
+}
+.om-lang button.active {
+  background: var(--om-aubergine);
+  color: #fff;
+}
+.om-identity {
+  max-width: 1120px;
+  margin: -52px auto 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  position: relative;
+}
+.om-crest {
+  width: 104px;
+  height: 104px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  border: 4px solid var(--om-white);
+  box-shadow: 0 8px 22px rgba(76, 24, 69, 0.16);
+}
+.om-crest--initials {
+  display: grid;
+  place-items: center;
+  background: var(--om-aubergine);
+  color: var(--om-butter);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.1rem;
+}
+.om-identity-text {
+  min-width: 0;
+  padding-bottom: 4px;
+}
+.om-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 5vw, 2.6rem);
+  line-height: 1.05;
+  color: var(--om-aubergine);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.om-meta {
+  margin: 6px 0 0;
+  font-weight: 700;
+  color: var(--om-ink-soft);
+}
+.om-tagline {
+  margin: 2px 0 0;
+  color: var(--om-ink-soft);
+  font-size: 0.95rem;
+}
+
+/* ===== BUTONAT ===== */
+.om-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  font-family: "Nunito", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 0.98rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.om-btn svg {
+  width: 19px;
+  height: 19px;
+}
+.om-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(76, 24, 69, 0.14);
+}
+.om-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.om-btn--menu {
+  background: var(--om-aubergine);
+  color: #fff;
+}
+.om-btn--reserve {
+  background: var(--om-butter);
+  color: var(--om-aubergine);
+}
+.om-btn--wolt {
+  background: var(--om-wolt);
+  color: var(--om-wolt-ink);
+}
+.om-btn--ghost {
+  background: transparent;
+  border-color: var(--om-aubergine);
+  color: var(--om-aubergine);
+}
+.om-btn--block {
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .om-btn {
+    transition: none;
+  }
+  .om-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ===== TRUPI I PROFILIT ===== */
+.om-profile {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 18px 16px 32px;
+}
+.om-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.om-profile-grid {
+  display: grid;
+  gap: 22px;
+}
+.om-profile-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.om-profile-side {
+  display: none;
+}
+@media (min-width: 960px) {
+  .om-cover-band {
+    height: 200px;
+  }
+  .om-identity {
+    margin-top: -64px;
+  }
+  .om-crest {
+    width: 128px;
+    height: 128px;
+  }
+  .om-actions {
+    display: flex;
+    justify-content: flex-start;
+  }
+  .om-actions .om-btn {
+    min-width: 150px;
+  }
+  .om-profile-grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+  }
+  .om-profile-side {
+    display: block;
+    position: sticky;
+    top: 20px;
+  }
+}
+.om-card {
+  background: #fff;
+  border: 1px solid var(--om-line);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(76, 24, 69, 0.06);
+  padding: 18px 20px;
+}
+.om-about p {
+  margin: 0;
+  font-size: 1.04rem;
+  line-height: 1.55;
+}
+.om-section-h {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  color: var(--om-aubergine);
+  margin: 0 0 12px;
+}
+.om-reserve-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.om-reserve-card h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  margin: 0;
+}
+.om-reserve-card p {
+  margin: 0 0 6px;
+  color: var(--om-ink-soft);
+}
+.om-reserve-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--om-butter);
+  color: var(--om-aubergine);
+}
+.om-reserve-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Lidhjet e kontaktit (profile.css) në paletën e re. */
+.om-page .rprofile-links {
+  margin-top: 0;
+}
+.om-page .rprofile-link {
+  border-color: var(--om-line);
+  box-shadow: none;
+}
+.om-page .rprofile-link:hover {
+  border-color: var(--om-pink);
+}
+.om-page .rprofile-link-icon {
+  background: var(--om-pink-soft);
+  color: var(--om-aubergine);
+}
+.om-page .rprofile-link-label {
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.om-page .rprofile-notice {
+  background: var(--om-butter-soft);
+  border: 1px solid var(--om-butter);
+  color: var(--om-aubergine);
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+}
+
+/* ===== VENDNDODHJA ===== */
+.om-loc-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-weight: 700;
+}
+.om-loc-address svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.om-loc-map-wrap {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--om-line);
+  background: var(--om-pink-soft);
+}
+.om-loc-map {
+  height: 260px;
+  width: 100%;
+  z-index: 0;
+}
+@media (min-width: 960px) {
+  .om-loc-map {
+    height: 320px;
+  }
+}
+.om-loc-map-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--om-ink-soft);
+  font-weight: 700;
+  pointer-events: none;
+}
+.om-loc-status {
+  min-height: 1.4em;
+  margin: 10px 0;
+  color: var(--om-ink-soft);
+  font-size: 0.95rem;
+}
+.om-loc-status:empty {
+  margin: 4px 0;
+}
+.om-loc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.om-pin-wrap {
+  background: transparent;
+  border: 0;
+}
+.om-pin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50% 50% 50% 6px;
+  transform: rotate(-45deg);
+  border: 3px solid #fff;
+  box-shadow: 0 6px 14px rgba(76, 24, 69, 0.3);
+}
+.om-pin--restaurant {
+  background: var(--om-aubergine);
+}
+.om-pin--restaurant::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--om-butter);
+}
+.om-pin--you {
+  background: var(--om-butter);
+}
+.om-pin-label {
+  transform: rotate(45deg);
+  font: 800 0.72rem "Nunito", system-ui, sans-serif;
+  color: var(--om-aubergine);
+}
+.om-pin--restaurant .om-pin-label {
+  display: none;
+}
+
+/* ===== NAVIGIMI I PROFILIT (PublicTabs) ===== */
+.om-page .rpub-tabs a.active,
+.qr-menu .rpub-tabs a.active {
+  color: var(--om-butter, #ffe16a);
+}
+
+/* ===== REZERVIMI (profile.css) — Butter = veprimi Rezervo + zgjedhja aktive ===== */
+.om-page .rprofile-hero {
+  background: var(--om-pink);
+  padding: 32px 20px 26px;
+}
+.om-page .rprofile-hero::before {
+  display: none;
+}
+.om-page .rprofile-hero h1 {
+  color: var(--om-aubergine);
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.om-page .rprofile-hero .rprofile-subtitle {
+  color: var(--om-aubergine);
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.om-page .rsv-steps {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.om-page .rsv-steps .on {
+  color: var(--om-aubergine);
+  background: var(--om-butter);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.om-page .rsv-card {
+  border-color: var(--om-line);
+  border-radius: 22px;
+}
+.om-page .rsv-field > span {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.om-page .rsv-field input,
+.om-page .rsv-field select,
+.om-page .rsv-field textarea {
+  background: var(--om-white);
+  border-color: var(--om-line);
+}
+.om-page .rsv-field input:focus,
+.om-page .rsv-field select:focus,
+.om-page .rsv-field textarea:focus {
+  border-color: var(--om-aubergine);
+}
+.om-page .rsv-btn {
+  background: var(--om-butter);
+  border-color: var(--om-butter);
+  color: var(--om-aubergine);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: 14px;
+}
+.om-page .rsv-slot {
+  background: #fff;
+  border-color: var(--om-line);
+  font-weight: 700;
+}
+.om-page .rsv-slot.on {
+  background: var(--om-butter);
+  border-color: var(--om-aubergine);
+  color: var(--om-aubergine);
+}
+.om-page .rsv-summary {
+  background: var(--om-butter-soft);
+  color: var(--om-aubergine);
+  font-weight: 700;
+}
+.om-page .rsv-check {
+  background: var(--om-butter);
+  color: var(--om-aubergine);
+}
+.om-page .rsv-back {
+  min-height: 44px;
+  font-weight: 700;
+}
+.om-page .bk-status.ok {
+  background: var(--om-butter);
+  color: var(--om-aubergine);
+}
+.om-page .bk-status.cancelled {
+  background: var(--om-pink-soft);
+  color: var(--om-aubergine);
+}
+
+/* ===== MENUJA (menu.css) ===== */
+.qr-menu.om-menu {
+  background: var(--om-white, #fff8ee);
+}
+.qr-menu.om-menu .qm-chef {
+  color: var(--om-aubergine, #4c1845);
+}
+.qr-menu.om-menu .qm-item-price::after {
+  content: " ALL";
+  color: var(--om-ink-soft, #6e4d68);
+}
+.qr-menu.om-menu .qm-section-eyebrow::after {
+  color: var(--om-ink-soft, #6e4d68);
+}
+.qr-menu.om-menu .qm-section-title,
+.qr-menu.om-menu .qm-card-name {
+  letter-spacing: 0;
+}
+.qr-menu.om-menu .qm-tab.active {
+  background: var(--om-butter, #ffe16a);
+  color: var(--om-aubergine, #4c1845);
+}
+.qr-menu.om-menu .qm-price-badge {
+  background: var(--om-pink-soft, #ffe1f0);
+  color: var(--om-aubergine, #4c1845);
+}
+.qr-menu.om-menu .qm-price-badge .qm-cur {
+  color: var(--om-ink-soft, #6e4d68);
+}
+
+/* ===== LOADING (05 — Shefi i Bukës në kutinë rozë) ===== */
+.om-splash {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px;
+  background: var(--om-pink-soft, #ffe1f0);
+  color: var(--om-aubergine, #4c1845);
+  text-align: center;
+}
+.om-dots {
+  display: flex;
+  gap: 10px;
+}
+.om-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--om-pink, #ff79bd);
+  animation: om-dot 1.2s ease-in-out infinite;
+}
+.om-dots span:nth-child(2) {
+  background: var(--om-aubergine, #4c1845);
+  animation-delay: 0.15s;
+}
+.om-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes om-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .om-dots span {
+    animation: none;
+    opacity: 1;
+  }
+}

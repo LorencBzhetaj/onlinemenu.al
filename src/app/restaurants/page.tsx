@@ -5,6 +5,9 @@ import { SearchFilters as SearchFiltersBar } from "@/components/discovery/search
 import { RestaurantResultCard } from "@/components/discovery/restaurant-result-card";
 import { EmptyState } from "@/components/ui/states";
 import { absoluteUrl } from "@/lib/site";
+import { CuisineCards } from "@/components/discovery/cuisine-cards";
+import { OmSiteHeader } from "@/components/public/om-site-header";
+import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
 
@@ -45,33 +48,26 @@ export default async function RestaurantsPage({
   const result = await searchRestaurants(filters);
 
   return (
-    <main className="min-h-screen bg-canvas text-ink">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <Link href="/" className="font-display text-xl tracking-wide">
-          Menu<span className="text-primary">Digjitale</span>
-        </Link>
-        <nav className="flex items-center gap-3 text-sm">
-          <Link href="/register" className="rounded-full px-3 py-2 text-muted transition hover:text-ink">
-            Për restorantet
-          </Link>
-          <Link href="/login" className="rounded-full px-3 py-2 text-muted transition hover:text-ink">
-            Hyr
-          </Link>
-        </nav>
-      </header>
-
-      <section className="mx-auto max-w-6xl px-6 pb-16 pt-2">
-        <h1 className="font-display text-3xl sm:text-4xl">Zbulo restorante</h1>
-        <p className="mt-2 max-w-2xl text-muted">
+    <div className="min-h-screen bg-om-white font-om-body text-om-aubergine">
+      <OmSiteHeader active="restaurants" />
+      <main className="mx-auto max-w-[1120px] px-4 pb-16 pt-6">
+        <h1 className="font-om-display text-3xl font-bold sm:text-4xl">Zbulo restorante</h1>
+        <p className="mt-2 max-w-2xl text-om-ink-soft">
           Kërko sipas qytetit, kuzhinës ose emrit. Zgjidh datën dhe personat për të parë orët e lira.
         </p>
 
-        <div className="mt-6">
+        {result.facets.cuisines.length > 0 && (
+          <div className="mt-5">
+            <CuisineCards cuisines={result.facets.cuisines} active={result.filters.cuisine ?? null} />
+          </div>
+        )}
+
+        <div className="mt-4">
           <SearchFiltersBar filters={filters} facets={result.facets} todayStr={todayInTirane()} />
         </div>
 
         <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-muted" aria-live="polite">
+          <p className="text-sm font-bold text-om-ink-soft" aria-live="polite">
             {result.total === 0
               ? "Asnjë rezultat"
               : result.total === 1
@@ -79,7 +75,7 @@ export default async function RestaurantsPage({
                 : `${result.total} restorante`}
           </p>
           {result.totalPages > 1 && (
-            <p className="text-sm text-muted">Faqja {result.page} / {result.totalPages}</p>
+            <p className="text-sm text-om-ink-soft">Faqja {result.page} / {result.totalPages}</p>
           )}
         </div>
 
@@ -87,10 +83,10 @@ export default async function RestaurantsPage({
           {result.items.length === 0 ? (
             <EmptyState title="Nuk u gjet asnjë restorant">
               Provo të heqësh disa filtra ose të ndryshosh qytetin/kuzhinën.{" "}
-              <Link href="/restaurants" className="text-primary hover:underline">Pastro filtrat</Link>.
+              <Link href="/restaurants" className="font-bold underline">Pastro filtrat</Link>.
             </EmptyState>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {result.items.map((r) => (
                 <RestaurantResultCard
                   key={r.slug}
@@ -108,7 +104,7 @@ export default async function RestaurantsPage({
             {result.page > 1 && (
               <Link
                 href={pageHref(result.filters, result.page - 1)}
-                className="inline-flex min-h-10 items-center rounded-full border border-line bg-surface px-4 text-sm text-ink transition hover:border-primary/50"
+                className="inline-flex min-h-11 items-center rounded-full border-2 border-om-line bg-om-surface px-4 text-sm font-bold transition hover:border-om-aubergine"
               >
                 ← Para
               </Link>
@@ -118,10 +114,10 @@ export default async function RestaurantsPage({
                 key={n}
                 href={pageHref(result.filters, n)}
                 aria-current={n === result.page ? "page" : undefined}
-                className={`inline-flex min-h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm transition ${
+                className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 text-sm font-bold transition ${
                   n === result.page
-                    ? "bg-primary text-white"
-                    : "border border-line bg-surface text-ink hover:border-primary/50"
+                    ? "border-2 border-om-aubergine bg-om-butter"
+                    : "border-2 border-om-line bg-om-surface hover:border-om-aubergine"
                 }`}
               >
                 {n}
@@ -130,14 +126,14 @@ export default async function RestaurantsPage({
             {result.page < result.totalPages && (
               <Link
                 href={pageHref(result.filters, result.page + 1)}
-                className="inline-flex min-h-10 items-center rounded-full border border-line bg-surface px-4 text-sm text-ink transition hover:border-primary/50"
+                className="inline-flex min-h-11 items-center rounded-full border-2 border-om-line bg-om-surface px-4 text-sm font-bold transition hover:border-om-aubergine"
               >
                 Pas →
               </Link>
             )}
           </nav>
         )}
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

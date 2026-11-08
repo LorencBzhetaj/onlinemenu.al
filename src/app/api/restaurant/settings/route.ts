@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { guardRestaurant } from "@/modules/memberships/access";
+import { parseCoord } from "@/modules/restaurants/location";
 
 const MAX_TEXT = 80;
 
@@ -68,6 +69,18 @@ export async function PUT(req: Request) {
   const city = optText(body.city);
   const cuisine = optText(body.cuisine);
 
+  // ── Koordinatat e pinit (opsionale): të dyja ose asnjëra; jashtë kufijve → 400 ──
+  const latRaw = String(body.latitude ?? "").trim();
+  const lngRaw = String(body.longitude ?? "").trim();
+  const latitude = parseCoord(latRaw, "lat");
+  const longitude = parseCoord(lngRaw, "lng");
+  if ((latRaw && latitude === null) || (lngRaw && longitude === null) || (latitude === null) !== (longitude === null)) {
+    return NextResponse.json(
+      { error: "Koordinatat duhet të jenë të dyja numra (gjerësia -90…90, gjatësia -180…180) ose bosh." },
+      { status: 400 }
+    );
+  }
+
   // ── Përshkrimi i profilit (opsional, më i gjatë) ──
   const aboutAl = optText(body.aboutAl, 600);
   const aboutEn = optText(body.aboutEn, 600);
@@ -89,11 +102,15 @@ export async function PUT(req: Request) {
       address,
       city,
       cuisine,
+      latitude,
+      longitude,
       aboutAl,
       aboutEn,
       isPublished,
     },
     select: {
+      latitude: true,
+      longitude: true,
       name: true,
       estYear: true,
       taglineAl: true,

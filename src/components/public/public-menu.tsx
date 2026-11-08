@@ -244,7 +244,7 @@ export function PublicMenu({
                     {t(`MENU DEGUSTUESE · PËR ${menu.guestCount} PERSONA`, `TASTING MENU · FOR ${menu.guestCount} PEOPLE`)}
                   </div>
                   <div className="qm-tasting-price">
-                    {menu.price} <span>LEK</span>
+                    {menu.price} <span>ALL</span>
                   </div>
                   {menu.courses.map((course, i) => (
                     <div className="qm-tasting-course" key={i}>
@@ -404,7 +404,7 @@ function MenuCard({
   const priceBadge = (
     <div className="qm-price-badge">
       <span className="qm-num">{item.price}</span>
-      <span className="qm-cur">LEK</span>
+      <span className="qm-cur">ALL</span>
     </div>
   );
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getInitials } from "@/lib/branding";
 import { useLang } from "./use-lang";
 import { AnalyticsBeacon, sendEvent } from "./analytics-beacon";
+import { RestaurantLocation } from "./restaurant-location";
 import type { LinkType } from "@/modules/restaurants/external-links";
 
 export type ProfileView = {
@@ -18,52 +19,51 @@ export type ProfileView = {
   aboutAl: string | null;
   aboutEn: string | null;
   phone: string | null;
+  city: string | null;
+  cuisine: string | null;
+  address: string | null;
   links: { type: LinkType; url: string }[];
   menuActive: boolean;
   reserveHref: string | null; // jo-null vetëm kur BOOKING aktiv + destinacion funksional
+  location: {
+    coords: { lat: number; lng: number } | null;
+    mapsLink: string | null;
+    directionsHref: string | null;
+    routingUrl: string | null;
+  };
 };
 
-function LinkIcon({ type }: { type: LinkType | "PHONE" | "RESERVE" }) {
-  switch (type) {
-    case "WOLT":
-      return <span aria-hidden="true">🛵</span>;
-    case "INSTAGRAM":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="5" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-        </svg>
-      );
-    case "MAPS":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" />
-          <circle cx="12" cy="10" r="2.5" />
-        </svg>
-      );
-    case "WEBSITE":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
-        </svg>
-      );
-    case "PHONE":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <path d="M5 4h3l2 5-2 1a12 12 0 0 0 5 5l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />
-        </svg>
-      );
-    case "RESERVE":
-      return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <rect x="3" y="5" width="18" height="16" rx="2" />
-          <path d="M8 3v4M16 3v4M3 10h18" />
-        </svg>
-      );
-  }
-}
+const Icon = {
+  menu: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+      <path d="M4 6h16M4 12h16M4 18h10" />
+    </svg>
+  ),
+  calendar: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </svg>
+  ),
+  instagram: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  website: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" />
+    </svg>
+  ),
+  phone: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <path d="M5 4h3l2 5-2 1a12 12 0 0 0 5 5l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />
+    </svg>
+  ),
+};
 
 function Chevron() {
   return (
@@ -78,28 +78,26 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
   const t = (al: string, en: string) => (lang === "al" ? al : en);
   const suffix = lang === "al" ? "Al" : "En";
 
-  const tagline = (profile[`tagline${suffix}` as "taglineAl" | "taglineEn"]) ?? null;
-  const subtitle = (profile[`subtitle${suffix}` as "subtitleAl" | "subtitleEn"]) ?? null;
-  const about = (profile[`about${suffix}` as "aboutAl" | "aboutEn"]) ?? null;
+  const tagline = profile[`tagline${suffix}` as "taglineAl" | "taglineEn"] ?? null;
+  const about = profile[`about${suffix}` as "aboutAl" | "aboutEn"] ?? null;
+  const meta = [profile.cuisine, profile.city].filter(Boolean).join(" · ");
 
-  const linkLabels: Record<LinkType, string> = {
-    WOLT: "Wolt",
-    INSTAGRAM: "Instagram",
-    MAPS: t("Vendndodhja", "Location"),
-    WEBSITE: t("Faqja zyrtare", "Website"),
-  };
-  const linkSubs: Record<LinkType, string> = {
-    WOLT: t("Porosit online", "Order online"),
-    INSTAGRAM: t("Na ndiq", "Follow us"),
-    MAPS: t("Hape në hartë", "Open in maps"),
-    WEBSITE: t("Vizito faqen", "Visit site"),
-  };
+  const wolt = profile.links.find((l) => l.type === "WOLT") ?? null;
+  const instagram = profile.links.find((l) => l.type === "INSTAGRAM") ?? null;
+  const website = profile.links.find((l) => l.type === "WEBSITE") ?? null;
+  const mapsLink = profile.location.mapsLink;
+  const hasLocation = Boolean(profile.address || profile.location.coords || mapsLink);
+  const reserveInternal = profile.reserveHref?.startsWith("/") ?? false;
+  const reserveExt = profile.reserveHref && !reserveInternal ? { target: "_blank", rel: "noopener noreferrer" } : {};
 
   return (
     <>
       <AnalyticsBeacon slug={profile.slug} type="profile_view" />
-      <header className="rprofile-hero">
-        <div className="rprofile-lang" role="group" aria-label={t("Zgjidh gjuhën", "Choose language")}>
+
+      {/* ===== COVER + IDENTITETI ===== */}
+      <header className="om-cover">
+        <div className="om-cover-band" aria-hidden="true" />
+        <div className="rprofile-lang om-lang" role="group" aria-label={t("Zgjidh gjuhën", "Choose language")}>
           <button type="button" className={lang === "al" ? "active" : ""} aria-pressed={lang === "al"} onClick={() => setLang("al")}>
             AL
           </button>
@@ -108,30 +106,54 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
           </button>
         </div>
 
-        {profile.logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="rprofile-crest" src={profile.logoUrl} alt={profile.name} width={84} height={84} />
-        ) : (
-          <div className="rprofile-crest-fallback">{getInitials(profile.name)}</div>
-        )}
-        {profile.estYear && <div className="rprofile-est">EST. {profile.estYear}</div>}
-        <h1>{profile.name}</h1>
-        {tagline && <div className="rprofile-script">{tagline}</div>}
-        {subtitle && <div className="rprofile-subtitle">{subtitle}</div>}
+        <div className="om-identity">
+          {profile.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="om-crest" src={profile.logoUrl} alt={`Logo e ${profile.name}`} width={104} height={104} />
+          ) : (
+            <div className="om-crest om-crest--initials" aria-hidden="true">
+              {getInitials(profile.name)}
+            </div>
+          )}
+          <div className="om-identity-text">
+            <h1 className="om-name">{profile.name}</h1>
+            {meta && <p className="om-meta">{meta}</p>}
+            {(tagline || profile.estYear) && (
+              <p className="om-tagline">
+                {tagline}
+                {tagline && profile.estYear ? " · " : ""}
+                {profile.estYear ? `${t("që nga", "since")} ${profile.estYear}` : ""}
+              </p>
+            )}
+          </div>
+        </div>
       </header>
 
-      <div className="rprofile-body">
-        {about && <div className="rprofile-about">{about}</div>}
-
-        {/* Veprimet kryesore: Menu + Informacion (QR hap profilin; menuja hapet prej këtu). */}
-        <div className="rprofile-primary">
-          <Link href={`/restaurants/${profile.slug}/menu`} className="rprofile-btn rprofile-btn--primary">
-            <LinkIcon type="WEBSITE" />
+      <div className="om-profile">
+        {/* ===== VEPRIMET: Menuja · Rezervo · Wolt ===== */}
+        <div className="om-actions">
+          <Link href={`/restaurants/${profile.slug}/menu`} className="om-btn om-btn--menu">
+            {Icon.menu}
             {t("Menuja", "Menu")}
           </Link>
-          <Link href={`/restaurants/${profile.slug}/info`} className="rprofile-btn rprofile-btn--outline">
-            {t("Informacion", "Info")}
-          </Link>
+          {profile.reserveHref && (
+            <a href={profile.reserveHref} className="om-btn om-btn--reserve" {...reserveExt}>
+              {Icon.calendar}
+              {t("Rezervo", "Reserve")}
+            </a>
+          )}
+          {wolt && (
+            <a
+              href={wolt.url}
+              className="om-btn om-btn--wolt"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => sendEvent(profile.slug, "wolt_click")}
+              aria-label={t("Wolt (hapet në faqe të jashtme)", "Wolt (opens an external site)")}
+            >
+              Wolt <span aria-hidden="true">↗</span>
+            </a>
+          )}
         </div>
 
         {!profile.menuActive && (
@@ -143,50 +165,78 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
           </div>
         )}
 
-        <div className="rprofile-links">
-          {/* Rezervimi: vetëm kur BOOKING është aktiv → formulari i brendshëm (same-tab). */}
+        <div className="om-profile-grid">
+          <div className="om-profile-main">
+            {about && (
+              <section className="om-card om-about" aria-label={t("Rreth restorantit", "About the restaurant")}>
+                <p>{about}</p>
+              </section>
+            )}
+
+            {(instagram || website || profile.phone) && (
+              <section aria-labelledby="om-contact-title">
+                <h2 id="om-contact-title" className="om-section-h">
+                  {t("Kontakti", "Contact")}
+                </h2>
+                <div className="rprofile-links">
+                  {profile.phone && (
+                    <a className="rprofile-link" href={`tel:${profile.phone}`}>
+                      <span className="rprofile-link-icon">{Icon.phone}</span>
+                      <span className="rprofile-link-text">
+                        <span className="rprofile-link-label">{t("Telefon", "Phone")}</span>
+                        <span className="rprofile-link-sub">{profile.phone}</span>
+                      </span>
+                      <Chevron />
+                    </a>
+                  )}
+                  {instagram && (
+                    <a className="rprofile-link" href={instagram.url} target="_blank" rel="noopener noreferrer">
+                      <span className="rprofile-link-icon">{Icon.instagram}</span>
+                      <span className="rprofile-link-text">
+                        <span className="rprofile-link-label">Instagram</span>
+                        <span className="rprofile-link-sub">{t("Na ndiq", "Follow us")}</span>
+                      </span>
+                      <Chevron />
+                    </a>
+                  )}
+                  {website && (
+                    <a className="rprofile-link" href={website.url} target="_blank" rel="noopener noreferrer">
+                      <span className="rprofile-link-icon">{Icon.website}</span>
+                      <span className="rprofile-link-text">
+                        <span className="rprofile-link-label">{t("Faqja zyrtare", "Website")}</span>
+                        <span className="rprofile-link-sub">{t("Vizito faqen", "Visit site")}</span>
+                      </span>
+                      <Chevron />
+                    </a>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {hasLocation && (
+              <RestaurantLocation
+                name={profile.name}
+                address={profile.address}
+                coords={profile.location.coords}
+                mapsLink={mapsLink}
+                directionsHref={profile.location.directionsHref}
+                routingUrl={profile.location.routingUrl}
+              />
+            )}
+          </div>
+
+          {/* Desktop: hapësirë anësore për rezervimin (në telefon butoni Rezervo është sipër). */}
           {profile.reserveHref && (
-            <a
-              className="rprofile-link rprofile-link--reserve"
-              href={profile.reserveHref}
-              {...(profile.reserveHref.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-            >
-              <span className="rprofile-link-icon"><LinkIcon type="RESERVE" /></span>
-              <span className="rprofile-link-text">
-                <span className="rprofile-link-label">{t("Rezervo tavolinë", "Reserve a table")}</span>
-                <span className="rprofile-link-sub">{t("Zgjidh datën, orën dhe personat", "Pick date, time and party")}</span>
-              </span>
-              <Chevron />
-            </a>
-          )}
-
-          {profile.links.map((l) => (
-            <a
-              key={l.type}
-              className="rprofile-link"
-              href={l.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={l.type === "WOLT" ? () => sendEvent(profile.slug, "wolt_click") : undefined}
-            >
-              <span className="rprofile-link-icon"><LinkIcon type={l.type} /></span>
-              <span className="rprofile-link-text">
-                <span className="rprofile-link-label">{linkLabels[l.type]}</span>
-                <span className="rprofile-link-sub">{linkSubs[l.type]}</span>
-              </span>
-              <Chevron />
-            </a>
-          ))}
-
-          {profile.phone && (
-            <a className="rprofile-link" href={`tel:${profile.phone}`}>
-              <span className="rprofile-link-icon"><LinkIcon type="PHONE" /></span>
-              <span className="rprofile-link-text">
-                <span className="rprofile-link-label">{t("Telefon", "Phone")}</span>
-                <span className="rprofile-link-sub">{profile.phone}</span>
-              </span>
-              <Chevron />
-            </a>
+            <aside className="om-profile-side" aria-label={t("Rezervo tavolinë", "Reserve a table")}>
+              <div className="om-card om-reserve-card">
+                <span className="om-reserve-icon">{Icon.calendar}</span>
+                <h2>{t("Rezervo tavolinë", "Reserve a table")}</h2>
+                <p>{t("Zgjidh datën, numrin e personave dhe orën e lirë.", "Pick a date, party size and a free time.")}</p>
+                <a href={profile.reserveHref} className="om-btn om-btn--reserve om-btn--block" {...reserveExt}>
+                  {t("Shiko oraret", "See times")}
+                </a>
+              </div>
+            </aside>
           )}
         </div>
       </div>

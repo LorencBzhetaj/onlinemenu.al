@@ -15,6 +15,27 @@
   --brand-accent: #a77932;
   --font-heading: "Playfair Display", Georgia, serif;
   --font-body: "Jost", system-ui, sans-serif;
+
+  /* OnlineMenu.al — paleta e vetme e miratuar (faqet publike). Shih src/lib/om-theme.ts. */
+  --om-butter: #ffe16a;
+  --om-butter-soft: #fff1b8;
+  --om-aubergine: #4c1845;
+  --om-aubergine-deep: #3a1035;
+  --om-pink: #ff79bd;
+  --om-pink-soft: #ffe1f0;
+  --om-white: #fff8ee;
+  --om-surface: #ffffff;
+  --om-ink-soft: #6e4d68;
+  --om-line: #eedfd3;
+  --om-wolt: #009de0;
+  --om-wolt-ink: #00243a;
+}
+
+/* Lëvizje e reduktuar: animacionet dekorative (pikat e loading-ut etj.) ndalen. */
+@media (prefers-reduced-motion: reduce) {
+  .om-anim {
+    animation: none !important;
+  }
 }
 
 body {

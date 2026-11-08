@@ -7,8 +7,10 @@ import { PublicFonts } from "@/components/public/public-fonts";
 import { PublicTabs } from "@/components/public/public-tabs";
 import { Unavailable } from "@/components/public/unavailable";
 import { ReserveFlow } from "@/components/public/reserve-flow";
+import { OmSiteHeader } from "@/components/public/om-site-header";
 import "@/components/public/profile.css";
 import "@/components/public/menu.css";
+import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +45,10 @@ export default async function ReservePage({
     Number.isInteger(gNum) && gNum >= 1 && gNum <= settings.maxPartySize ? gNum : undefined;
 
   return (
-    <div className="rprofile" style={publicThemeVars(p)}>
+    <div className="rprofile om-page" style={publicThemeVars(p)}>
       <PublicFonts href={publicFontsHref(p)} />
-      <header className="rprofile-hero" style={{ padding: "40px 22px 32px" }}>
+      <OmSiteHeader />
+      <header className="rprofile-hero">
         <h1 style={{ fontSize: "2rem" }}>{p.name}</h1>
         <div className="rprofile-subtitle">Rezervo një tavolinë</div>
       </header>

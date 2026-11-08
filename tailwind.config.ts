@@ -22,6 +22,23 @@ const config: Config = {
         },
         accent: "#A77932", // ar — detaje delikate (jo veprime)
 
+        // ── OnlineMenu.al — paleta e vetme e miratuar e faqeve publike (shih src/lib/om-theme.ts) ──
+        // Butter/Pink janë sfonde/thekse; teksti mbi to është gjithmonë aubergine.
+        om: {
+          butter: "#FFE16A",
+          "butter-soft": "#FFF1B8",
+          aubergine: "#4C1845",
+          "aubergine-deep": "#3A1035",
+          pink: "#FF79BD",
+          "pink-soft": "#FFE1F0",
+          white: "#FFF8EE",
+          surface: "#FFFFFF",
+          "ink-soft": "#6E4D68",
+          line: "#EEDFD3",
+          wolt: "#009DE0",
+          "wolt-ink": "#00243A",
+        },
+
         // ── Tema "Mesnatë Alpine" — VETËM faqja publike /m/[slug] (brand restoranti) ──
         midnight: { DEFAULT: "#0f1720", soft: "#1a2530" },
         alpine: { gold: "#c9a24b", cream: "#f5f0e6" },
@@ -33,6 +50,9 @@ const config: Config = {
         // Alias ekzistues (publik/legacy).
         heading: ["var(--font-heading)", "Playfair Display", "serif"],
         body: ["var(--font-body)", "Jost", "sans-serif"],
+        // OnlineMenu.al (faqet publike).
+        "om-display": ["Fredoka", "system-ui", "sans-serif"],
+        "om-body": ["Nunito", "system-ui", "sans-serif"],
       },
       borderRadius: {
         card: "24px",

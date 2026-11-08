@@ -6,8 +6,8 @@ import type { SearchFilters, SearchFacets } from "@/modules/restaurants/search";
 import { MAX_GUESTS } from "@/modules/restaurants/search";
 
 const FIELD =
-  "min-h-11 w-full rounded-field border border-line bg-surface px-3 text-sm text-ink outline-none transition focus:border-primary/60";
-const LABEL = "mb-1 block text-xs font-medium uppercase tracking-wide text-muted";
+  "min-h-12 w-full rounded-2xl border-2 border-om-line bg-om-white px-3 text-base text-om-aubergine outline-none transition focus:border-om-aubergine";
+const LABEL = "mb-1 block text-sm font-extrabold text-om-ink-soft";
 
 /** Ndërton querystring-un duke lënë jashtë vlerat bosh dhe duke rikthyer page→1. */
 function buildQuery(v: {
@@ -66,7 +66,8 @@ export function SearchFilters({
 
   return (
     <form
-      className="rounded-card-sm sm:rounded-card border border-line bg-surface p-4 shadow-card sm:p-5"
+      role="search"
+      className="rounded-3xl border border-om-line bg-om-surface p-4 font-om-body text-om-aubergine sm:p-5"
       onSubmit={(e) => {
         e.preventDefault();
         apply();
@@ -118,12 +119,12 @@ export function SearchFilters({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-white transition hover:bg-primary-dark disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-om-aubergine px-7 text-base font-extrabold text-white transition disabled:opacity-60"
         >
           {pending ? "Duke kërkuar…" : "Kërko"}
         </button>
         {hasAny && (
-          <button type="button" onClick={reset} className="text-sm text-muted transition hover:text-ink">
+          <button type="button" onClick={reset} className="min-h-11 px-2 text-sm font-bold text-om-ink-soft underline-offset-4 transition hover:text-om-aubergine hover:underline">
             Pastro filtrat
           </button>
         )}
