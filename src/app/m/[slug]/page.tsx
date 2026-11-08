@@ -12,7 +12,8 @@ import {
   type PubRestaurant,
 } from "./public-menu";
 
-export const revalidate = 60;
+// Faza "Së shpejti": rruga është 404 nga middleware; s’ka rindërtim statik që prek DB-në në build.
+export const dynamic = "force-dynamic";
 
 async function getRestaurant(slug: string) {
   return prisma.restaurant.findUnique({

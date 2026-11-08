@@ -1,46 +1,25 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    const { token } = req.nextauth;
-    const path = req.nextUrl.pathname;
-    const isSuperAdmin = token?.role === "SUPER_ADMIN";
-    const isOwner = token?.role === "RESTAURANT_OWNER";
-    const hasRestaurant = !!token?.restaurantId;
+// Faza "Së shpejti": publikohet VETËM kryefaqja + skedarët e saj. Çdo rrugë tjetër (panel, admin,
+// regjistrim, hyrje, menutë e vjetra /m/*, API-të) kthen 404 noindex — kurrë një kopje të indeksueshme
+// të faqes "Së shpejti". Kur të lançohet platforma, ky middleware zëvendësohet.
+const ALLOWED_EXACT = new Set(["/", "/robots.txt", "/sitemap.xml", "/icon.png", "/apple-icon.png", "/opengraph-image.jpg", "/favicon.ico"]);
+const ALLOWED_PREFIX = ["/coming-soon/", "/brand/"];
 
-    // Super Admin s'ka dashboard/onboarding restoranti — dërgohet te /admin.
-    if (isSuperAdmin && (path.startsWith("/dashboard") || path.startsWith("/onboarding"))) {
-      return NextResponse.redirect(new URL("/admin", req.url));
-    }
+const NOT_FOUND_HTML = `<!doctype html><html lang="sq"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Faqja nuk u gjet · OnlineMenu.al</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#4a0f35;color:#fff8ee;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:24px}a{color:#ffe16a;font-weight:700}</style></head><body><main><h1>Faqja nuk u gjet</h1><p><a href="/">Kthehu te OnlineMenu.al</a></p></main></body></html>`;
 
-    // /admin/* -> vetëm SUPER_ADMIN
-    if (path.startsWith("/admin") && !isSuperAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
-    // Pronar PA restorant (p.sh. sapo u kyç me Google) -> duhet të kalojë /onboarding.
-    if (isOwner && !hasRestaurant && !path.startsWith("/onboarding")) {
-      return NextResponse.redirect(new URL("/onboarding", req.url));
-    }
-
-    // Pronar QË TASHMË ka restorant s'ka pse të jetë te /onboarding.
-    if (isOwner && hasRestaurant && path.startsWith("/onboarding")) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-
+export function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  if (ALLOWED_EXACT.has(path) || ALLOWED_PREFIX.some((p) => path.startsWith(p))) {
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      // Lejon vetëm përdorues të autentikuar (të tjerët -> /login).
-      authorized: ({ token }) => !!token,
-    },
-    pages: { signIn: "/login" },
   }
-);
+  return new NextResponse(NOT_FOUND_HTML, {
+    status: 404,
+    headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex, nofollow", "cache-control": "no-store" },
+  });
+}
 
-// Mbron këto rrugë; /m/[slug] mbetet publike.
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/onboarding"],
+  // Gjithçka përveç asete të brendshme të Next (/_next/*).
+  matcher: ["/((?!_next/).*)"],
 };

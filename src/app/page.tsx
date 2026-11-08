@@ -1,52 +1,60 @@
-import Link from "next/link";
+import { SITE_URL, analyticsEnabled } from "@/lib/site-config";
+import { ConsentAndGtm } from "@/components/analytics/consent-gtm";
+import "./coming-soon.css";
 
-export default function LandingPage() {
+// Faqe statike: hapet me 200 pa lidhje me databazën.
+export const dynamic = "force-static";
+
+// Të dhëna të strukturuara vetëm me fakte të dukshme/verifikuara: emri, URL-ja dhe logoja.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "OnlineMenu.al",
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/brand/logo-chef.webp`,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "OnlineMenu.al",
+      url: `${SITE_URL}/`,
+      inLanguage: "sq",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
+};
+
+export default function ComingSoonPage() {
   return (
-    <main className="min-h-screen bg-midnight text-alpine-cream">
-      <header className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
-        <span className="font-heading text-xl tracking-wide">
-          Menu<span className="text-alpine-gold">Digjitale</span>
-        </span>
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/login" className="hover:text-alpine-gold transition">
-            Hyr
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-full bg-alpine-gold px-4 py-2 text-midnight font-medium hover:opacity-90 transition"
-          >
-            Fillo Provën Falas
-          </Link>
-        </nav>
-      </header>
+    <main className="cs">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <h1 className="font-heading text-4xl sm:text-6xl leading-tight">
-          Menu digjitale që ruan{" "}
-          <span className="text-alpine-gold">identitetin</span> e restorantit tënd
-        </h1>
-        <p className="mt-6 text-lg text-alpine-cream/80">
-          Jo një kallëp gjenerik. Paletë, fonte dhe layout të personalizueshëm,
-          QR i pandryshueshëm, dhe menu dygjuhëshe — gati për t&apos;u skanuar.
+      {/* Shfletuesi shkarkon vetëm imazhin që i përshtatet ekranit (portret → mobile, peizazh → desktop). */}
+      <picture className="cs-bg">
+        <source media="(orientation: portrait)" srcSet="/coming-soon/mobile.webp" width={941} height={1672} />
+        <img src="/coming-soon/desktop.webp" alt="" width={1672} height={941} fetchPriority="high" decoding="async" />
+      </picture>
+
+      <div className="cs-content">
+        <p className="cs-brand">
+          OnlineMenu<span>.al</span>
         </p>
-        <div className="mt-10 flex items-center justify-center gap-4">
-          <Link
-            href="/register"
-            className="rounded-full bg-alpine-gold px-6 py-3 text-midnight font-medium hover:opacity-90 transition"
-          >
-            Provo 30 ditë falas
-          </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-alpine-cream/30 px-6 py-3 hover:border-alpine-gold transition"
-          >
-            Kam llogari
-          </Link>
-        </div>
-        <p className="mt-16 text-sm text-alpine-cream/50">
-          Faza 1 (MVP) — themelet e projektit janë gati.
+        <h1 className="cs-title">Së shpejti</h1>
+        <p className="cs-en" lang="en">
+          Coming soon
         </p>
-      </section>
+        <span className="cs-rule" aria-hidden="true" />
+        <p className="cs-tagline">Menu digjitale dhe rezervime tavolinash.</p>
+        <p className="cs-about">
+          OnlineMenu.al po përgatit një platformë për të zbuluar restorante, për të parë menutë digjitale dhe për të rezervuar tavolina
+          te bizneset që e ofrojnë.
+        </p>
+      </div>
+
+      {analyticsEnabled() && <ConsentAndGtm />}
     </main>
   );
 }

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+// Gjithmonë dinamike: pa prerender statik që prek DB-në gjatë build-it.
+export const dynamic = "force-dynamic";
+
 export default async function AdminRestaurantsPage() {
   const restaurants = await prisma.restaurant.findMany({
     include: { subscription: true, owner: { select: { email: true } } },
