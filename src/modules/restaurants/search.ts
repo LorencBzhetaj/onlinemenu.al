@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { hasEntitlement } from "@/modules/subscriptions/entitlements";
+import { hasEntitlement, entitlementWhere } from "@/modules/subscriptions/entitlements";
+import { nameMatchRank, normalizeForSearch } from "@/lib/text-normalize";
 import { getAvailableTimes } from "@/modules/booking/availability";
 
 /**
@@ -128,7 +129,7 @@ function pickSlots(slots: { time: string; start: string }[], preferTime: string 
 /** Vlerat reale dalluese të qytetit/kuzhinës mes restoranteve publike — për dropdown-et e filtrit. */
 export async function getSearchFacets(): Promise<SearchFacets> {
   const rows = await prisma.restaurant.findMany({
-    where: { isPublished: true, suspendedAt: null },
+    where: { isPublished: true, ...entitlementWhere("MENU") },
     select: { city: true, cuisine: true },
   });
   const cities = new Set<string>();
@@ -144,37 +145,97 @@ export async function getSearchFacets(): Promise<SearchFacets> {
   };
 }
 
-export async function searchRestaurants(filters: SearchFilters, now: Date = new Date()): Promise<SearchResult> {
-  const where: Prisma.RestaurantWhereInput = {
+const CARD_SELECT = {
+  id: true,
+  slug: true,
+  name: true,
+  logoUrl: true,
+  coverUrl: true,
+  city: true,
+  cuisine: true,
+  address: true,
+  primaryColor: true,
+  accentColor: true,
+} as const;
+
+/** Kufiri i kandidatëve për përputhjen e emrit në server (katalogu i tanishëm është i vogël). */
+const NAME_CANDIDATES = 2000;
+
+/**
+ * Bazë e katalogut të menuve: e njëjta porta si faqja publike e menusë
+ * (i publikuar + jo i pezulluar + MENU aktiv sipas `entitlementWhere`), + qytet/kuzhinë.
+ */
+function catalogWhere(filters: Pick<SearchFilters, "city" | "cuisine">, now: Date): Prisma.RestaurantWhereInput {
+  return {
     isPublished: true,
-    suspendedAt: null,
+    ...entitlementWhere("MENU", now),
     ...(filters.city ? { city: { equals: filters.city, mode: "insensitive" } } : {}),
     ...(filters.cuisine ? { cuisine: { equals: filters.cuisine, mode: "insensitive" } } : {}),
-    ...(filters.q ? { name: { contains: filters.q, mode: "insensitive" } } : {}),
   };
+}
 
-  const total = await prisma.restaurant.count({ where });
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(filters.page, totalPages);
-
-  const rows = await prisma.restaurant.findMany({
+/** Id-të që përputhen me emrin, të renditura: fillimi i emrit → fillimi i një fjale → diku në emër. */
+async function rankedNameMatches(where: Prisma.RestaurantWhereInput, q: string): Promise<string[]> {
+  const candidates = await prisma.restaurant.findMany({
     where,
+    select: { id: true, name: true },
     orderBy: [{ name: "asc" }],
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      logoUrl: true,
-      coverUrl: true,
-      city: true,
-      cuisine: true,
-      address: true,
-      primaryColor: true,
-      accentColor: true,
-    },
+    take: NAME_CANDIDATES,
   });
+  const coll = new Intl.Collator("sq", { sensitivity: "base" });
+  return candidates
+    .map((c) => ({ id: c.id, name: c.name, rank: nameMatchRank(c.name, q) }))
+    .filter((c): c is { id: string; name: string; rank: number } => c.rank !== null)
+    .sort((a, b) => a.rank - b.rank || coll.compare(a.name, b.name))
+    .map((c) => c.id);
+}
+
+export type Suggestion = { slug: string; name: string; city: string | null; cuisine: string | null };
+export const SUGGEST_MIN = 2;
+export const SUGGEST_MAX = 6;
+
+/** Sugjerime gjatë shkrimit (nga 2 karaktere), me të njëjtën portë dhe renditje si katalogu. */
+export async function suggestRestaurants(qRaw: string, cityRaw: string | null, now: Date = new Date()): Promise<Suggestion[]> {
+  const q = cleanText(qRaw);
+  if (!q || normalizeForSearch(q).length < SUGGEST_MIN) return [];
+  const ids = (await rankedNameMatches(catalogWhere({ city: cleanText(cityRaw ?? undefined), cuisine: null }, now), q)).slice(0, SUGGEST_MAX);
+  if (ids.length === 0) return [];
+  const rows = await prisma.restaurant.findMany({ where: { id: { in: ids } }, select: { id: true, slug: true, name: true, city: true, cuisine: true } });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.flatMap((id) => {
+    const r = byId.get(id);
+    return r ? [{ slug: r.slug, name: r.name, city: r.city, cuisine: r.cuisine }] : [];
+  });
+}
+
+export async function searchRestaurants(filters: SearchFilters, now: Date = new Date()): Promise<SearchResult> {
+  const where = catalogWhere(filters, now);
+
+  let total: number;
+  let page: number;
+  let rows: Prisma.RestaurantGetPayload<{ select: typeof CARD_SELECT }>[];
+
+  if (filters.q) {
+    // Emri: pjesë e emrit, pa dallim shkronjash, me ë/e dhe ç/c — renditje sipas përputhjes.
+    const ids = await rankedNameMatches(where, filters.q);
+    total = ids.length;
+    page = Math.min(filters.page, Math.max(1, Math.ceil(total / PAGE_SIZE)));
+    const pageIds = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const found = pageIds.length ? await prisma.restaurant.findMany({ where: { id: { in: pageIds } }, select: CARD_SELECT }) : [];
+    const byId = new Map(found.map((r) => [r.id, r]));
+    rows = pageIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+  } else {
+    total = await prisma.restaurant.count({ where });
+    page = Math.min(filters.page, Math.max(1, Math.ceil(total / PAGE_SIZE)));
+    rows = await prisma.restaurant.findMany({
+      where,
+      orderBy: [{ name: "asc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: CARD_SELECT,
+    });
+  }
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const availabilityRequested = filters.date != null && filters.guests != null;
 

@@ -54,6 +54,7 @@ export function PublicMenu({
   allergens,
   photoStyle,
   slug,
+  back,
 }: {
   restaurant: PubRestaurant;
   categories: PubCategory[];
@@ -61,6 +62,8 @@ export function PublicMenu({
   allergens: PubAllergen[];
   photoStyle: MenuPhotoStyle;
   slug?: string;
+  /** Kthimi: te katalogu/profili (from i validuar) ose "Te restoranti" për link direkt. */
+  back?: { href: string; label: string };
 }) {
   const { lang, setLang } = useLang();
   // item_view: klikim real mbi një pjatë (analytics tenant-scoped, pa PII).
@@ -108,6 +111,11 @@ export function PublicMenu({
     <>
       {/* ===== HEADER ===== */}
       <header className="qm-header">
+        {back && (
+          <a className="qm-back" href={back.href}>
+            <span aria-hidden="true">←</span> {back.label}
+          </a>
+        )}
         <div className="qm-brand">
           {restaurant.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

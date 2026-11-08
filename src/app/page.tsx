@@ -5,6 +5,7 @@ import { RestaurantResultCard } from "@/components/discovery/restaurant-result-c
 import { CuisineCards } from "@/components/discovery/cuisine-cards";
 import { OmSiteHeader } from "@/components/public/om-site-header";
 import { OmSiteFooter } from "@/components/public/om-site-footer";
+import { CatalogScrollRestore } from "@/components/discovery/catalog-scroll-restore";
 import { ChefMascot } from "@/components/public/chef-mascot";
 import "@/components/public/om-public.css";
 
@@ -63,10 +64,10 @@ export default async function LandingPage() {
               </Link>
             </div>
             {/* Rresht horizontal (si te mockup-i): karta pranë njëra-tjetrës, me scroll-snap. */}
-            <ul className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-3 [scrollbar-width:thin]" aria-label="Restorantet">
+            <ul className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-3 [scrollbar-width:thin]" aria-label="Restorantet" data-scroll-key="featured">
               {featured.map((r) => (
                 <li key={r.slug} className="flex w-[78%] max-w-[320px] shrink-0 snap-start sm:w-[300px]">
-                  <RestaurantResultCard r={r} filters={result.filters} availabilityRequested={false} />
+                  <RestaurantResultCard r={r} filters={result.filters} availabilityRequested={false} fromPath="/" />
                 </li>
               ))}
             </ul>
@@ -86,6 +87,7 @@ export default async function LandingPage() {
         </section>
       </main>
 
+      <CatalogScrollRestore />
       <OmSiteFooter />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { SearchFilters, SearchFacets } from "@/modules/restaurants/search";
+import { RestaurantNameCombobox } from "./restaurant-name-combobox";
 
 const FIELD =
   "h-11 w-full rounded-xl border-2 border-om-line bg-om-white px-3 text-[15px] text-om-aubergine outline-none transition focus:border-om-aubergine";
@@ -17,7 +18,7 @@ function buildQuery(v: { q: string; city: string; cuisine: string }): string {
   return p.toString();
 }
 
-export function SearchFilters({ filters, facets }: { filters: SearchFilters; facets: SearchFacets }) {
+export function SearchFilters({ filters, facets, fromPath }: { filters: SearchFilters; facets: SearchFacets; fromPath: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -50,8 +51,15 @@ export function SearchFilters({ filters, facets }: { filters: SearchFilters; fac
     >
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:gap-3">
         <div className="col-span-2 sm:col-span-1">
-          <label className={LABEL} htmlFor="f-q">Emri</label>
-          <input id="f-q" className={FIELD} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Kërko restorant…" maxLength={80} />
+          <RestaurantNameCombobox
+            value={q}
+            onChange={setQ}
+            city={city}
+            fromPath={fromPath}
+            inputId="f-q"
+            label="Emri"
+            inputClassName={`${FIELD} pr-16`}
+          />
         </div>
         <div>
           <label className={LABEL} htmlFor="f-city">Qyteti</label>

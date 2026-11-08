@@ -157,7 +157,7 @@ export function ReserveFlow({
 
       {step === "time" && (
         <div className="rsv-card">
-          <button type="button" className="rsv-back" onClick={() => setStep("when")}>← Ndrysho datën/personat</button>
+          <button type="button" className="rsv-back" onClick={() => setStep("when")} aria-label="Mbrapa te data dhe personat">← Mbrapa</button>
           {slots.length === 0 ? (
             <p className="rsv-empty">Nuk ka orë të lira për këtë datë. Provoni një datë tjetër.</p>
           ) : (
@@ -182,7 +182,7 @@ export function ReserveFlow({
 
       {step === "contact" && (
         <form className="rsv-card" onSubmit={submit}>
-          <button type="button" className="rsv-back" onClick={() => setStep("time")}>← Ndrysho orën</button>
+          <button type="button" className="rsv-back" onClick={() => setStep("time")} aria-label="Mbrapa te ora">← Mbrapa</button>
           <div className="rsv-summary">{date} · {selected?.time} · {partySize} persona</div>
           <label className="rsv-field"><span>Emri *</span><input value={firstName} onChange={(e) => setFirstName(e.target.value)} required /></label>
           <label className="rsv-field"><span>Mbiemri</span><input value={lastName} onChange={(e) => setLastName(e.target.value)} /></label>

@@ -13,10 +13,17 @@ import {
   type PubCourse,
   type PubTasting,
 } from "@/components/public/public-menu";
+import { safeReturnPath } from "@/lib/safe-return";
 import "@/components/public/menu.css";
 import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
+
+/** Kthehu → katalogu/profili nga ku erdhi vizitori; link direkt → "Te restoranti" (profili). */
+function backTarget(slug: string, from: string | string[] | undefined) {
+  const safe = safeReturnPath(from);
+  return safe ? { href: safe, label: "Kthehu" } : { href: `/restaurants/${slug}`, label: "Te restoranti" };
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const p = await getPublicProfile(params.slug);
@@ -45,7 +52,13 @@ function parseCourses(value: unknown): PubCourse[] {
   });
 }
 
-export default async function PublicMenuPage({ params }: { params: { slug: string } }) {
+export default async function PublicMenuPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const p = await getPublicProfile(params.slug);
   if (!p) notFound();
 

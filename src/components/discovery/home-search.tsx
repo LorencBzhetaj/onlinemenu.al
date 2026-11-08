@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { SearchFacets } from "@/modules/restaurants/search";
+import { RestaurantNameCombobox } from "./restaurant-name-combobox";
 
 /**
  * Kërkimi i kryefaqes (kompakt, një rresht edhe në telefon): qyteti + emri → /restaurants.
@@ -51,21 +52,20 @@ export function HomeSearch({ facets }: { facets: SearchFacets }) {
           </select>
         </label>
       )}
-      <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-om-white px-3">
+      <div className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-om-white pl-3">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className="h-[18px] w-[18px] shrink-0" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m21 21-4.3-4.3" />
         </svg>
-        <span className="sr-only">Kërko restorant</span>
-        <input
-          name="q"
+        <RestaurantNameCombobox
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Kërko restorant…"
-          maxLength={80}
-          className="h-11 w-full min-w-0 bg-transparent text-[15px] text-om-aubergine outline-none placeholder:text-om-ink-soft"
+          onChange={setQ}
+          city={city}
+          fromPath="/"
+          hideLabel
+          inputClassName="h-11 w-full min-w-0 bg-transparent pr-16 text-[15px] text-om-aubergine outline-none placeholder:text-om-ink-soft"
         />
-      </label>
+      </div>
       <button
         type="submit"
         disabled={pending}

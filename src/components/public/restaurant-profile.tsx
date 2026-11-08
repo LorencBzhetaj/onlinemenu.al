@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { getInitials } from "@/lib/branding";
+import { menuHref } from "@/lib/safe-return";
 import { useLang } from "./use-lang";
 import { AnalyticsBeacon, sendEvent } from "./analytics-beacon";
 import { RestaurantLocation } from "./restaurant-location";
@@ -139,7 +140,7 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
       <div className="om-profile">
         {/* ===== VEPRIMET: Menuja · Rezervo · Wolt ===== */}
         <div className="om-actions">
-          <Link href={`/restaurants/${profile.slug}/menu`} className="om-btn om-btn--menu">
+          <Link href={menuHref(profile.slug, `/restaurants/${profile.slug}`)} className="om-btn om-btn--menu">
             {Icon.menu}
             {t("Menuja", "Menu")}
           </Link>

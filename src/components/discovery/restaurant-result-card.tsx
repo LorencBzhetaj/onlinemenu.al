@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { RestaurantCard, SearchFilters } from "@/modules/restaurants/search";
+import { menuHref } from "@/lib/safe-return";
 
 function reserveHref(slug: string, time: string, filters: SearchFilters): string {
   const p = new URLSearchParams();
@@ -27,10 +28,13 @@ export function RestaurantResultCard({
   r,
   filters,
   availabilityRequested,
+  fromPath,
 }: {
   r: RestaurantCard;
   filters: SearchFilters;
   availabilityRequested: boolean;
+  /** Rruga e katalogut ku kthehet "Kthehu" nga menuja. */
+  fromPath?: string;
 }) {
   const meta = [r.cuisine, r.city].filter(Boolean).join(" · ");
   return (
@@ -68,7 +72,7 @@ export function RestaurantResultCard({
 
       <div className="mt-auto flex flex-wrap gap-2 px-5 pb-5">
         <Link
-          href={`/restaurants/${r.slug}/menu`}
+          href={menuHref(r.slug, fromPath)}
           className="inline-flex min-h-11 items-center rounded-xl bg-om-aubergine px-4 text-sm font-extrabold text-white"
         >
           Menuja

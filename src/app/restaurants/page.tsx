@@ -8,6 +8,7 @@ import { absoluteUrl } from "@/lib/site";
 import { CuisineCards } from "@/components/discovery/cuisine-cards";
 import { OmSiteHeader } from "@/components/public/om-site-header";
 import { OmSiteFooter } from "@/components/public/om-site-footer";
+import { CatalogScrollRestore } from "@/components/discovery/catalog-scroll-restore";
 import "@/components/public/om-public.css";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,8 @@ export default async function RestaurantsPage({
 }) {
   const filters = parseSearchParams(searchParams);
   const result = await searchRestaurants(filters);
+  // Rruga aktuale e katalogut (kërkimi + qyteti + kuzhina + faqja) — për "Kthehu" nga menuja.
+  const here = pageHref({ ...result.filters, date: null, time: null, guests: null }, result.page);
 
   return (
     <div className="min-h-screen bg-om-white font-om-body text-om-aubergine">
@@ -56,7 +59,7 @@ export default async function RestaurantsPage({
         )}
 
         <div className="mt-4">
-          <SearchFiltersBar filters={filters} facets={result.facets} />
+          <SearchFiltersBar key={here} filters={filters} facets={result.facets} fromPath={here} />
         </div>
 
         <div className="mt-6 flex items-center justify-between">
@@ -74,9 +77,10 @@ export default async function RestaurantsPage({
 
         <div className="mt-4">
           {result.items.length === 0 ? (
-            <EmptyState title="Nuk u gjet asnjë restorant">
-              Provo të heqësh disa filtra ose të ndryshosh qytetin/kuzhinën.{" "}
-              <Link href="/restaurants" className="font-bold underline">Pastro filtrat</Link>.
+            <EmptyState title={result.filters.q ? "Nuk gjetëm restorant me këtë emër" : "Nuk u gjet asnjë restorant"}>
+              {result.filters.city ? `Kërkimi u kufizua te ${result.filters.city}. ` : ""}
+              Provo një pjesë tjetër të emrit ose hiq filtrat.{" "}
+              <Link href="/restaurants" className="font-bold underline">Pastro kërkimin</Link>
             </EmptyState>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -86,6 +90,7 @@ export default async function RestaurantsPage({
                   r={r}
                   filters={result.filters}
                   availabilityRequested={false}
+                  fromPath={here}
                 />
               ))}
             </div>
@@ -127,6 +132,7 @@ export default async function RestaurantsPage({
           </nav>
         )}
       </main>
+      <CatalogScrollRestore />
       <OmSiteFooter />
     </div>
   );

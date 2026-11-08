@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export type Module = "MENU" | "BOOKING";
@@ -5,6 +6,30 @@ export type Module = "MENU" | "BOOKING";
 // Allowlist (jo denylist): status i panjohur → jo i lejuar.
 const SUBSCRIPTION_OK = new Set(["trial", "active"]);
 const MODULE_OK = new Set(["active"]);
+
+/**
+ * Filtri Prisma ekuivalent me `hasEntitlement` për shumë restorante njëherësh (p.sh. katalogu):
+ * jo i pezulluar + abonim në allowlist e jo i skaduar + modul në allowlist e jo i skaduar.
+ * Mbahet pranë `hasEntitlement` që rregullat të mos ndahen; testi i Fazës 9 i krahason të dyja.
+ */
+export function entitlementWhere(module: Module, now: Date = new Date()): Prisma.RestaurantWhereInput {
+  return {
+    suspendedAt: null,
+    subscription: {
+      is: {
+        status: { in: Array.from(SUBSCRIPTION_OK) },
+        expiresAt: { gt: now },
+        entitlements: {
+          some: {
+            module,
+            status: { in: Array.from(MODULE_OK) },
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          },
+        },
+      },
+    },
+  };
+}
 
 /**
  * A ka restoranti të drejtën aktive për modulin? Vlerësim me allowlist, sipas
