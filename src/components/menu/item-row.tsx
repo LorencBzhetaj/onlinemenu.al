@@ -77,6 +77,7 @@ export function ItemRow({
         <IconButton title="Ndrysho" onClick={onEdit}>
           ✎
         </IconButton>
+        <span className="mx-1 h-6 w-px bg-line" aria-hidden="true" />
         <IconButton title="Fshi" onClick={onDelete} danger>
           🗑
         </IconButton>
@@ -101,7 +102,8 @@ function IconButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`rounded-md px-2 py-1 text-sm hover:bg-black/5 transition ${
+      aria-label={title}
+      className={`inline-grid h-11 w-11 place-items-center rounded-lg text-base hover:bg-black/5 transition ${
         danger ? "text-red-600" : "text-muted"
       }`}
     >
