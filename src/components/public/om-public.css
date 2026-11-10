@@ -806,9 +806,10 @@
   min-height: 44px;
   font-weight: 700;
 }
+/* Statuset: sukses = jeshile (e dallueshme nga Butter i markës). */
 .om-page .bk-status.ok {
-  background: var(--om-butter);
-  color: var(--om-aubergine);
+  background: #dcfce7;
+  color: #166534;
 }
 .om-page .bk-status.cancelled {
   background: var(--om-pink-soft);
@@ -964,4 +965,11 @@ body:has(.om-site-header) :focus-visible {
   letter-spacing: 0.01em;
   line-height: 1.15;
   overflow-wrap: anywhere;
+}
+
+/* Menuja në telefon: hyrja kompakte që pjatat të dalin në ekranin e parë. */
+@media (max-width: 640px) {
+  .qr-menu.om-menu .qm-section-heading { padding-top: 14px; }
+  .qr-menu.om-menu .om-menu-art { width: 84px; height: 56px; margin-bottom: 2px; }
+  .qr-menu.om-menu .qm-section-title { font-size: 1.55rem; margin-top: 2px; }
 }

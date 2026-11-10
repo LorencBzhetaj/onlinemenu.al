@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { OrDivider } from "@/components/google-button";
 import { OAuthButtons, useHasOAuth } from "@/components/oauth-buttons";
+import { AuthBrand } from "@/components/auth-brand";
 
 export default function RegisterPage() {
   const hasOAuth = useHasOAuth();
@@ -40,6 +41,7 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm">
+        <AuthBrand />
         <h1 className="font-heading text-3xl text-center mb-2">Fillo provën falas</h1>
         <p className="text-center text-sm text-muted mb-8">
           30 ditë, pa kartë krediti.

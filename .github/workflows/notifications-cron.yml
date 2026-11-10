@@ -1,0 +1,37 @@
+# Nis worker-in e njoftimeve automatikisht (riprovimet pa aktivitet të ri nga restoranti).
+# Vercel Hobby lejon cron vetëm një herë në ditë dhe vetëm në Production, ndaj këtë e bën GitHub Actions.
+# GitHub i ekzekuton "schedule" VETËM nga dega default (main): ky skedar s'ka efekt derisa të jetë atje.
+# Secrets (Settings → Secrets and variables → Actions):
+#   NOTIFY_CRON_URL    p.sh. https://onlinemenu-al-preview.vercel.app/api/cron/notifications
+#   NOTIFY_CRON_SECRET vlera e CRON_SECRET të atij ambienti
+#   VERCEL_AUTOMATION_BYPASS (opsionale) — vetëm për Preview të mbrojtur me Vercel Authentication
+name: notifications-cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: notifications-cron
+  cancel-in-progress: false
+
+jobs:
+  run-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Thirr worker-in e njoftimeve
+        env:
+          URL: ${{ secrets.NOTIFY_CRON_URL }}
+          SECRET: ${{ secrets.NOTIFY_CRON_SECRET }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then
+            echo "Secrets mungojnë — asgjë për të bërë."; exit 0
+          fi
+          args=(-sS --fail-with-body --max-time 60 -H "Authorization: Bearer $SECRET")
+          if [ -n "$BYPASS" ]; then args+=(-H "x-vercel-protection-bypass: $BYPASS"); fi
+          curl "${args[@]}" "$URL"

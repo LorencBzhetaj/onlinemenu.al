@@ -4,7 +4,7 @@ import type { HandleProps } from "./sortable";
 import type { ItemDTO } from "@/lib/menu-types";
 
 function formatPrice(price: number): string {
-  return `${price.toLocaleString("sq-AL")} L`;
+  return `${price.toLocaleString("sq-AL")} ALL`;
 }
 
 export function ItemRow({

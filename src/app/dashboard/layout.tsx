@@ -7,6 +7,7 @@ import { RestaurantProvider } from "@/components/restaurant-context";
 import { RestaurantSwitcher } from "@/components/restaurant-switcher";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { listMemberships } from "@/modules/memberships/active-restaurant";
+import { PlatformBrand } from "@/components/platform-brand";
 
 export default async function DashboardLayout({
   children,
@@ -24,9 +25,7 @@ export default async function DashboardLayout({
       {/* Sidebar në desktop; top-bar horizontal në mobile. */}
       <aside className="border-b border-line bg-surface p-4 lg:min-h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-5 lg:flex lg:flex-col">
         <div className="flex items-center justify-between gap-3 lg:block">
-          <div className="font-display text-lg lg:mb-6">
-            Menu<span className="text-primary">Digjitale</span>
-          </div>
+          <PlatformBrand area="Paneli" href="/dashboard" />
           {/* Në mobile: dalja në krye-djathtas */}
           <div className="lg:hidden">
             <LogoutButton />

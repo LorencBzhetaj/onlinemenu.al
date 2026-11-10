@@ -444,7 +444,7 @@ function MenuCard({
               {nameEl}
               {priceBadge}
             </div>
-            <div className="qm-card-rule" />
+            {desc && <div className="qm-card-rule" />}
             {desc && <p className="qm-card-desc">{desc}</p>}
             {extras}
           </div>
@@ -463,7 +463,7 @@ function MenuCard({
         {nameEl}
         {priceBadge}
       </div>
-      <div className="qm-card-rule" />
+      {desc && <div className="qm-card-rule" />}
       {desc && <p className="qm-card-desc">{desc}</p>}
       {extras}
     </article>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const NAV = [
@@ -29,8 +30,17 @@ export function DashboardNav({ isAdmin }: { isAdmin: boolean }) {
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
 
+  // Telefon: menuja horizontale lëviz vetë te faqja aktive (pa lëvizur faqen vertikalisht).
+  const navRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>("[aria-current=page]");
+    if (!nav || !active || nav.scrollWidth <= nav.clientWidth) return;
+    nav.scrollLeft = Math.max(0, active.offsetLeft - nav.offsetLeft - 16);
+  }, [pathname]);
+
   return (
-    <nav className="mt-4 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-6 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
+    <nav ref={navRef} aria-label="Paneli" className="mt-4 flex gap-1 overflow-x-auto pb-1 text-sm lg:mt-6 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:pb-0">
       {NAV.map((item) => (
         <Link
           key={item.href}

@@ -207,6 +207,33 @@ async function main() {
   ok("kanali email i fikur → asnjë njoftim biznesi", (await prisma.notificationJob.count({ where: { reservationId: b3.ok ? b3.data!.reservationId : "", type: { startsWith: "Business" } } })) === 0);
   ok("rezervimi si vizitor s'kërkon llogari (u krijua)", b3.ok);
 
+  console.log("\n13. Riprovimi pa aktivitet të ri nga restoranti (dështim → cron → sukses):");
+  {
+    const R3 = await makeResto(`retry-${uniq()}`);
+    const b4 = await createReservation({ restaurantId: R3.restaurantId, start: at(D, 18), partySize: 2, ...guest(`k4-${uniq()}${SUF}`) });
+    const rid4 = b4.ok ? b4.data!.reservationId : "";
+    const failing: NotifySender = async () => ({ delivered: false, error: "provider_down" });
+    // Përpjekja 1 (si pas commit-it): dështon → Failed me backoff.
+    await runNotificationWorker({ restaurantId: R3.restaurantId, send: failing });
+    const jobs1 = await prisma.notificationJob.findMany({ where: { reservationId: rid4, type: { not: "Reminder24h" } } });
+    ok("përpjekja 1 dështon → Failed, e riplanifikuar në të ardhmen", jobs1.length > 0 && jobs1.every((j) => j.status === "Failed" && j.attempts === 1 && j.scheduledAt.getTime() > Date.now()), JSON.stringify(jobs1.map((j) => [j.status, j.attempts])));
+    // Koha kalon (backoff-i skadon); restoranti s'bën asgjë.
+    await prisma.notificationJob.updateMany({ where: { reservationId: rid4, type: { not: "Reminder24h" } }, data: { scheduledAt: new Date(Date.now() - 1000) } });
+    // Mekanizmi automatik: endpoint-i i cron-it (pa restaurantId), me sekretin.
+    const prev = process.env.CRON_SECRET;
+    process.env.CRON_SECRET = "p10-cron-secret";
+    const { GET: cronGET } = await import("../src/app/api/cron/notifications/route");
+    const unauth = await cronGET(new Request("http://localhost/api/cron/notifications"));
+    ok("cron-i pa sekret → 401", unauth.status === 401);
+    const r = await cronGET(new Request("http://localhost/api/cron/notifications", { headers: { authorization: "Bearer p10-cron-secret" } }));
+    process.env.CRON_SECRET = prev;
+    ok("cron-i me sekret → 200", r.status === 200);
+    const jobs2 = await prisma.notificationJob.findMany({ where: { reservationId: rid4, type: { not: "Reminder24h" } } });
+    ok("përpjekja 2 nga cron-i → Simulated (pa dërgim real)", jobs2.every((j) => j.status === "Simulated" && j.attempts === 2), JSON.stringify(jobs2.map((j) => [j.status, j.attempts])));
+    const del = await prisma.notificationDelivery.findMany({ where: { jobId: { in: jobs2.map((j) => j.id) } }, orderBy: { attempt: "asc" } });
+    ok("historiku: 1 'failed' + 1 'simulated' për çdo job", jobs2.every((j) => { const d = del.filter((x) => x.jobId === j.id).map((x) => x.outcome); return d.join(",") === "failed,simulated"; }));
+  }
+
   await cleanup();
   console.log(`\n──────── FAZA 10: ${pass} passed, ${fail} failed ────────`);
   await prisma.$disconnect();

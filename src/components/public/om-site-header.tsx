@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OmAccountLink } from "./om-account-link";
 
 /** Shenja e brandit: "OnlineMenu.al" në Aubergine me tri vija Butter (si te mockup-et). */
 export function OmLogo({ size = "md" }: { size?: "md" | "lg" }) {
@@ -25,8 +26,6 @@ const NAV: { key: NavKey; href: string; label: string }[] = [
  * Telefon: logo + menu kompakte (<details>, pa JS shtesë). Navigimi i profilit mbetet poshtë (PublicTabs).
  */
 export function OmSiteHeader({ active, signedIn = false }: { active?: NavKey; signedIn?: boolean }) {
-  // I kyçur → "Llogaria ime" në vend të "Hyr" (dalja bëhet te faqja e llogarisë).
-  const secondary = signedIn ? { href: "/account", label: "Llogaria ime" } : { href: "/login", label: "Hyr" };
   const links = NAV.map((n) => (
     <Link key={n.key} href={n.href} className={active === n.key ? "is-active" : ""} aria-current={active === n.key ? "page" : undefined}>
       {n.label}
@@ -44,9 +43,7 @@ export function OmSiteHeader({ active, signedIn = false }: { active?: NavKey; si
 
         <nav className="om-site-nav om-nav-desktop" aria-label="Kryesore">
           {links}
-          <Link href={secondary.href} className="om-site-secondary">
-            {secondary.label}
-          </Link>
+          <OmAccountLink signedIn={signedIn} />
         </nav>
 
         <details className="om-nav-mobile">
@@ -57,9 +54,7 @@ export function OmSiteHeader({ active, signedIn = false }: { active?: NavKey; si
           </summary>
           <nav className="om-nav-mobile-panel" aria-label="Kryesore">
             {links}
-            <Link href={secondary.href} className="om-site-secondary">
-              {secondary.label}
-            </Link>
+            <OmAccountLink signedIn={signedIn} />
           </nav>
         </details>
       </div>

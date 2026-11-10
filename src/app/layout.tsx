@@ -6,8 +6,8 @@ import { SITE_URL, indexingAllowed } from "@/lib/site";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Platforma e Menusë Digjitale",
-    template: "%s · MenuDigjitale",
+    default: "OnlineMenu.al",
+    template: "%s · OnlineMenu.al",
   },
   description:
     "Menu digjitale premium për restorante — QR, personalizim vizual, dygjuhëshe (AL/EN).",
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#FAF8F3",
+  themeColor: "#FFF8EE",
 };
 
 export default function RootLayout({
@@ -41,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="sq">
       <head>
-        {/* Fontet e platformës: Playfair Display (tituj) + Jost (UI). */}
+        {/* Fontet: Fredoka + Nunito (marka). Playfair/Jost mbeten për temat e menusë së restorantit. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}

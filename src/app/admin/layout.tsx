@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
+import { PlatformBrand } from "@/components/platform-brand";
 
 export default async function AdminLayout({
   children,
@@ -17,9 +18,7 @@ export default async function AdminLayout({
     <div className="min-h-screen bg-canvas text-ink lg:flex">
       <aside className="border-b border-line p-4 lg:min-h-screen lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-5 lg:flex lg:flex-col">
         <div className="flex items-center justify-between gap-3 lg:block">
-          <div className="font-heading text-lg lg:mb-8">
-            Admin<span className="text-primary">·</span>Panel
-          </div>
+          <PlatformBrand area="Admin" href="/admin/restaurants" />
           <div className="lg:hidden">
             <LogoutButton />
           </div>

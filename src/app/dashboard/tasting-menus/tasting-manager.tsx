@@ -44,7 +44,7 @@ export function TastingManager({ initial }: { initial: TastingDTO[] }) {
                 <div className="min-w-0">
                   <div className="font-display text-lg text-ink">{m.name}</div>
                   <div className="text-sm text-muted">
-                    {m.price} LEK · për {m.guestCount} persona · {m.courses.length} kurse
+                    {m.price} ALL · për {m.guestCount} persona · {m.courses.length} kurse
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">

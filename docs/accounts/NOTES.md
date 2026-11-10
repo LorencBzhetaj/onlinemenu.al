@@ -32,7 +32,7 @@ Statusi: **vetëm lokalisht** (dega `accounts-notifications-local`). Pa push, pa
 ## Bllokues të hapur
 - Apple: Services ID, Team ID, Key ID, çelësi .p8, domain + callback `/api/auth/callback/apple`.
 - WhatsApp: ofruesi s'është zgjedhur (vetëm simulim).
-- Rrjedha reale e Google OAuth s'u testua (vetëm callback-u i NextAuth në teste).
+- Google OAuth: u testua realisht në Preview më 2026-11-10 (shih "Provat reale me Google" më poshtë).
 - Teksti i privatësisë duhet përditësuar (identitetet OAuth, marrësit e njoftimeve) para aktivizimit të GTM.
 
 ## Testet
@@ -54,3 +54,24 @@ ngrinte dhe job-et mbeteshin Pending. `vercel.json` s'ka cron për `/api/cron/no
 te veprimi i radhës i atij restoranti.
 - Të përbashkëta me Production: `GOOGLE_CLIENT_*`, `RESEND_API_KEY`, `EMAIL_FROM`, Cloudinary.
   Email-et e llogarisë (verifikim/rivendosje) dërgohen realisht kur ka `RESEND_API_KEY`; njoftimet e rezervimeve vetëm me `EMAIL_SEND_LIVE=1` (i fikur).
+
+## Provat reale me Google (Preview, 2026-11-10)
+Redirect URI i regjistruar: `https://onlinemenu-al-preview.vercel.app/api/auth/callback/google` (client-i i projektit 911459198924).
+
+| Prova | Rezultati |
+|---|---|
+| Hyrje me Google, email i ri | ✅ `/account`; rol `USER`, email i verifikuar, pa fjalëkalim, 1 identitet, 0 anëtarësi; s'u krijua restorant/trial |
+| Lidhje nga "Llogaria ime" e një identiteti që i përket llogarisë tjetër | ✅ refuzim `link_conflict`; sesioni s'ndryshoi |
+| Email i njëjtë me llogari me fjalëkalim | ✅ refuzim `account_exists`; 1 përdorues, fjalëkalimi i paprekur, 0 identitete të reja |
+| Ura për llogaritë e vjetra vetëm me Google | ✅ lidhje një herë te i njëjti përdorues; pa llogari të dytë |
+
+Gjendja përfundimtare e llogarisë së testimit: vetëm Google, pa fjalëkalim, 1 identitet, rol `USER`, pa biznes.
+S'u testua live: identitet i dytë Google me të njëjtin email (mbulohet nga Faza 10); Apple (i fshehur).
+Llogari sintetike QA në DB-në e testimit: `qa-manager@staging.demo` (MANAGER te Te Gurra), `qa-pa-biznes@staging.demo`.
+
+## Riprovimi automatik i njoftimeve (2026-11-11)
+- Test (Faza 10, §13): dërguesi dështon → job `Failed` me backoff; pa asnjë veprim nga restoranti, endpoint-i
+  `/api/cron/notifications` (me `CRON_SECRET`) e merr dhe e kalon në `Simulated`; historiku `failed,simulated`.
+- Nisësi automatik: `.github/workflows/notifications-cron.yml` (çdo 5 min). Vercel Hobby lejon cron vetëm ditor dhe vetëm në
+  Production. **Joaktiv derisa skedari të jetë në `main`** (GitHub ekzekuton `schedule` vetëm nga dega default) dhe të shtohen
+  secrets `NOTIFY_CRON_URL`, `NOTIFY_CRON_SECRET` (+ `VERCEL_AUTOMATION_BYPASS` për Preview të mbrojtur).

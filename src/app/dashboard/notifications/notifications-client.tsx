@@ -77,11 +77,11 @@ export function NotificationsClient() {
       <section className="rounded-xl border border-line bg-surface p-5 space-y-3" aria-labelledby="h-kanalet">
         <h2 id="h-kanalet" className="font-heading text-xl">Kanalet</h2>
         <label className="flex items-center gap-3 min-h-11">
-          <input type="checkbox" checked={data.settings.emailEnabled} onChange={async (e) => { await post({ action: "channels", emailEnabled: e.target.checked }); await load(); }} />
+          <input type="checkbox" aria-label="Kanali Email për njoftimet e rezervimeve" checked={data.settings.emailEnabled} onChange={async (e) => { await post({ action: "channels", emailEnabled: e.target.checked }); await load(); }} />
           <span>Email</span>
         </label>
         <label className="flex items-center gap-3 min-h-11">
-          <input type="checkbox" checked={data.settings.whatsappEnabled} onChange={async (e) => { await post({ action: "channels", whatsappEnabled: e.target.checked }); await load(); }} />
+          <input type="checkbox" aria-label="Kanali WhatsApp për njoftimet e rezervimeve (i simuluar)" checked={data.settings.whatsappEnabled} onChange={async (e) => { await post({ action: "channels", whatsappEnabled: e.target.checked }); await load(); }} />
           <span>WhatsApp <span className="text-muted text-sm">(i simuluar derisa të konfigurohet integrimi zyrtar i biznesit)</span></span>
         </label>
         <p className="text-xs text-muted">Pa marrës email të verifikuar, njoftimi shkon te email-i i pronarit. Mesazhi ka datën, orën, personat, referencën dhe lidhjen te paneli (kërkon hyrje); kurrë lidhjen e anulimit të klientit.</p>
@@ -100,10 +100,10 @@ export function NotificationsClient() {
                 </span>
                 <span className="flex flex-wrap gap-2">
                   <label className="flex items-center gap-2 text-sm min-h-11">
-                    <input type="checkbox" checked={r.enabled} onChange={async (e) => { await post({ action: "toggle", id: r.id, enabled: e.target.checked }); await load(); }} />
+                    <input type="checkbox" aria-label={`Marrësi ${r.channel} ${r.address} aktiv`} checked={r.enabled} onChange={async (e) => { await post({ action: "toggle", id: r.id, enabled: e.target.checked }); await load(); }} />
                     Aktiv
                   </label>
-                  <button type="button" className="min-h-11 px-3 text-sm text-red-700 underline" onClick={async () => { await post({ action: "remove", id: r.id }); await load(); }}>
+                  <button type="button" aria-label={`Hiq marrësin ${r.channel} ${r.address}`} className="min-h-11 px-3 text-sm text-red-700 underline" onClick={async () => { await post({ action: "remove", id: r.id }); await load(); }}>
                     Hiq
                   </button>
                 </span>
@@ -119,7 +119,7 @@ export function NotificationsClient() {
                 >
                   <label className="text-sm">
                     Kodi
-                    <input inputMode="numeric" maxLength={6} className={inputClass} value={codes[r.id] ?? ""} onChange={(e) => setCodes((c) => ({ ...c, [r.id]: e.target.value }))} />
+                    <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} aria-label={`Kodi 6-shifror i verifikimit për ${r.address}`} className={inputClass} value={codes[r.id] ?? ""} onChange={(e) => setCodes((c) => ({ ...c, [r.id]: e.target.value }))} />
                   </label>
                   <button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm text-white">Verifiko</button>
                   <button
@@ -160,7 +160,7 @@ export function NotificationsClient() {
           </label>
           {channel === "WhatsApp" && (
             <label className="flex items-start gap-3 text-sm">
-              <input type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+              <input type="checkbox" aria-label="Marrësi ka dhënë pëlqimin për njoftime rezervimesh në WhatsApp" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
               <span>Marrësi ka dhënë pëlqimin për të marrë njoftime rezervimesh në WhatsApp.</span>
             </label>
           )}

@@ -3,18 +3,18 @@
 @tailwind utilities;
 
 :root {
-  /* Platforma (chrome): krem + ink. Faqja publike /m/[slug] e mbivendos vetë brendin. */
-  --background: #faf8f3;
-  --foreground: #20241f;
+  /* Platforma (chrome): paleta OnlineMenu.al. Faqet publike të restorantit (.rprofile/.qr-menu) e mbivendosin vetë. */
+  --background: #fff8ee;
+  --foreground: #3a1035;
 
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-ui: "Jost", system-ui, sans-serif;
+  --font-display: "Fredoka", system-ui, sans-serif;
+  --font-ui: "Nunito", system-ui, sans-serif;
 
   /* Alias legacy (publik). */
-  --brand-primary: #164b36;
-  --brand-accent: #a77932;
-  --font-heading: "Playfair Display", Georgia, serif;
-  --font-body: "Jost", system-ui, sans-serif;
+  --brand-primary: #4c1845;
+  --brand-accent: #ff79bd;
+  --font-heading: "Fredoka", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
 
   /* OnlineMenu.al — paleta e vetme e miratuar (faqet publike). Shih src/lib/om-theme.ts. */
   --om-butter: #ffe16a;
@@ -55,6 +55,12 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #164b36;
+  outline: 2px solid #4c1845;
   outline-offset: 2px;
+}
+
+/* Kontrollet native (checkbox/radio) në ngjyrën e markës. */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #4c1845;
 }

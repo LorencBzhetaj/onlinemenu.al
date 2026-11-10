@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ResetForm } from "./reset-form";
+import { AuthBrand } from "@/components/auth-brand";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function ResetPasswordPage({
   return (
     <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm">
+        <AuthBrand />
         <h1 className="font-heading text-3xl text-center mb-8">Vendos një password të ri</h1>
 
         {valid ? (

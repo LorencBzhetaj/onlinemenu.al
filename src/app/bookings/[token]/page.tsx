@@ -55,7 +55,7 @@ export default async function BookingPage({ params }: { params: { token: string 
           {!cancelled && (
             <div className="bk-actions">
               <a className="rsv-btn" href={`/bookings/${params.token}/calendar.ics`}>Shto në kalendar</a>
-              <CancelBooking token={params.token} />
+              <CancelBooking token={params.token} summary={`${b.restaurant.name} · ${dateKey} · ${time} · ${b.partySize} persona`} />
               <p style={{ fontFamily: "var(--font-ui)", fontSize: "0.8rem", color: "var(--ink-soft)", textAlign: "center", margin: "6px 0 0" }}>
                 Për të ndryshuar orën ose personat, kontaktoni restorantin{b.restaurant.phone ? ` në ${b.restaurant.phone}` : ""}.
                 Riplanifikimin e bën stafi.

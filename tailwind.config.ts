@@ -9,18 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Design system i platformës (Faza 2): krem/jeshile, i butë ──
-        canvas: "#FAF8F3", // sfondi krem
+        // ── Platforma (llogaria, paneli, admin): paleta OnlineMenu.al me emra semantikë ──
+        canvas: "#FFF8EE", // Warm White
         surface: "#FFFFFF", // kartat
-        ink: "#20241F", // teksti kryesor
-        muted: "#62685F", // teksti dytësor
-        line: "#E8E3D7", // kontura delikate
+        ink: "#3A1035", // Aubergine deep
+        muted: "#6E4D68", // tekst dytësor (≥4.5:1 mbi canvas)
+        line: "#EEDFD3", // kontura delikate
         primary: {
-          DEFAULT: "#164B36", // jeshile (butona, theks veprimi)
-          dark: "#0F3A29",
-          soft: "#E7EFEA", // sfond i butë jeshil (badge/hover)
+          DEFAULT: "#4C1845", // Aubergine (butona, theks veprimi; tekst i bardhë)
+          dark: "#3A1035",
+          soft: "#FFF1B8", // Butter soft (nav aktiv, badge)
         },
-        accent: "#A77932", // ar — detaje delikate (jo veprime)
+        accent: "#FF79BD", // Pink — vetëm dekor, kurrë tekst i vogël
 
         // ── OnlineMenu.al — paleta e vetme e miratuar e faqeve publike (shih src/lib/om-theme.ts) ──
         // Butter/Pink janë sfonde/thekse; teksti mbi to është gjithmonë aubergine.
@@ -44,12 +44,12 @@ const config: Config = {
         alpine: { gold: "#c9a24b", cream: "#f5f0e6" },
       },
       fontFamily: {
-        // Platforma: Playfair Display (tituj) + Jost (UI/body).
-        display: ["var(--font-display)", "Playfair Display", "Georgia", "serif"],
-        ui: ["var(--font-ui)", "Jost", "system-ui", "sans-serif"],
+        // Platforma: Fredoka (tituj) + Nunito (UI/body), si faqet publike.
+        display: ["var(--font-display)", "Fredoka", "system-ui", "sans-serif"],
+        ui: ["var(--font-ui)", "Nunito", "system-ui", "sans-serif"],
         // Alias ekzistues (publik/legacy).
-        heading: ["var(--font-heading)", "Playfair Display", "serif"],
-        body: ["var(--font-body)", "Jost", "sans-serif"],
+        heading: ["var(--font-heading)", "Fredoka", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "Nunito", "system-ui", "sans-serif"],
         // OnlineMenu.al (faqet publike).
         "om-display": ["Fredoka", "system-ui", "sans-serif"],
         "om-body": ["Nunito", "system-ui", "sans-serif"],

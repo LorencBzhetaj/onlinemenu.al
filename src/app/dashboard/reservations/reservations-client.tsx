@@ -25,6 +25,7 @@ const STATUS_STYLE: Record<string, string> = {
   NoShow: "bg-red-50 text-red-600",
 };
 const NEXT_STATUSES = ["Seated", "Completed", "NoShow", "Cancelled"];
+const STATUS_LABEL: Record<string, string> = { Confirmed: "Konfirmuar", Seated: "Në tryezë", Completed: "Përfunduar", NoShow: "S’erdhi", Cancelled: "Anuluar" };
 
 function todayISO() {
   const d = new Date();
@@ -99,7 +100,7 @@ export function ReservationsClient() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-display text-lg text-ink">{hhmm(r.startDateTime)}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLE[r.status] ?? "bg-black/5 text-muted"}`}>{r.status}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLE[r.status] ?? "bg-black/5 text-muted"}`}>{STATUS_LABEL[r.status] ?? r.status}</span>
                     <span className="text-xs text-muted">· {r.partySize} persona</span>
                   </div>
                   <div className="mt-1 text-sm text-ink">
@@ -118,7 +119,7 @@ export function ReservationsClient() {
                     aria-label="Ndrysho statusin"
                   >
                     <option value="">Status…</option>
-                    {NEXT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    {NEXT_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
                   </select>
                   <button onClick={() => setReschedule(r)} className="rounded-lg border border-line px-2.5 py-1.5 text-xs text-muted hover:border-primary hover:text-primary">
                     Riplanifiko

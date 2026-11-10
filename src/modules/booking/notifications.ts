@@ -85,7 +85,7 @@ export const resendSender: NotifySender = async (msg) => {
   try {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const from = process.env.EMAIL_FROM || "MenuDigjitale <onboarding@resend.dev>";
+    const from = process.env.EMAIL_FROM || "OnlineMenu.al <onboarding@resend.dev>";
     const { data, error } = await resend.emails.send({ from, to: msg.to, subject: msg.subject, text: msg.text });
     if (error) return { delivered: false, error: typeof error === "string" ? error : JSON.stringify(error) };
     return { delivered: true, simulated: false, ...(data?.id ? {} : {}) };

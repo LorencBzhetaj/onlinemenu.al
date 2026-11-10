@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { OrDivider } from "@/components/google-button";
 import { OAuthButtons, useHasOAuth } from "@/components/oauth-buttons";
+import { AuthBrand } from "@/components/auth-brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -64,6 +65,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen grid place-items-center bg-canvas text-ink px-6">
       <div className="w-full max-w-sm">
+        <AuthBrand />
         <h1 className="font-heading text-3xl text-center mb-8">Hyr në llogari</h1>
 
         {resetOk && (

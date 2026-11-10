@@ -1,45 +1,35 @@
-# Auditi vizual: llogaria, onboarding, paneli, admin-i
+# Marka në llogari, panel, admin dhe email — dhe hierarkia vizuale
 
-Pamjet (lokale, DB Docker sintetike): `docs/redesign/screenshots/audit/` — telefon 390×844 dhe desktop 1366×900.
+Pamjet (lokale, të dhëna sintetike): `docs/redesign/screenshots/hierarchy/` — telefon 390×844 dhe desktop 1366×900.
+Pamjet e vjetra (tema jeshile, para ndryshimit): `docs/redesign/screenshots/audit/`.
 
-| Faqja | Tema sot | Gjendja |
+## Çfarë u aplikua
+| Zona | Ndryshimi |
+|---|---|
+| Token-at e platformës (`tailwind.config.ts`, `globals.css`) | canvas #FFF8EE · ink #3A1035 · muted #6E4D68 · line #EEDFD3 · primary Aubergine #4C1845 · primary-soft Butter #FFF1B8 · accent Pink (vetëm dekor) · Fredoka/Nunito |
+| Statuset | Sukses = jeshile (`green-100/800`), paralajmërim = portokalli (`amber-100/900`), gabim = e kuqe (`red-100/800`), "provë falas" = Butter. Statuset e rezervimeve mbeten me ngjyra të veçanta dhe tani në shqip |
+| Paneli dhe admin-i | Logoja + "OnlineMenu.al" + etiketë "Paneli"/"Admin" (`platform-brand.tsx`); titulli i dritares "… · OnlineMenu.al" |
+| Hyrja, regjistrimi, onboarding, rivendosja | Shenja e markës mbi titull (`auth-brand.tsx`) |
+| Email-et e llogarisë | Sfond Warm White, titull Aubergine, buton Butter me tekst Aubergine, "OnlineMenu.al" |
+| Header-i publik | "Llogaria ime" për përdoruesin e kyçur në të gjitha faqet publike (`om-account-link.tsx`, lexon sesionin në klient) |
+| Checkbox/radio | `accent-color` Aubergine |
+
+Faqet publike të restorantit (`.rprofile`, `.qr-menu`) kanë fontet dhe ngjyrat në scope-in e tyre dhe s'preken nga token-at e platformës.
+
+## Hierarkia faqe pas faqeje — gjetje dhe korrigjime
+| Faqja | Gjetja | Korrigjimi |
 |---|---|---|
-| `/account` | OnlineMenu.al (Butter/Aubergine, Fredoka/Nunito) | ✅ e harmonizuar. U rregullua: header-i tregonte "Hyr" për përdoruesin e kyçur dhe s'kishte dalje → tani "Llogaria ime" + "Dil nga llogaria". |
-| `/login`, `/register`, `/onboarding` | e vjetër (krem/jeshile, Playfair/Jost) | ❌ |
-| `/dashboard/*` (përfshi Njoftime) | e vjetër, emri "MenuDigjitale" | ❌ |
-| `/admin/*` | e vjetër, "Admin·Panel" | ❌ |
-| Email-et (verifikim, rivendosje, njoftime) | "MenuDigjitale", ar/blu e errët | ❌ |
-| Titulli i dritares | "… · MenuDigjitale" | ❌ |
+| Menuja publike (telefon) | Ilustrimi 120 px + titulli 2.1rem shtynin pjatat poshtë | Hyrje kompakte në ≤640 px (ilustrim 84 px, titull 1.55rem) |
+| Menuja publike | Vija dekorative dhe hapësirë bosh te pjatat pa përshkrim | Vija shfaqet vetëm kur ka përshkrim |
+| Paneli → Menu | Çmimet "700 L" ndërsa publiku shfaq "ALL"; menuja degustuese "LEK" | Kudo "ALL" |
+| Paneli (telefon) | Menuja horizontale s'tregonte faqen aktive (p.sh. Rezervime jashtë ekranit) | Lëviz vetë te faqja aktive |
+| Paneli → Rezervime | Statuset në anglisht (Confirmed, NoShow…) | Konfirmuar · Në tryezë · Përfunduar · S’erdhi · Anuluar |
+| Rezervimi i klientit | Statusi "I konfirmuar" në ngjyrë ari | Jeshile (sukses) |
+| Anulimi | `confirm()` i shfletuesit | Dialog `<dialog>` modal: fokus te "Jo, mbaje", Tab/Enter/Esc, fokusi kthehet te butoni; "Po, anuloje" tekst i bardhë mbi #B4461F |
+| Hyrja/regjistrimi | Pa shenjë marke mbi formular | Logoja + emri |
 
-## Propozimi (pa e zbatuar ende)
-
-Paneli përdor vetëm token-a semantikë (`canvas`, `surface`, `ink`, `muted`, `line`, `primary`, `accent`,
-`font-display`, `font-ui`), ndaj harmonizimi bëhet kryesisht duke ndryshuar vlerat e token-ave, pa prekur 47 skedarët.
-
-| Token | Sot | Propozim |
-|---|---|---|
-| `canvas` | #FAF8F3 | #FFF8EE (Warm White) |
-| `surface` | #FFFFFF | #FFFFFF |
-| `ink` | #20241F | #3A1035 (Aubergine deep) |
-| `muted` | #62685F | #6E4D68 |
-| `line` | #E8E3D7 | #EEDFD3 |
-| `primary` | #164B36 jeshile | #4C1845 Aubergine (tekst i bardhë, kontrast ~12:1) |
-| `primary.dark` | #0F3A29 | #3A1035 |
-| `primary.soft` | #E7EFEA | #FFF1B8 (Butter soft — nav aktiv, badge) |
-| `accent` | #A77932 ar | #FF79BD Pink (vetëm dekor, kurrë tekst i vogël) |
-| `font-display` / `font-heading` | Playfair Display | Fredoka |
-| `font-ui` / `font-body` | Jost | Nunito |
-
-Plus ndryshime të vogla manuale:
-1. Emri dhe shenja: "MenuDigjitale" → logo-chef + "OnlineMenu.al" në `dashboard-nav`, `admin/layout`, `layout.tsx` (titulli).
-2. Badge "trial" (blu) → Butter me tekst Aubergine; statuset e tjera (aktiv/skaduar) me ngjyrat ekzistuese të suksesit/gabimit.
-3. Butoni kryesor: Butter me tekst Aubergine (si "Regjistro biznesin") për veprimin kryesor të faqes; Aubergine për butonat e zakonshëm.
-4. Fokusi: unaza Aubergine 2px (sot jeshile).
-5. Email-et: sfond i bardhë, titull Aubergine, buton Butter; "OnlineMenu.al". `EMAIL_FROM` mbetet siç është derisa të verifikohet domeni.
-6. Rreshti "Google · Jo i lidhur" te `/account` ka hapësirë të tepërt poshtë (kozmetike).
-
-Rrezik: `font-heading`/`font-body` përdoren edhe në 16 skedarë jashtë panelit (login, register, onboarding, invite) — kjo është
-e dëshirueshme (i harmonizon njëkohësisht). Faqja publike e menusë `/m/[slug]` përdor `midnight`/`alpine` dhe nuk preket;
-faqet publike përdorin `om-*` dhe nuk preken.
-
-Verifikimi pas zbatimit: kontrast WCAG AA për `muted` mbi `canvas`, pamjet e njëjta në të dyja madhësitë, `npm test` + build.
+### Të vërejtura, pa ndryshim në këtë raund
+- Profili publik në desktop: shiriti lundrues (Restoranti/Menuja/Informacion) del mbi footer-in në fund të faqes.
+- Profili pa foto/informacion: kolona e majtë në desktop mbetet bosh.
+- Paneli → Menu: ikonat e veprimeve (shiko/ndrysho/fshi) janë të vogla për prekje (<44 px).
+- Paneli → Rezervime: "Duke ngarkuar…" pa skelet; data e input-it në format amerikan te shfletuesi në anglisht.
