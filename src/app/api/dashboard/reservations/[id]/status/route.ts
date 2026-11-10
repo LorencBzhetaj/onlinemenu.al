@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { guardBooking } from "@/modules/booking/guards";
 import { setReservationStatus, type ReservationStatus } from "@/modules/booking/reservations";
-import { runNotificationWorker } from "@/modules/booking/notifications";
+import { flushNotificationsAfterCommit } from "@/modules/booking/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const body = await req.json().catch(() => ({}));
   const res = await setReservationStatus(restaurantId, params.id, String(body.status) as ReservationStatus);
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
-  runNotificationWorker({ restaurantId }).catch(() => {});
+  await flushNotificationsAfterCommit(restaurantId);
   return NextResponse.json({ ok: true });
 }

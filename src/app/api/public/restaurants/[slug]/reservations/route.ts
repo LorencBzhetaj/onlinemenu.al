@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPublicProfile } from "@/modules/restaurants/public-profile";
 import { createReservation } from "@/modules/booking/reservations";
-import { runNotificationWorker } from "@/modules/booking/notifications";
+import { flushNotificationsAfterCommit } from "@/modules/booking/notifications";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +42,7 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
   if (!res.ok) return NextResponse.json({ ok: false, error: res.error }, { status: 400 });
 
   // Dërgo njoftimet pas commit-it (best-effort; dështimi s'e prish rezervimin).
-  runNotificationWorker({ restaurantId: p.id }).catch(() => {});
+  await flushNotificationsAfterCommit(p.id);
 
   return NextResponse.json({
     ok: true,

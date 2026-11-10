@@ -45,6 +45,12 @@ Konfiguruar në Vercel vetëm për këtë degë (Preview), vlerat s'janë printu
 - Domen i qëndrueshëm: `https://onlinemenu-al-preview.vercel.app` (i lidhur me degën; mbrohet nga Vercel Authentication).
 - `NEXTAUTH_URL`, `NEXT_PUBLIC_BASE_URL` → domeni i mësipërm. `NOINDEX=1`.
 - `NEXTAUTH_SECRET`, `CRON_SECRET` → të reja, të ndara nga Production (sesionet e Preview s'vlejnë në Production).
-- **Mungon:** `DATABASE_URL` dhe `DIRECT_URL` për këtë degë. Pa to Preview s'ka DB (s'bie te Production, por s'punon).
+- `DATABASE_URL`/`DIRECT_URL` (2026-11-10): DB-ja e testimit që përdornin Preview-t e mëparshme (vetëm të dhëna `@staging.demo`;
+  asnjë shërbim live s'varet prej saj; "Së shpejti" s'e prek). Kur të dalim live → projekt i ri Neon.
+
+## Worker-i i njoftimeve
+Rrugët API e presin worker-in (`flushNotificationsAfterCommit`, kufi 4 s) para përgjigjes: në Vercel një premtim pa `await`
+ngrinte dhe job-et mbeteshin Pending. `vercel.json` s'ka cron për `/api/cron/notifications`; job-et që dështojnë rikapen
+te veprimi i radhës i atij restoranti.
 - Të përbashkëta me Production: `GOOGLE_CLIENT_*`, `RESEND_API_KEY`, `EMAIL_FROM`, Cloudinary.
   Email-et e llogarisë (verifikim/rivendosje) dërgohen realisht kur ka `RESEND_API_KEY`; njoftimet e rezervimeve vetëm me `EMAIL_SEND_LIVE=1` (i fikur).

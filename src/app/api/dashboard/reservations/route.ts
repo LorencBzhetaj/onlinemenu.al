@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { guardBooking } from "@/modules/booking/guards";
 import { createWalkIn } from "@/modules/booking/reservations";
-import { runNotificationWorker } from "@/modules/booking/notifications";
+import { flushNotificationsAfterCommit } from "@/modules/booking/notifications";
 import { getSettings } from "@/modules/booking/availability";
 import { toBusinessDateKey, businessDateAtMinutes } from "@/modules/booking/timezone";
 
@@ -52,6 +52,6 @@ export async function POST(req: Request) {
     tableId: body.tableId ? String(body.tableId) : "any",
   });
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
-  runNotificationWorker({ restaurantId }).catch(() => {});
+  await flushNotificationsAfterCommit(restaurantId);
   return NextResponse.json(res.data, { status: 201 });
 }

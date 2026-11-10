@@ -124,6 +124,20 @@ export interface WorkerResult {
 }
 
 /**
+ * Thirret nga rrugët API pas commit-it. Pret worker-in (me kufi kohe) para përgjigjes: në Vercel
+ * funksioni ngrin pas përgjigjes, ndaj një premtim "fire-and-forget" mund të mos ekzekutohet kurrë
+ * dhe job-et mbeten Pending. Job-et që s'mbarojnë brenda kufirit i merr thirrja/cron-i i radhës.
+ */
+export async function flushNotificationsAfterCommit(restaurantId: string, timeoutMs = 4000): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    runNotificationWorker({ restaurantId, limit: 20 }).catch(() => undefined),
+    new Promise<void>((resolve) => { timer = setTimeout(resolve, timeoutMs); }),
+  ]);
+  if (timer) clearTimeout(timer);
+}
+
+/**
  * Përpunon job-et e gatshme (scheduledAt<=now, pa lease aktiv), një nga një, me
  * claim atomik (updateMany i mbrojtur me status+lease) → i sigurt ndaj disa worker-ëve.
  * Në sukses: Sent/Simulated. Në dështim: retry me backoff derisa maxAttempts → Dead.

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cancelReservationByToken } from "@/modules/booking/reservations";
-import { runNotificationWorker } from "@/modules/booking/notifications";
+import { flushNotificationsAfterCommit } from "@/modules/booking/notifications";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
 
   // Gjej restaurantId për worker-in (best-effort).
   const r = await prisma.reservation.findUnique({ where: { cancelToken: params.token }, select: { restaurantId: true } });
-  if (r) runNotificationWorker({ restaurantId: r.restaurantId }).catch(() => {});
+  if (r) await flushNotificationsAfterCommit(r.restaurantId);
 
   return NextResponse.json({ ok: true });
 }
