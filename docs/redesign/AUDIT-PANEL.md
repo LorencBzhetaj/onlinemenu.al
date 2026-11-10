@@ -29,7 +29,9 @@ Faqet publike të restorantit (`.rprofile`, `.qr-menu`) kanë fontet dhe ngjyrat
 | Hyrja/regjistrimi | Pa shenjë marke mbi formular | Logoja + emri |
 
 ### Të vërejtura, pa ndryshim në këtë raund
-- Profili publik në desktop: shiriti lundrues (Restoranti/Menuja/Informacion) del mbi footer-in në fund të faqes.
-- Profili pa foto/informacion: kolona e majtë në desktop mbetet bosh.
-- Paneli → Menu: ikonat e veprimeve (shiko/ndrysho/fshi) janë të vogla për prekje (<44 px).
-- Paneli → Rezervime: "Duke ngarkuar…" pa skelet; data e input-it në format amerikan te shfletuesi në anglisht.
+| # | Gjetja | Ndikimi | Prioriteti |
+|---|---|---|---|
+| 1 | Paneli → Menu: ikonat shiko/ndrysho/fshi janë ~20 px, nën 44 px për prekje; fshirja është pranë ndryshimit | Prekje të gabuara në telefon (edhe fshirje aksidentale); WCAG 2.5.5/2.5.8 | **I lartë** — pronari e përdor çdo ditë nga telefoni |
+| 2 | Profili publik në desktop: shiriti lundrues (Restoranti/Menuja/Informacion) mbulon footer-in në fund të faqes | Lidhjet ligjore të footer-it mbulohen pjesërisht; s'prek telefonin | **Mesatar** |
+| 3 | Paneli → Rezervime: "Duke ngarkuar…" pa skelet; data shfaqet sipas gjuhës së shfletuesit (p.sh. MM/DD/YYYY) | Kërcim i faqes gjatë ngarkimit; datë e paqartë për stafin me shfletues në anglisht | **Mesatar** |
+| 4 | Profili pa foto/informacion: kolona e majtë në desktop mbetet bosh | Vetëm estetikë, kur restoranti s'ka plotësuar profilin | **I ulët** |

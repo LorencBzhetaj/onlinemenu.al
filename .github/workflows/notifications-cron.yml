@@ -1,10 +1,15 @@
 # Nis worker-in e njoftimeve automatikisht (riprovimet pa aktivitet të ri nga restoranti).
 # Vercel Hobby lejon cron vetëm një herë në ditë dhe vetëm në Production, ndaj këtë e bën GitHub Actions.
-# GitHub i ekzekuton "schedule" VETËM nga dega default (main): ky skedar s'ka efekt derisa të jetë atje.
-# Secrets (Settings → Secrets and variables → Actions):
-#   NOTIFY_CRON_URL    p.sh. https://onlinemenu-al-preview.vercel.app/api/cron/notifications
-#   NOTIFY_CRON_SECRET vlera e CRON_SECRET të atij ambienti
-#   VERCEL_AUTOMATION_BYPASS (opsionale) — vetëm për Preview të mbrojtur me Vercel Authentication
+#
+# Kujdes: "schedule" i GitHub është best-effort. Intervali është i kërkuar, jo i garantuar: ekzekutimet
+# mund të vonohen ose të kapërcehen kur GitHub është i ngarkuar, dhe GitHub i çaktivizon workflow-et e
+# planifikuara pas 60 ditësh pa aktivitet në repo. Worker-i është idempotent, ndaj vonesa s'krijon dublikata.
+# GitHub i ekzekuton "schedule" VETËM nga dega default (main).
+#
+# Secrets (Settings → Secrets and variables → Actions → Repository secrets):
+#   NOTIFY_CRON_URL           endpoint-i i plotë, p.sh. https://<host>/api/cron/notifications
+#   NOTIFY_CRON_SECRET        vlera e CRON_SECRET të atij ambienti në Vercel
+#   VERCEL_AUTOMATION_BYPASS  (vetëm për Preview të mbrojtur) "Protection Bypass for Automation"
 name: notifications-cron
 
 on:
@@ -12,8 +17,10 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
+# Asnjë akses në repo: workflow-i thërret vetëm një URL të jashtme.
 permissions: {}
 
+# Një ekzekutim në të njëjtën kohë; një i ri pret (s'anulon) atë që po punon.
 concurrency:
   group: notifications-cron
   cancel-in-progress: false
@@ -21,17 +28,34 @@ concurrency:
 jobs:
   run-worker:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - name: Thirr worker-in e njoftimeve
         env:
           URL: ${{ secrets.NOTIFY_CRON_URL }}
           SECRET: ${{ secrets.NOTIFY_CRON_SECRET }}
           BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS }}
+        shell: bash
         run: |
-          if [ -z "$URL" ] || [ -z "$SECRET" ]; then
-            echo "Secrets mungojnë — asgjë për të bërë."; exit 0
+          set -euo pipefail
+          if [ -z "${URL}" ] || [ -z "${SECRET}" ]; then
+            echo "::error::Mungojnë NOTIFY_CRON_URL ose NOTIFY_CRON_SECRET."
+            exit 1
           fi
-          args=(-sS --fail-with-body --max-time 60 -H "Authorization: Bearer $SECRET")
-          if [ -n "$BYPASS" ]; then args+=(-H "x-vercel-protection-bypass: $BYPASS"); fi
-          curl "${args[@]}" "$URL"
+          # Header-at shkruhen në një skedar të përkohshëm: s'dalin në komandë, në logs apo te `ps`.
+          hdr="$(mktemp)"; body="$(mktemp)"
+          trap 'rm -f "$hdr" "$body"' EXIT
+          printf 'Authorization: Bearer %s\n' "$SECRET" > "$hdr"
+          if [ -n "${BYPASS:-}" ]; then printf 'x-vercel-protection-bypass: %s\n' "$BYPASS" >> "$hdr"; fi
+          # Pa -L: një ridrejtim (p.sh. te hyrja e Vercel) trajtohet si dështim, jo si sukses.
+          code="$(curl -sS --connect-timeout 10 --max-time 90 -H @"$hdr" -o "$body" -w '%{http_code}' "$URL")" || code=000
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Worker-i ktheu HTTP $code."
+            exit 1
+          fi
+          if ! grep -q '"ok":true' "$body"; then
+            echo "::error::Përgjigje e papritur nga worker-i (pa ok:true)."
+            exit 1
+          fi
+          # Vetëm numëruesit (s'ka adresa apo të dhëna klientësh në përgjigje).
+          cat "$body"; echo
