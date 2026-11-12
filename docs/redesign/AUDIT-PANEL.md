@@ -28,10 +28,14 @@ Faqet publike të restorantit (`.rprofile`, `.qr-menu`) kanë fontet dhe ngjyrat
 | Anulimi | `confirm()` i shfletuesit | Dialog `<dialog>` modal: fokus te "Jo, mbaje", Tab/Enter/Esc, fokusi kthehet te butoni; "Po, anuloje" tekst i bardhë mbi #B4461F |
 | Hyrja/regjistrimi | Pa shenjë marke mbi formular | Logoja + emri |
 
-### Të vërejtura, pa ndryshim në këtë raund
+### Katër vërejtjet e raundit të kaluar (të korrigjuara më 2026-11-13)
 | # | Gjetja | Ndikimi | Prioriteti |
 |---|---|---|---|
 | 1 | Paneli → Menu: ikonat shiko/ndrysho/fshi janë ~20 px, nën 44 px për prekje; fshirja është pranë ndryshimit | Prekje të gabuara në telefon (edhe fshirje aksidentale); WCAG 2.5.5/2.5.8 | **I lartë** — pronari e përdor çdo ditë nga telefoni |
 | 2 | Profili publik në desktop: shiriti lundrues (Restoranti/Menuja/Informacion) mbulon footer-in në fund të faqes | Lidhjet ligjore të footer-it mbulohen pjesërisht; s'prek telefonin | **Mesatar** |
 | 3 | Paneli → Rezervime: "Duke ngarkuar…" pa skelet; data shfaqet sipas gjuhës së shfletuesit (p.sh. MM/DD/YYYY) | Kërcim i faqes gjatë ngarkimit; datë e paqartë për stafin me shfletues në anglisht | **Mesatar** |
 | 4 | Profili pa foto/informacion: kolona e majtë në desktop mbetet bosh | Vetëm estetikë, kur restoranti s'ka plotësuar profilin | **I ulët** |
+
+Korrigjimet: (1) butonat e artikujve dhe të kategorive ≥44 px me etiketa, fshirja e ndarë, rreshtat kalojnë në dy rreshta në telefon;
+(2) footer-i merr hapësirë poshtë kur ka shiritin e fiksuar (72 px telefon, 96 px desktop); (3) skelet ngarkimi + data në shqip
+("e premte, 13 nëntor 2026") te Rezervime; (4) profili pa përmbajtje kryesore përdor një kolonë, pa hapësirë bosh.

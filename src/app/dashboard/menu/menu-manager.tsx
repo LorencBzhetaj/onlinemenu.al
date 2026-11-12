@@ -181,7 +181,7 @@ export function MenuManager({
             {(handle) => (
               <div className="mb-3 rounded-xl border border-line bg-surface">
                 {/* Kreu i kategorisë */}
-                <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
                   <span {...handle} className="touch-none px-1 cursor-grab active:cursor-grabbing text-muted hover:text-muted text-lg">
                     ⠿
                   </span>
@@ -189,7 +189,7 @@ export function MenuManager({
                     {expanded.has(cat.id) ? "▾" : "▸"}
                   </button>
                   <CategoryIcon icon={cat.icon} className="w-5 h-5 text-primary" />
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-[9rem] flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-ink truncate">{cat.nameAl}</span>
                       {cat.scheduleId && scheduleById.has(cat.scheduleId) && (
@@ -357,7 +357,7 @@ function HeaderBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-md px-2.5 py-1 text-xs hover:bg-black/5 transition ${
+      className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md px-2.5 text-xs hover:bg-black/5 transition ${
         danger ? "text-red-600" : "text-muted"
       }`}
     >

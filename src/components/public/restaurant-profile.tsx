@@ -89,6 +89,8 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
   const website = profile.links.find((l) => l.type === "WEBSITE") ?? null;
   const mapsLink = profile.location.mapsLink;
   const hasLocation = Boolean(profile.address || profile.location.coords || mapsLink);
+  // Pa përmbajtje kryesore: s'lëmë kolonë bosh në desktop (karta e rezervimit zë vendin e saj).
+  const hasMainContent = Boolean(about || instagram || website || profile.phone || hasLocation);
   const reserveInternal = profile.reserveHref?.startsWith("/") ?? false;
   const reserveExt = profile.reserveHref && !reserveInternal ? { target: "_blank", rel: "noopener noreferrer" } : {};
 
@@ -173,8 +175,8 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
           </div>
         )}
 
-        <div className="om-profile-grid">
-          <div className="om-profile-main">
+        <div className={`om-profile-grid${hasMainContent ? "" : " om-profile-grid--solo"}`}>
+          {hasMainContent && <div className="om-profile-main">
             {about && (
               <section className="om-card om-about" aria-label={t("Rreth restorantit", "About the restaurant")}>
                 <p>{about}</p>
@@ -231,7 +233,7 @@ export function RestaurantProfile({ profile }: { profile: ProfileView }) {
                 routingUrl={profile.location.routingUrl}
               />
             )}
-          </div>
+          </div>}
 
           {/* Desktop: hapësirë anësore për rezervimin (në telefon butoni Rezervo është sipër). */}
           {profile.reserveHref && (

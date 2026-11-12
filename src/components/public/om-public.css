@@ -973,3 +973,23 @@ body:has(.om-site-header) :focus-visible {
   .qr-menu.om-menu .om-menu-art { width: 84px; height: 56px; margin-bottom: 2px; }
   .qr-menu.om-menu .qm-section-title { font-size: 1.55rem; margin-top: 2px; }
 }
+
+/* Footer-i s'mbulohet nga shiriti Restoranti/Menuja/Informacion (i fiksuar poshtë). */
+body:has(.rpub-tabs) .om-site-footer {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+@media (min-width: 900px) {
+  body:has(.rpub-tabs) .om-site-footer {
+    padding-bottom: 96px;
+  }
+}
+
+/* Profil pa përmbajtje kryesore: një kolonë, karta e rezervimit pa kolonë bosh pranë. */
+@media (min-width: 960px) {
+  .om-profile-grid--solo {
+    grid-template-columns: minmax(0, 420px);
+  }
+  .om-profile-grid--solo .om-profile-side {
+    position: static;
+  }
+}

@@ -27,6 +27,16 @@ const STATUS_STYLE: Record<string, string> = {
 const NEXT_STATUSES = ["Seated", "Completed", "NoShow", "Cancelled"];
 const STATUS_LABEL: Record<string, string> = { Confirmed: "Konfirmuar", Seated: "Në tryezë", Completed: "Përfunduar", NoShow: "S’erdhi", Cancelled: "Anuluar" };
 
+const SQ_DAYS = ["e diel", "e hënë", "e martë", "e mërkurë", "e enjte", "e premte", "e shtunë"];
+const SQ_MONTHS = ["janar", "shkurt", "mars", "prill", "maj", "qershor", "korrik", "gusht", "shtator", "tetor", "nëntor", "dhjetor"];
+/** "2026-11-13" → "e premte, 13 nëntor 2026" (pa varësi nga Intl/locale e shfletuesit). */
+function formatDateSq(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return `${SQ_DAYS[wd]}, ${d} ${SQ_MONTHS[m - 1]} ${y}`;
+}
+
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -82,14 +92,20 @@ export function ReservationsClient() {
       </div>
 
       <div className="mb-4 flex items-center gap-2">
-        <button onClick={() => shiftDay(-1)} className="min-h-11 rounded-lg border border-line px-3 text-sm hover:border-primary">←</button>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
-        <button onClick={() => shiftDay(1)} className="min-h-11 rounded-lg border border-line px-3 text-sm hover:border-primary">→</button>
+        <button onClick={() => shiftDay(-1)} aria-label="Dita e mëparshme" className="min-h-11 rounded-lg border border-line px-3 text-sm hover:border-primary">←</button>
+        <input type="date" lang="sq" aria-label="Data e rezervimeve" value={date} onChange={(e) => setDate(e.target.value)} className="min-h-11 rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
+        <button onClick={() => shiftDay(1)} aria-label="Dita tjetër" className="min-h-11 rounded-lg border border-line px-3 text-sm hover:border-primary">→</button>
         <button onClick={() => setDate(todayISO())} className="min-h-11 rounded-lg border border-line px-3 text-sm text-muted hover:border-primary">Sot</button>
       </div>
+      {/* Data e qartë në shqip, pavarësisht gjuhës së shfletuesit (input-i date ndjek locale-n e tij). */}
+      <p className="-mt-2 mb-4 text-sm font-semibold text-ink" aria-live="polite">{formatDateSq(date)}</p>
 
       {loading ? (
-        <p className="text-muted">Duke ngarkuar…</p>
+        <ul className="space-y-3" aria-busy="true" aria-label="Duke ngarkuar rezervimet">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="h-24 animate-pulse rounded-2xl border border-line bg-surface motion-reduce:animate-none" />
+          ))}
+        </ul>
       ) : rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line p-10 text-center text-muted">Asnjë rezervim për këtë datë.</div>
       ) : (

@@ -22,7 +22,7 @@ export function ItemRow({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border border-line bg-canvas px-3 py-2 mb-2 ${
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-canvas px-3 py-2 mb-2 ${
         item.isVisible ? "" : "opacity-50"
       }`}
     >
@@ -37,7 +37,8 @@ export function ItemRow({
         <div className="h-10 w-10 rounded bg-black/5 shrink-0" />
       )}
 
-      <div className="min-w-0 flex-1">
+      {/* Emri merr vend të paktën 9rem; çmimi dhe veprimet kalojnë poshtë kur s'ka vend (telefon). */}
+      <div className="min-w-[9rem] flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-ink truncate">{item.nameAl}</span>
           {item.isChefPick && (
@@ -66,7 +67,7 @@ export function ItemRow({
         )}
       </div>
 
-      <span className="text-primary whitespace-nowrap text-sm">
+      <span className="ml-auto text-primary whitespace-nowrap text-sm">
         {formatPrice(item.price)}
       </span>
 
